@@ -8,6 +8,22 @@
 
 ## Clarifications
 
+### Session 2026-06-16 (ronda 2)
+
+- Q: ¿Cuándo se crea el Chat asociado al Hallazgo? → A: El Chat se crea automáticamente cuando el Admin aprueba el Hallazgo, no al momento de su creación.
+- Q: ¿Qué ocurre con las Acciones cuando el Admin rechaza un Hallazgo? → A: Las tres Acciones se eliminan en cascada al pasar el Hallazgo a estado RECHAZADO. El Hallazgo queda como registro de solo lectura.
+- Q: ¿La visibilidad por rol de un Hallazgo se extiende a sus archivos adjuntos y acciones? → A: Sí; la visibilidad es heredada. Si un usuario puede ver el Hallazgo, puede ver sus archivos adjuntos y acciones.
+- Q: ¿Qué ocurre con una SolicitudCierreAccion PENDIENTE si el responsable que la generó es removido del Hallazgo? → A: La solicitud permanece activa y el Admin puede resolverla igualmente, aunque el solicitante ya no sea responsable.
+- Q: ¿El estado EN_PROGRESO es obligatorio antes de poder solicitar el cierre de una Acción? → A: Sí; una Acción en estado PENDIENTE no puede solicitar cierre directamente. Debe transicionar primero a EN_PROGRESO.
+
+### Session 2026-06-16
+
+- Q: ¿Cuándo y quién crea las 3 Acciones de un Hallazgo? → A: Se crean automáticamente al crear el Hallazgo, en estado PENDIENTE, sin intervención manual.
+- Q: ¿Qué ocurre si un Empleado solicita cerrar una Acción que ya está en estado CERRADA? → A: El sistema rechaza la solicitud con error 400 y un mensaje claro indicando que la acción ya está cerrada.
+- Q: ¿El Administrador tiene acceso al chat de los hallazgos? → A: El Admin tiene acceso de solo lectura a todos los chats; puede leer mensajes pero no enviarlos.
+- Q: ¿Qué ocurre con las acciones en progreso cuando el Admin remueve a un responsable del hallazgo? → A: Las acciones mantienen su estado tal como están; el Admin debe asignar un nuevo responsable para que otro Empleado pueda continuar.
+- Q: ¿Los Empleados reciben notificaciones cuando el Admin toma decisiones que los afectan? → A: Sí; los Empleados reciben notificaciones por cualquier decisión del Admin que los afecte directamente: aprobación/rechazo de hallazgo (si son creadores), asignación o remoción como responsable, y aprobación/rechazo de solicitudes de cierre de acciones.
+
 ### Session 2026-06-10
 
 - Q: ¿Bajo qué condición un Hallazgo pasa al estado CERRADO? → A: Automáticamente cuando las 3 acciones (Inmediata, Correctiva, Verificación) están en estado CERRADA.
@@ -82,8 +98,7 @@ Los responsables de un hallazgo colaboran a través de un chat asociado. Al remo
 
 1. **Given** un hallazgo aprobado con responsables asignados, **When** se visualiza el hallazgo, **Then** existe un chat con todos los responsables como participantes.
 2. **Given** un responsable del chat, **When** envía un mensaje, **Then** el mensaje es visible para todos los participantes con fecha y hora.
-3. **Given** un responsable removido del hallazgo, **When** intenta acceder al chat, **Then** el sistema le deniega el acceso y el mensaje no está disponible para él.
-
+3. **Given** un responsable removido del hallazgo, **When** intenta acceder al chat, **Then** el sistema le deniega el acceso y el mensaje no está disponible para él.4. **Given** el Admin autenticado, **When** accede al chat de cualquier hallazgo, **Then** puede leer todos los mensajes históricos pero no puede enviar mensajes.
 ---
 
 ### User Story 5 - Gestión de Usuarios por el Administrador (Priority: P5)
@@ -105,9 +120,10 @@ El Administrador crea nuevos usuarios en el sistema, asignándoles tipo (Emplead
 ### Edge Cases
 
 - ¿Qué sucede si el Admin intenta asignar un responsable que ya fue asignado al mismo hallazgo? El sistema ignora la operación y muestra un aviso informativo (FR-027).
-- ¿Qué ocurre si se solicita cerrar una acción que ya está en estado CERRADA?
+- ¿Qué ocurre con las acciones en progreso si el Admin remueve al responsable? Las acciones mantienen su estado; el Admin debe reasignar un nuevo responsable (FR-032).
+- ¿Qué ocurre si se solicita cerrar una acción que ya está en estado CERRADA? El sistema rechaza la solicitud con error 400 y mensaje claro (FR-030).
 - ¿Puede el Admin aprobar un hallazgo que ya fue rechazado anteriormente? No; RECHAZADO es un estado terminal (FR-026).
-- ¿Puede un Empleado acceder al chat de un hallazgo donde ya no es responsable?
+- ¿Puede un Empleado acceder al chat de un hallazgo donde ya no es responsable? No; al ser removido como responsable pierde acceso inmediatamente (FR-013).
 - ¿Qué sucede si un Cliente intenta acceder a hallazgos que no le pertenecen? El sistema debe denegar el acceso (FR-025).
 
 ## Requirements *(mandatory)*
@@ -122,6 +138,7 @@ El Administrador crea nuevos usuarios en el sistema, asignándoles tipo (Emplead
 - **FR-023**: El Administrador DEBE poder visualizar todos los hallazgos del sistema.
 - **FR-024**: Los Empleados DEBEN poder visualizar únicamente los hallazgos en los que estén asignados como responsables.
 - **FR-025**: Los Clientes DEBEN poder visualizar únicamente los hallazgos (Quejas de Cliente) que ellos mismos crearon.
+- **FR-035**: La visibilidad por rol definida en FR-023, FR-024 y FR-025 se aplica de forma transitiva a todos los sub-recursos del Hallazgo: archivos adjuntos, acciones y solicitudes de cierre. Un usuario que no puede ver un Hallazgo tampoco puede acceder a ninguno de sus sub-recursos.
 
 **Gestión de Hallazgos**
 
@@ -130,28 +147,34 @@ El Administrador crea nuevos usuarios en el sistema, asignándoles tipo (Emplead
 - **FR-006**: Los hallazgos creados por Empleados (No Conformidad, Oportunidad de Mejora) DEBEN quedar en estado PENDIENTE hasta aprobación administrativa.
 - **FR-007**: Las Quejas de Cliente DEBEN registrarse automáticamente en estado APROBADO sin requerir aprobación.
 - **FR-008**: Todo hallazgo creado DEBE generar una notificación al Administrador.
+- **FR-033**: El sistema DEBE enviar notificaciones a los Empleados afectados en los siguientes eventos: (a) el Admin aprueba o rechaza un hallazgo del cual el Empleado es creador; (b) el Admin asigna o remueve al Empleado como responsable de un hallazgo; (c) el Admin aprueba o rechaza una solicitud de cierre de acción presentada por ese Empleado.
 - **FR-009**: El Administrador DEBE poder aprobar, rechazar o reclasificar hallazgos en estado PENDIENTE.
 - **FR-010**: El Administrador DEBE poder asignar y remover responsables de cualquier hallazgo aprobado.
 
 **Gestión de Chat**
 
-- **FR-011**: Cada hallazgo DEBE tener un chat colaborativo asociado.
-- **FR-012**: Solo los responsables vigentes del hallazgo DEBEN tener acceso al chat.
+- **FR-011**: Cada hallazgo DEBE tener un chat colaborativo asociado. El Chat se crea automáticamente en el momento en que el Administrador aprueba el Hallazgo; no existe para hallazgos en estado PENDIENTE, RECHAZADO o antes de la aprobación.
+- **FR-012**: Solo los responsables vigentes del hallazgo DEBEN tener acceso al chat para leer y enviar mensajes.
 - **FR-013**: Al remover un responsable del hallazgo, el sistema DEBE eliminarlo automáticamente de los participantes del chat.
+- **FR-031**: El Administrador DEBE tener acceso de solo lectura al chat de cualquier hallazgo; puede leer todos los mensajes históricos pero no puede enviar mensajes.
+- **FR-032**: Al remover un responsable de un hallazgo, las acciones asociadas al hallazgo DEBEN mantener su estado actual sin modificación. El Administrador es responsable de asignar un nuevo responsable para que las acciones puedan continuar.
+- **FR-036**: Si un responsable tiene una SolicitudCierreAccion en estado PENDIENTE y es removido del Hallazgo, la solicitud DEBE permanecer activa. El Administrador PUEDE aprobarla o rechazarla independientemente de que el solicitante ya no sea responsable vigente.
 
 **Gestión de Acciones**
 
-- **FR-014**: Cada hallazgo DEBE poder contener exactamente una Acción Inmediata, una Acción Correctiva y una Verificación de Eficiencia.
+- **FR-014**: Cada hallazgo DEBE contener exactamente una Acción Inmediata, una Acción Correctiva y una Verificación de Eficiencia. Las tres acciones DEBEN crearse automáticamente en estado PENDIENTE en el mismo instante en que se crea el Hallazgo, sin intervención manual de ningún usuario.
 - **FR-015**: Los responsables DEBEN poder actualizar descripción, fechas y adjuntar archivos en cada acción.
-- **FR-016**: Un Empleado responsable DEBE poder solicitar el cierre de cualquier acción que esté a su cargo.
+- **FR-016**: Un Empleado responsable DEBE poder solicitar el cierre de cualquier acción que esté a su cargo, siempre que dicha acción se encuentre en estado EN_PROGRESO. No se puede solicitar el cierre de una acción en estado PENDIENTE.
 - **FR-017**: El Administrador DEBE poder aprobar o rechazar solicitudes de cierre de acciones.
 - **FR-018**: Ninguna acción PUEDE quedar en estado CERRADA sin aprobación explícita del Administrador.
 - **FR-019**: El rechazo de una solicitud de cierre DEBE mantener la acción activa para futuras correcciones.
 - **FR-022**: El sistema DEBE transicionar automáticamente un Hallazgo al estado CERRADO cuando sus tres acciones (Acción Inmediata, Acción Correctiva y Verificación de Eficiencia) estén en estado CERRADA.
 - **FR-026**: El estado RECHAZADO de un Hallazgo es terminal; no puede ser reabierto ni modificado. Si el Empleado desea reintentar, debe crear un nuevo hallazgo.
+- **FR-034**: Al transicionar un Hallazgo al estado RECHAZADO, el sistema DEBE eliminar en cascada las tres Acciones asociadas. El Hallazgo permanece como registro de solo lectura para auditoría.
 - **FR-027**: Si el Admin intenta asignar como responsable a un Empleado que ya está asignado al mismo hallazgo, el sistema DEBE ignorar la operación y devolver un aviso informativo sin interrumpir el flujo.
 - **FR-028**: El sistema DEBE validar en el backend que los archivos adjuntos sean de tipos permitidos (PDF, imágenes: JPG/PNG/GIF, documentos Office: DOC/DOCX/XLS/XLSX/PPT/PPTX).
 - **FR-029**: El sistema DEBE rechazar archivos que superen el tamaño máximo configurado. Dicho límite DEBE ser configurable mediante variable de entorno o archivo de configuración, sin hardcode en el código fuente.
+- **FR-030**: El sistema DEBE rechazar con error 400 cualquier solicitud de cierre sobre una Acción que ya se encuentre en estado CERRADA, devolviendo un mensaje claro al usuario.
 
 **Archivos Adjuntos**
 
@@ -167,7 +190,7 @@ El Administrador crea nuevos usuarios en el sistema, asignándoles tipo (Emplead
 - **Chat**: Canal de comunicación asociado a un hallazgo. Contiene mensajes y una lista de participantes (los responsables vigentes del hallazgo).
 - **Mensaje**: Texto enviado en un chat. Tiene contenido, fecha/hora y usuario emisor.
 - **Archivo**: Evidencia adjunta a un hallazgo o acción. Tiene nombre, ruta de almacenamiento, fecha de carga y usuario que lo cargó.
-- **Notificación**: Aviso generado automáticamente al Administrador. Tiene título, mensaje, fecha, estado de lectura y referencia al hallazgo que la originó.
+- **Notificación**: Aviso generado automáticamente dirigido al Administrador o a Empleados según el evento. Tiene título, mensaje, fecha, estado de lectura, referencia al hallazgo que la originó y destinatario (Admin o Empleado afectado).
 
 ## Success Criteria *(mandatory)*
 

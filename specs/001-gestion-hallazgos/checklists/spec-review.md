@@ -48,3 +48,33 @@
 ## Consistencia entre Requisitos
 
 - [ ] CHK018 - ¿FR-012 (solo responsables vigentes acceden al chat) es consistente con el supuesto documentado de que el historial de mensajes se conserva tras remover un responsable? ¿Está resuelto el aparente conflicto entre acceso y preservación? [Consistency, Spec §FR-012]
+
+---
+
+## Reconciliación 2026-06-16 — Audit post-clarificación
+
+**Propósito**: Evaluar qué ítems CHK001–CHK018 quedaron cubiertos por las sesiones de clarificación y documentar los gaps remanentes como nuevos ítems.
+
+### Ítems resueltos (CHK001–CHK018)
+
+- [x] CHK001 — RESUELTO: FR-014 actualizado especifica creación automática al crear el Hallazgo [Spec §FR-014]
+- [x] CHK002 — RESUELTO: FR-009 indica explícitamente "en estado PENDIENTE" [Spec §FR-009]
+- [x] CHK004 — RESUELTO: FR-016 "cualquier acción que esté a su cargo"; sin asignación por acción individual [Spec §FR-016]
+- [x] CHK007 — RESUELTO: FR-024 + Clarification 2026-06-10 — Empleados ven solo donde son responsables [Spec §FR-024]
+- [x] CHK009 — RESUELTO: FR-031 define acceso Admin de solo lectura al chat [Spec §FR-031]
+- [x] CHK011 — RESUELTO: Historial documentado en Assumptions section
+- [x] CHK012 — RESUELTO: US3 Scenario 3 cubre notificación al Admin por solicitud de cierre
+- [x] CHK013 — RESUELTO: Modelo Notificacion con leida=False implica acumulación; Assumption cubre canal
+- [x] CHK015 — RESUELTO: FR-028 especifica "validar en el backend" explícitamente [Spec §FR-028]
+- [x] CHK018 — RESUELTO: Acceso removido (FR-012) y preservación de historial (Assumption) son consistentes
+
+### Gaps remanentes — nuevos ítems de calidad de requisitos
+
+- [x] CHK019 — RESUELTO: FR-034 define eliminación en cascada de Acciones al rechazar; Chat no existe en PENDIENTE (FR-011 actualizado) [Spec §FR-034, FR-011]
+- [x] CHK020 — RESUELTO: FR-036 define que la SolicitudCierreAccion permanece activa aunque el solicitante sea removido [Spec §FR-036]
+- [x] CHK021 — RESUELTO: FR-016 actualizado exige EN_PROGRESO previo; PENDIENTE→SOLICITUD_CIERRE directo no permitido [Spec §FR-016]
+- [x] CHK022 — RESUELTO: FR-035 define visibilidad transitiva; archivos y acciones heredan permisos del Hallazgo [Spec §FR-035]
+- [x] CHK023 — RESUELTO: FR-011 actualizado define creación del Chat al momento de aprobación del Hallazgo [Spec §FR-011]
+- [ ] CHK024 — DIFERIDO: Eliminación de archivos adjuntos — sin impacto en MVP; mejor resuelto en fase de diseño de UI
+- [ ] CHK025 — DIFERIDO: Condiciones de carga para SC-001 — mejor especificado en performance testing plan
+- [ ] CHK026 — DIFERIDO: Número mínimo de usuarios para SC-006 — mejor cuantificado en capacity planning post-MVP
