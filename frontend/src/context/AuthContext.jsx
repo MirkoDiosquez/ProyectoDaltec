@@ -24,6 +24,7 @@
  */
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import axios from "axios";
+import { authRef } from "../api/client.js";
 
 // ---------------------------------------------------------------------------
 // Context definition
@@ -136,6 +137,10 @@ export function AuthProvider({ children }) {
     refreshTokenRef, // consumed by T014 Axios interceptor
     isAuthenticated: Boolean(accessToken),
   };
+
+  // Keep authRef in sync so the Axios interceptor always has the latest token
+  // and refresh function without needing a React context subscription.
+  authRef.current = { accessToken, refreshTokenRef };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
