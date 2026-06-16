@@ -40,7 +40,7 @@
 - [X] T009 [P] Configure `backend/config/asgi.py` with `ProtocolTypeRouter`: HTTP → Django WSGI app; WebSocket → `TokenAuthMiddlewareStack` wrapping `URLRouter` (routes registered later per consumer)
 - [X] T010 [P] Implement `TokenAuthMiddleware` for WebSocket JWT validation in `backend/apps/users/middleware.py`; sets `scope["user"]` from `?token=` query param; closes with code 4001 if invalid
 - [X] T011 Create initial Django migration for `CustomUser`, `EmpleadoProfile`, `ClienteProfile` in `backend/apps/users/migrations/0001_initial.py`
-- [ ] T012 Implement JWT auth views: `LoginView` (POST `/api/v1/auth/login/`), `TokenRefreshView`, `LogoutView` (blacklist refresh token) in `backend/apps/users/views.py`; register in `backend/config/urls.py`
+- [X] T012 Implement JWT auth views: `LoginView` (POST `/api/v1/auth/login/`), `TokenRefreshView`, `LogoutView` (blacklist refresh token) in `backend/apps/users/views.py`; register in `backend/config/urls.py`
 - [ ] T013 [P] Implement frontend `AuthContext` with `login()`, `logout()`, `refreshToken()`, JWT storage (access in memory, refresh in HttpOnly cookie) in `frontend/src/context/AuthContext.jsx`
 - [ ] T014 [P] Implement frontend Axios instance with request interceptor (attach access token) and response interceptor (silent refresh on 401) in `frontend/src/api/client.js`
 - [ ] T015 Configure React Router with `ProtectedRoute` component (redirect to login if unauthenticated) and `RoleRoute` component (redirect if wrong role) in `frontend/src/App.jsx`

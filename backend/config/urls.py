@@ -9,8 +9,8 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    # App URLs registered progressively per task:
-    # T012: path("api/v1/auth/", include("apps.users.urls.auth")),
+    # T012
+    path("api/v1/auth/", include("apps.users.urls.auth")),
     # T028: path("api/v1/", include("apps.hallazgos.urls")),
     # T043: path("api/v1/", include("apps.acciones.urls")),
     # T053: path("api/v1/", include("apps.chat.urls")),
