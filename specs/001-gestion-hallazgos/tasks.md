@@ -19,7 +19,7 @@
 **Purpose**: Project scaffolding and containerization — no business logic.
 
 - [X] T001 Create `docker-compose.yml` with services: mysql, redis, backend (Daphne), frontend (build), nginx
-- [ ] T002 Create `.env.example` with all required variables: `DB_*`, `REDIS_URL`, `SECRET_KEY`, `JWT_ACCESS_LIFETIME`, `JWT_REFRESH_LIFETIME`, `MAX_FILE_SIZE`, `ALLOWED_FILE_TYPES`, `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`
+- [X] T002 Create `.env.example` with all required variables: `DB_*`, `REDIS_URL`, `SECRET_KEY`, `JWT_ACCESS_LIFETIME`, `JWT_REFRESH_LIFETIME`, `MAX_FILE_SIZE`, `ALLOWED_FILE_TYPES`, `ALLOWED_HOSTS`, `CORS_ALLOWED_ORIGINS`
 - [ ] T003 [P] Create `nginx/nginx.conf` routing `/api/` and `/ws/` to Daphne; all other routes to React static build
 - [ ] T004 Initialize Django project in `backend/` with package `config/` containing `settings/base.py`, `settings/development.py`, `settings/production.py`, `urls.py`, `asgi.py`, `wsgi.py`, `manage.py`
 - [ ] T005 [P] Initialize React project in `frontend/` with React 18, React Router 6, Axios; output `package.json`, `src/` scaffold
