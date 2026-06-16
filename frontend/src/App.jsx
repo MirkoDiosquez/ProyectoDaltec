@@ -18,6 +18,7 @@
  */
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext.jsx";
+import LoginPage from "./pages/auth/LoginPage.jsx";
 
 // ---------------------------------------------------------------------------
 // Route guards
@@ -56,7 +57,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* T016: <Route path="/login" element={<LoginPage />} /> */}
+        {/* T016 */}
+        <Route path="/login" element={<LoginPage />} />
 
         {/* T031: Hallazgo list — authenticated users (role filter applied inside component)
         <Route

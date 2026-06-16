@@ -44,8 +44,8 @@
 - [X] T013 [P] Implement frontend `AuthContext` with `login()`, `logout()`, `refreshToken()`, JWT storage (access in memory, refresh in HttpOnly cookie) in `frontend/src/context/AuthContext.jsx`
 - [X] T014 [P] Implement frontend Axios instance with request interceptor (attach access token) and response interceptor (silent refresh on 401) in `frontend/src/api/client.js`
 - [X] T015 Configure React Router with `ProtectedRoute` component (redirect to login if unauthenticated) and `RoleRoute` component (redirect if wrong role) in `frontend/src/App.jsx`
-- [ ] T016 Implement login page with DNI + password form in `frontend/src/pages/auth/LoginPage.jsx`
-- [ ] T017 [P] Create Django management command `createsuperuser_admin` that creates an initial ADMIN user from CLI args (`--dni`, `--nombre`, `--apellido`, `--password`) in `backend/apps/users/management/commands/createsuperuser_admin.py`
+- [X] T016 Implement login page with DNI + password form in `frontend/src/pages/auth/LoginPage.jsx`
+- [X] T017 [P] Create Django management command `createsuperuser_admin` that creates an initial ADMIN user from CLI args (`--dni`, `--nombre`, `--apellido`, `--password`) in `backend/apps/users/management/commands/createsuperuser_admin.py`
 
 **Checkpoint**: `POST /api/v1/auth/login/` returns JWT tokens; protected frontend routes redirect unauthenticated users to login
 
