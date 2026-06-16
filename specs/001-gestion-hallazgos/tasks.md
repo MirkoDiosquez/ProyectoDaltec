@@ -41,7 +41,7 @@
 - [X] T010 [P] Implement `TokenAuthMiddleware` for WebSocket JWT validation in `backend/apps/users/middleware.py`; sets `scope["user"]` from `?token=` query param; closes with code 4001 if invalid
 - [X] T011 Create initial Django migration for `CustomUser`, `EmpleadoProfile`, `ClienteProfile` in `backend/apps/users/migrations/0001_initial.py`
 - [X] T012 Implement JWT auth views: `LoginView` (POST `/api/v1/auth/login/`), `TokenRefreshView`, `LogoutView` (blacklist refresh token) in `backend/apps/users/views.py`; register in `backend/config/urls.py`
-- [ ] T013 [P] Implement frontend `AuthContext` with `login()`, `logout()`, `refreshToken()`, JWT storage (access in memory, refresh in HttpOnly cookie) in `frontend/src/context/AuthContext.jsx`
+- [X] T013 [P] Implement frontend `AuthContext` with `login()`, `logout()`, `refreshToken()`, JWT storage (access in memory, refresh in HttpOnly cookie) in `frontend/src/context/AuthContext.jsx`
 - [ ] T014 [P] Implement frontend Axios instance with request interceptor (attach access token) and response interceptor (silent refresh on 401) in `frontend/src/api/client.js`
 - [ ] T015 Configure React Router with `ProtectedRoute` component (redirect to login if unauthenticated) and `RoleRoute` component (redirect if wrong role) in `frontend/src/App.jsx`
 - [ ] T016 Implement login page with DNI + password form in `frontend/src/pages/auth/LoginPage.jsx`
@@ -257,6 +257,34 @@ Phase 8 (Polish)         → depends on all desired user stories being complete
 **Increment 4** — Phase 6 (US4): Add real-time chat (new WebSocket consumer, isolated from other flows).
 
 **Increment 5** — Phase 7 (US5): Add Admin user management UI (purely additive, no changes to existing flows).
+
+**Increment 6** — Phase 9 (Feature 002): Admin can create QUEJA_CLIENTE on behalf of a client (additive — 1 FK field + service extension). Depends on Phase 4 (US2 QUEJA_CLIENTE) and Phase 6 (US4 Chat) being complete.
+
+---
+
+## Phase 9: Feature 002 — Admin Crear Quejas de Cliente
+
+**Purpose**: Extends QUEJA_CLIENTE flow so Admins can register complaints on behalf of external clients (phone/email/in-person). Depends on T018, T023, T024, T026, T027, T032, T033, T048 being complete.
+
+**Spec**: [002-admin-crear-quejas-cliente/spec.md](../002-admin-crear-quejas-cliente/spec.md)
+
+- [ ] T066 Add `cliente_asociado` nullable FK (→ `CustomUser`, `on_delete=SET_NULL`, `related_name="quejas_asociadas"`) to `Hallazgo` model in `backend/apps/hallazgos/models.py`
+- [ ] T067 Create additive migration `backend/apps/hallazgos/migrations/000X_add_cliente_asociado_to_hallazgo.py` for the new field (depends on T066)
+- [ ] T068 [P] Extract private `_crear_chat(hallazgo)` helper from `hallazgo_service.aprobar()` and call it inside `crear_hallazgo()` when `tipo == QUEJA_CLIENTE` (Chat created in same transaction as creation, per spec 002 FR-010) in `backend/apps/hallazgos/services.py` — depends on T023 + T048
+- [ ] T069 [P] Add `exclude_user_id=None` optional parameter to `notificacion_service.crear_y_enviar()` and filter out that user from notification recipients in `backend/apps/notificaciones/services.py` (depends on T024)
+- [ ] T070 Add `cliente_asociado` field to `HallazgoCreateSerializer` with `validate()` cross-field rule: obligatorio si `creado_por.is_admin and tipo == QUEJA_CLIENTE`; must reference existing user with `tipo=CLIENTE`; ignored for other types in `backend/apps/hallazgos/serializers.py` (depends on T026 + T066)
+- [ ] T071 Update `hallazgo_service.crear_hallazgo()` to: (a) auto-fill `cliente_asociado = user` when `user.is_cliente and tipo == QUEJA_CLIENTE` (spec 002 FR-012); (b) pass `exclude_user_id=user.pk` to `notificacion_service` when `user.is_admin` (spec 002 FR-007) in `backend/apps/hallazgos/services.py` (depends on T068 + T069)
+- [ ] T072 [P] Update `HallazgoSerializer` (detail + list) to include `cliente_asociado` as nested read-only field (`id`, `nombre`, `apellido`, `tipo`; null for non-QUEJA_CLIENTE) in `backend/apps/hallazgos/serializers.py` (depends on T026 + T066)
+- [ ] T073 [P] Make `cliente_asociado` immutable on update: strip field in `HallazgoSerializer.update()` or `HallazgoViewSet.partial_update` so any PATCH/PUT attempt is silently ignored (spec 002 FR-004) in `backend/apps/hallazgos/serializers.py`
+- [ ] T074 Update Hallazgo list queryset for CLIENTE role to filter by `cliente_asociado=request.user` (replacing previous `creado_por=request.user`) in `backend/apps/hallazgos/views.py` (depends on T027 + T066)
+- [ ] T075 [US2-002] Update `CrearHallazgoPage` to show conditional `cliente_asociado` selector (dropdown of users with `tipo=CLIENTE`) only when `tipo === "QUEJA_CLIENTE"` is selected; send field in POST body only when visible in `frontend/src/pages/hallazgos/CrearHallazgoPage.jsx` (depends on T032)
+- [ ] T076 [P] [US2-002] Add `GET /api/v1/usuarios/?tipo=CLIENTE` API call in `frontend/src/api/usuarios.js` to populate the `cliente_asociado` selector (depends on T057)
+- [ ] T077 [US2-002] Update `HallazgoDetailPage` to display `cliente_asociado` field when populated (show `nombre apellido (CLIENTE)`; hide row when null) in `frontend/src/pages/hallazgos/HallazgoDetailPage.jsx` (depends on T033)
+- [ ] T078 [P] Add `?cliente_asociado=<id>` query filter to Admin Hallazgo list so Admin can filter by client in `backend/apps/hallazgos/views.py`
+- [ ] T079 [P] Register `cliente_asociado` in `HallazgoAdmin` in `backend/apps/hallazgos/admin.py` (list_display, search_fields, list_filter)
+- [ ] T080 Verify quickstart scenarios VS-01–VS-08 from `specs/002-admin-crear-quejas-cliente/quickstart.md` pass end-to-end
+
+**Checkpoint**: Admin crea QUEJA_CLIENTE con `cliente_asociado`; queja pasa a APROBADO con Chat creado en la misma transacción; cliente asociado ve la queja en su lista; Admin creador no recibe la propia notificación
 
 **Increment 6** — Phase 8: Polish, observability, employee notifications, production hardening.
 

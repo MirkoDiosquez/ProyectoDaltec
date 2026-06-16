@@ -31,7 +31,7 @@
 
 ## Notes
 
-- 36 functional requirements (FR-001 a FR-036) todos testables y sin ambigüedad.
+- 38 functional requirements (FR-001 a FR-038) todos testables y sin ambigüedad.
 - 9 assumptions documentadas, incluyendo tipos y límite configurable de archivos adjuntos.
-- 15 clarificaciones integradas en 3 sesiones: cierre automático, visibilidad por rol, RECHAZADO terminal, responsable duplicado, archivos, creación de Acciones, error en cierre de acción CERRADA, acceso de solo lectura del Admin al chat, preservación de estado de acciones al remover responsable, notificaciones a Empleados, creación del Chat al aprobar, eliminación en cascada al rechazar, visibilidad heredada, SolicitudCierre persiste tras remoción, EN_PROGRESO obligatorio antes de cierre.
+- 20 clarificaciones integradas en 4 sesiones (incluyendo ronda 3): cierre automático, visibilidad por rol, RECHAZADO terminal, responsable duplicado, archivos, creación de Acciones, error en cierre de acción CERRADA, acceso de solo lectura del Admin al chat, preservación de estado de acciones al remover responsable, notificaciones a Empleados, creación del Chat al aprobar, eliminación en cascada al rechazar, visibilidad heredada, SolicitudCierre persiste tras remoción, EN_PROGRESO obligatorio antes de cierre, transición explícita PENDIENTE→EN_PROGRESO (Iniciar Acción), cualquier responsable puede editar cualquier acción, chat solo lectura al CERRAR/RECHAZAR, todos los Admins notificados, notificación cierre a responsables vigentes.
 - Ready to proceed to `/speckit.implement`.
