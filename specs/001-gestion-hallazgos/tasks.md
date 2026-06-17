@@ -59,7 +59,7 @@
 
 ### Implementation for User Story 1
 
-- [ ] T018 [P] [US1] Implement `Hallazgo` model with `tipo` (NO_CONFORMIDAD/OPORTUNIDAD_MEJORA/QUEJA_CLIENTE), `estado` (PENDIENTE/APROBADO/RECHAZADO/CERRADO), `creado_por` FK, `responsables` M2M through `HallazgoResponsable`; `post_save` signal that auto-creates 3 `Accion` instances (INMEDIATA, CORRECTIVA, VERIFICACION_EFICIENCIA) in state PENDIENTE when Hallazgo is created in `backend/apps/hallazgos/models.py`
+- [X] T018 [P] [US1] Implement `Hallazgo` model with `tipo` (NO_CONFORMIDAD/OPORTUNIDAD_MEJORA/QUEJA_CLIENTE), `estado` (PENDIENTE/APROBADO/RECHAZADO/CERRADO), `creado_por` FK, `responsables` M2M through `HallazgoResponsable`; `post_save` signal that auto-creates 3 `Accion` instances (INMEDIATA, CORRECTIVA, VERIFICACION_EFICIENCIA) in state PENDIENTE when Hallazgo is created in `backend/apps/hallazgos/models.py`
 - [ ] T019 [P] [US1] Implement `Accion` model with `tipo` (INMEDIATA/CORRECTIVA/VERIFICACION_EFICIENCIA), `estado` (PENDIENTE/EN_PROGRESO/SOLICITUD_CIERRE/CERRADA), `descripcion`, `fecha_inicio`, `fecha_fin`, `hallazgo` FK; UNIQUE constraint on `(hallazgo, tipo)` in `backend/apps/acciones/models.py`
 - [ ] T020 [P] [US1] Implement `Archivo` model with `nombre`, `ruta` (FileField), `tipo_mime`, `tamanio`, `fecha_carga` (auto), `cargado_por` FK in `backend/apps/archivos/models.py`
 - [ ] T021 [P] [US1] Implement `Notificacion` model with `titulo`, `mensaje`, `fecha` (auto), `leida` (default False), `destinatario` FK, `hallazgo_relacionado` FK (nullable) in `backend/apps/notificaciones/models.py`
