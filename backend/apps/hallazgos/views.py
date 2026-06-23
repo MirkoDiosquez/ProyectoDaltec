@@ -9,6 +9,7 @@ from rest_framework.response import Response
 
 from apps.archivos.models import Archivo
 from apps.hallazgos.models import Hallazgo, TipoHallazgo
+from apps.hallazgos.permissions import HallazgoTipoPermission
 from apps.hallazgos.serializers import (
 	HallazgoCreateSerializer,
 	HallazgoSerializer,
@@ -27,6 +28,12 @@ class HallazgoViewSet(viewsets.ModelViewSet):
 	queryset = Hallazgo.objects.select_related("creado_por").prefetch_related("responsables")
 	permission_classes = [IsAuthenticated]
 	parser_classes = [MultiPartParser, FormParser]
+
+	def get_permissions(self):
+		permissions = [IsAuthenticated]
+		if self.action == "create":
+			permissions.append(HallazgoTipoPermission)
+		return [permission() for permission in permissions]
 
 	def get_queryset(self):
 		user = self.request.user

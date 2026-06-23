@@ -88,7 +88,7 @@
 
 ### Implementation for User Story 2
 
-- [ ] T034 [P] [US2] Implement role-based permission class `HallazgoTipoPermission` that restricts `QUEJA_CLIENTE` to Clientes and `NO_CONFORMIDAD`/`OPORTUNIDAD_MEJORA` to Empleados (FR-004, FR-005) in `backend/apps/hallazgos/permissions.py`; apply to `HallazgoViewSet.create`
+- [X] T034 [P] [US2] Implement role-based permission class `HallazgoTipoPermission` that restricts `QUEJA_CLIENTE` to Clientes and `NO_CONFORMIDAD`/`OPORTUNIDAD_MEJORA` to Empleados (FR-004, FR-005) in `backend/apps/hallazgos/permissions.py`; apply to `HallazgoViewSet.create`
 - [ ] T035 [US2] Extend `hallazgo_service.crear_hallazgo()` in `backend/apps/hallazgos/services.py` to set `estado = APROBADO` automatically when `tipo = QUEJA_CLIENTE` (FR-007); reuse existing notificacion_service for Admin notification
 - [ ] T036 [P] [US2] Implement `CrearQuejaPage` for Cliente users (form with only descripcion and ubicacion; tipo fixed to QUEJA_CLIENTE) in `frontend/src/pages/hallazgos/CrearQuejaPage.jsx`; add route in `frontend/src/App.jsx`
 
