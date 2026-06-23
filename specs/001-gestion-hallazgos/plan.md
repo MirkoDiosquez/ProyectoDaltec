@@ -6,7 +6,7 @@
 
 ## Summary
 
-Sistema web completo para registrar, aprobar, gestionar y cerrar Hallazgos (No Conformidades, Oportunidades de Mejora, Quejas de Cliente) con ciclos de Acciones Correctivas, chat colaborativo en tiempo real y notificaciones push al Administrador. El backend se implementa con Django REST Framework + Django Channels sobre MySQL y Redis; el frontend con React consumiendo las APIs REST y WebSocket.
+Sistema web completo para registrar, aprobar, gestionar y cerrar Hallazgos (No Conformidades, Oportunidades de Mejora, Quejas de Cliente) con ciclos de Acciones Correctivas, chat colaborativo en tiempo real y notificaciones push al Administrador. El Administrador conserva sus funciones propias y, ademas, puede ejecutar funciones operativas de usuario normal sin autorizaciones adicionales; los hallazgos creados por Administrador se registran autoaprobados. El backend se implementa con Django REST Framework + Django Channels sobre MySQL y Redis; el frontend con React consumiendo las APIs REST y WebSocket.
 
 ## Technical Context
 
@@ -74,7 +74,7 @@ backend/
 │   └── wsgi.py
 ├── apps/
 │   ├── users/                 # Usuarios, roles, auth (FR-001–003, FR-023–025)
-│   ├── hallazgos/             # Hallazgo, transiciones de estado (FR-004–010, FR-022)
+│   ├── hallazgos/             # Hallazgo, transiciones de estado (FR-004–010, FR-022, FR-040)
 │   ├── acciones/              # Accion, SolicitudCierreAccion (FR-014–019)
 │   ├── chat/                  # Chat, Mensaje, consumers WS (FR-011–013)
 │   ├── archivos/              # Archivo, manejo de uploads (FR-015)

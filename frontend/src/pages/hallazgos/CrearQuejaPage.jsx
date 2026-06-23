@@ -1,32 +1,17 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { createHallazgo } from "../../api/hallazgos.js";
-import { useAuth } from "../../context/AuthContext.jsx";
 
-const EMPLEADO_TIPOS = [
-  { value: "NO_CONFORMIDAD", label: "No Conformidad" },
-  { value: "OPORTUNIDAD_MEJORA", label: "Oportunidad de Mejora" },
-];
-
-export default function CrearHallazgoPage() {
+export default function CrearQuejaPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   const [form, setForm] = useState({
     descripcion: "",
     ubicacion: "",
-    tipo: EMPLEADO_TIPOS[0].value,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  const allowedTipos = useMemo(() => {
-    if (user?.tipo === "EMPLEADO" || user?.tipo === "ADMIN") {
-      return EMPLEADO_TIPOS;
-    }
-    return [];
-  }, [user?.tipo]);
 
   const onChange = (event) => {
     const { name, value } = event.target;
@@ -42,14 +27,14 @@ export default function CrearHallazgoPage() {
       const created = await createHallazgo({
         descripcion: form.descripcion.trim(),
         ubicacion: form.ubicacion.trim(),
-        tipo: form.tipo,
+        tipo: "QUEJA_CLIENTE",
       });
       navigate(`/hallazgos/${created.id}`);
     } catch (apiError) {
       const detail =
         apiError?.response?.data?.detail ||
         apiError?.response?.data?.tipo?.[0] ||
-        "No se pudo crear el hallazgo.";
+        "No se pudo crear la queja.";
       setError(detail);
     } finally {
       setLoading(false);
@@ -59,9 +44,9 @@ export default function CrearHallazgoPage() {
   return (
     <main style={{ maxWidth: 760, margin: "0 auto", padding: "2rem 1rem" }}>
       <header style={{ marginBottom: "1.5rem" }}>
-        <h1 style={{ margin: 0 }}>Crear Hallazgo</h1>
+        <h1 style={{ margin: 0 }}>Registrar Queja</h1>
         <p style={{ marginTop: 8, color: "#475569" }}>
-          Registra una No Conformidad u Oportunidad de Mejora.
+          Crea una Queja de Cliente. Se registrara como tipo QUEJA_CLIENTE.
         </p>
       </header>
 
@@ -84,7 +69,7 @@ export default function CrearHallazgoPage() {
             onChange={onChange}
             rows={5}
             required
-            placeholder="Describe el hallazgo detectado"
+            placeholder="Describe la queja"
             style={{ borderRadius: 8, border: "1px solid #cbd5e1", padding: "0.65rem" }}
           />
         </label>
@@ -97,26 +82,9 @@ export default function CrearHallazgoPage() {
             value={form.ubicacion}
             onChange={onChange}
             required
-            placeholder="Sector o ubicacion"
+            placeholder="Canal, sucursal o referencia"
             style={{ borderRadius: 8, border: "1px solid #cbd5e1", padding: "0.65rem" }}
           />
-        </label>
-
-        <label style={{ display: "grid", gap: 6 }}>
-          <span style={{ fontWeight: 600 }}>Tipo</span>
-          <select
-            name="tipo"
-            value={form.tipo}
-            onChange={onChange}
-            required
-            style={{ borderRadius: 8, border: "1px solid #cbd5e1", padding: "0.65rem" }}
-          >
-            {allowedTipos.map((tipo) => (
-              <option key={tipo.value} value={tipo.value}>
-                {tipo.label}
-              </option>
-            ))}
-          </select>
         </label>
 
         {error && <p style={{ color: "#b91c1c", margin: 0 }}>{error}</p>}
@@ -147,7 +115,7 @@ export default function CrearHallazgoPage() {
               opacity: loading ? 0.7 : 1,
             }}
           >
-            {loading ? "Guardando..." : "Crear Hallazgo"}
+            {loading ? "Guardando..." : "Crear Queja"}
           </button>
         </div>
       </form>

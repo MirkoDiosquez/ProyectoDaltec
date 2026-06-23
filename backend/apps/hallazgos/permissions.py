@@ -1,4 +1,5 @@
 from rest_framework.permissions import BasePermission
+from rest_framework.exceptions import ValidationError
 
 from apps.hallazgos.models import TipoHallazgo
 
@@ -17,12 +18,20 @@ class HallazgoTipoPermission(BasePermission):
             return True
 
         if getattr(user, "is_empleado", False):
-            return tipo in {
+            if tipo not in {
                 TipoHallazgo.NO_CONFORMIDAD,
                 TipoHallazgo.OPORTUNIDAD_MEJORA,
-            }
+            }:
+                raise ValidationError(
+                    {"tipo": ["Un empleado solo puede crear No Conformidad u Oportunidad de Mejora."]}
+                )
+            return True
 
         if getattr(user, "is_cliente", False):
-            return tipo == TipoHallazgo.QUEJA_CLIENTE
+            if tipo != TipoHallazgo.QUEJA_CLIENTE:
+                raise ValidationError(
+                    {"tipo": ["Un cliente solo puede crear Queja de Cliente."]}
+                )
+            return True
 
         return False

@@ -146,7 +146,7 @@ curl -X POST http://localhost/api/v1/hallazgos/ \
 
 ### VS-04: Queja de Cliente (US-2, P2)
 
-**Objetivo**: Verificar FR-005, FR-007 — Auto-aprobación de Quejas de Cliente.
+**Objetivo**: Verificar FR-005, FR-007, FR-040 — Auto-aprobación de Quejas de Cliente y creación autoaprobada por Admin.
 
 ```bash
 TOKEN_CLI="<access_token_cliente>"
@@ -158,6 +158,17 @@ curl -X POST http://localhost/api/v1/hallazgos/ \
 ```
 
 **Expected**: `201 Created`, `estado: APROBADO` (sin intervención del Admin — FR-007, SC-005).
+
+```bash
+TOKEN_ADMIN="<access_token_admin>"
+
+curl -X POST http://localhost/api/v1/hallazgos/ \
+  -H "Authorization: Bearer $TOKEN_ADMIN" \
+  -H "Content-Type: application/json" \
+  -d '{"descripcion":"Hallazgo cargado por admin","ubicacion":"Sector A","tipo":"NO_CONFORMIDAD"}'
+```
+
+**Expected**: `201 Created`, `estado: APROBADO` (sin pasar por flujo de aprobación manual del Admin — FR-040).
 
 ---
 

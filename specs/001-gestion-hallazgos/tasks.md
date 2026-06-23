@@ -82,17 +82,20 @@
 
 ## Phase 4: User Story 2 — Queja de Cliente (Priority: P2)
 
-**Goal**: Un Cliente registra una Queja de Cliente que queda automáticamente en estado APROBADO y notifica al Admin.
+**Goal**: Un Cliente (o un Admin actuando con capacidades de usuario normal) registra una Queja de Cliente que queda automáticamente en estado APROBADO y notifica al Admin.
 
-**Independent Test**: Cliente crea queja → verificar `estado: APROBADO` sin intervención del Admin (SC-005); Admin recibe notificación; Admin puede asignar responsables. Ver quickstart.md VS-04.
+**Independent Test**: Cliente crea queja → verificar `estado: APROBADO` sin intervención del Admin (SC-005); Admin recibe notificación; Admin puede asignar responsables. Admin crea hallazgo (cualquier tipo) → verificar `estado: APROBADO` automático. Ver quickstart.md VS-04.
 
 ### Implementation for User Story 2
 
-- [X] T034 [P] [US2] Implement role-based permission class `HallazgoTipoPermission` that restricts `QUEJA_CLIENTE` to Clientes and `NO_CONFORMIDAD`/`OPORTUNIDAD_MEJORA` to Empleados (FR-004, FR-005) in `backend/apps/hallazgos/permissions.py`; apply to `HallazgoViewSet.create`
-- [ ] T035 [US2] Extend `hallazgo_service.crear_hallazgo()` in `backend/apps/hallazgos/services.py` to set `estado = APROBADO` automatically when `tipo = QUEJA_CLIENTE` (FR-007); reuse existing notificacion_service for Admin notification
-- [ ] T036 [P] [US2] Implement `CrearQuejaPage` for Cliente users (form with only descripcion and ubicacion; tipo fixed to QUEJA_CLIENTE) in `frontend/src/pages/hallazgos/CrearQuejaPage.jsx`; add route in `frontend/src/App.jsx`
+- [X] T034 [P] [US2] Implement role-based permission class `HallazgoTipoPermission` that restricts `QUEJA_CLIENTE` to Clientes and `NO_CONFORMIDAD`/`OPORTUNIDAD_MEJORA` to Empleados, with bypass for Admin (FR-004, FR-005) in `backend/apps/hallazgos/permissions.py`; apply to `HallazgoViewSet.create`
+- [X] T035 [US2] Extend `hallazgo_service.crear_hallazgo()` in `backend/apps/hallazgos/services.py` to set `estado = APROBADO` automatically when `tipo = QUEJA_CLIENTE` (FR-007); reuse existing notificacion_service for Admin notification
+- [X] T036 [P] [US2] Implement `CrearQuejaPage` for Cliente users (form with only descripcion and ubicacion; tipo fixed to QUEJA_CLIENTE) in `frontend/src/pages/hallazgos/CrearQuejaPage.jsx`; add route in `frontend/src/App.jsx`
+- [X] T081 [US2] Extend `hallazgo_service.crear_hallazgo()` in `backend/apps/hallazgos/services.py` so any hallazgo created by `ADMIN` is auto-approved (`estado = APROBADO`) without requiring normal-user authorization flow (FR-006, FR-040)
+- [X] T082 [P] [US2] Update frontend routes and creation screens in `frontend/src/App.jsx`, `frontend/src/pages/hallazgos/CrearHallazgoPage.jsx`, and `frontend/src/pages/hallazgos/CrearQuejaPage.jsx` so `ADMIN` can use normal-user creation flows (empleado/cliente) in addition to admin-only actions (FR-040)
+- [X] T083 [US2] Update quickstart validation in `specs/001-gestion-hallazgos/quickstart.md` with an Admin-created hallazgo scenario that verifies immediate `estado: APROBADO` (FR-006, FR-040)
 
-**Checkpoint**: Cliente crea queja → `estado: APROBADO` inmediato (SC-005); Empleado intentando crear QUEJA_CLIENTE recibe 400; Admin ve queja en listado y puede asignar responsables sin aprobar
+**Checkpoint**: Cliente crea queja → `estado: APROBADO` inmediato (SC-005); Empleado intentando crear QUEJA_CLIENTE recibe 400; Admin ve queja en listado y puede asignar responsables sin aprobar; Admin crea hallazgo y queda autoaprobado.
 
 ---
 
@@ -104,17 +107,17 @@
 
 ### Implementation for User Story 3
 
-- [ ] T037 [P] [US3] Implement `SolicitudCierreAccion` model with `accion` FK, `solicitante` FK, `administrador` FK (nullable), `fecha_solicitud` (auto), `observacion`, `estado` (PENDIENTE/APROBADA/RECHAZADA); UNIQUE constraint on active pending request per accion in `backend/apps/acciones/models.py`; create migration
-- [ ] T038 [US3] Implement `accion_service.py` with: `actualizar(accion, empleado, data)` (validates responsable, transitions PENDIENTE→EN_PROGRESO), `adjuntar_archivo(accion, empleado, file)`, `solicitar_cierre(accion, empleado, observacion)` (validates EN_PROGRESO state, FR-030 guard for CERRADA), `aprobar_cierre(solicitud, admin)` (sets accion CERRADA, notifies empleado, triggers hallazgo auto-close check), `rechazar_cierre(solicitud, admin, observacion)` (sets accion EN_PROGRESO, notifies empleado) in `backend/apps/acciones/services.py`
-- [ ] T039 [US3] Implement `post_save` signal on `Accion` that checks if all 3 acciones of parent `Hallazgo` are CERRADA and transitions `Hallazgo` to CERRADO (FR-022) in `backend/apps/acciones/signals.py`; register in `backend/apps/acciones/apps.py`
-- [ ] T040 [US3] Extend `notificacion_service.py` to send employee notifications for: `accion_cierre_aprobado`, `accion_cierre_rechazado` events (FR-033c) in `backend/apps/notificaciones/services.py`
-- [ ] T041 [US3] Implement `AccionSerializer`, `AccionUpdateSerializer`, `SolicitudCierreSerializer` in `backend/apps/acciones/serializers.py`
-- [ ] T042 [US3] Implement `AccionViewSet` (retrieve, partial_update, upload_archivo, solicitar_cierre actions) and `SolicitudCierreViewSet` (aprobar, rechazar actions) in `backend/apps/acciones/views.py`
-- [ ] T043 [US3] Register Accion and SolicitudCierre URLs in `backend/apps/acciones/urls.py`; include in `backend/config/urls.py` under `/api/v1/hallazgos/{hallazgo_id}/acciones/` and `/api/v1/solicitudes-cierre/`
-- [ ] T044 [P] [US3] Implement file upload validator (MIME type whitelist from settings, file size from settings) in `backend/apps/archivos/validators.py`; apply to all upload endpoints
-- [ ] T045 [P] [US3] Implement frontend Acciones + SolicitudCierre API client in `frontend/src/api/acciones.js`
-- [ ] T046 [US3] Implement `AccionDetailPage` (editable descripcion/fechas, file upload, solicitar cierre button with state guards) in `frontend/src/pages/acciones/AccionDetailPage.jsx`
-- [ ] T047 [US3] Implement `SolicitudCierreAdminView` component (inline on HallazgoDetailPage or standalone; aprobar/rechazar con observacion) in `frontend/src/pages/acciones/SolicitudCierreAdminView.jsx`
+- [X] T037 [P] [US3] Implement `SolicitudCierreAccion` model with `accion` FK, `solicitante` FK, `administrador` FK (nullable), `fecha_solicitud` (auto), `observacion`, `estado` (PENDIENTE/APROBADA/RECHAZADA); UNIQUE constraint on active pending request per accion in `backend/apps/acciones/models.py`; create migration
+- [X] T038 [US3] Implement `accion_service.py` with: `actualizar(accion, empleado, data)` (validates responsable, transitions PENDIENTE→EN_PROGRESO), `adjuntar_archivo(accion, empleado, file)`, `solicitar_cierre(accion, empleado, observacion)` (validates EN_PROGRESO state, FR-030 guard for CERRADA), `aprobar_cierre(solicitud, admin)` (sets accion CERRADA, notifies empleado, triggers hallazgo auto-close check), `rechazar_cierre(solicitud, admin, observacion)` (sets accion EN_PROGRESO, notifies empleado) in `backend/apps/acciones/services.py`
+- [X] T039 [US3] Implement `post_save` signal on `Accion` that checks if all 3 acciones of parent `Hallazgo` are CERRADA and transitions `Hallazgo` to CERRADO (FR-022) in `backend/apps/acciones/signals.py`; register in `backend/apps/acciones/apps.py`
+- [X] T040 [US3] Extend `notificacion_service.py` to send employee notifications for: `accion_cierre_aprobado`, `accion_cierre_rechazado` events (FR-033c) in `backend/apps/notificaciones/services.py`
+- [X] T041 [US3] Implement `AccionSerializer`, `AccionUpdateSerializer`, `SolicitudCierreSerializer` in `backend/apps/acciones/serializers.py`
+- [X] T042 [US3] Implement `AccionViewSet` (retrieve, partial_update, upload_archivo, solicitar_cierre actions) and `SolicitudCierreViewSet` (aprobar, rechazar actions) in `backend/apps/acciones/views.py`
+- [X] T043 [US3] Register Accion and SolicitudCierre URLs in `backend/apps/acciones/urls.py`; include in `backend/config/urls.py` under `/api/v1/hallazgos/{hallazgo_id}/acciones/` and `/api/v1/solicitudes-cierre/`
+- [X] T044 [P] [US3] Implement file upload validator (MIME type whitelist from settings, file size from settings) in `backend/apps/archivos/validators.py`; apply to all upload endpoints
+- [X] T045 [P] [US3] Implement frontend Acciones + SolicitudCierre API client in `frontend/src/api/acciones.js`
+- [X] T046 [US3] Implement `AccionDetailPage` (editable descripcion/fechas, file upload, solicitar cierre button with state guards) in `frontend/src/pages/acciones/AccionDetailPage.jsx`
+- [X] T047 [US3] Implement `SolicitudCierreAdminView` component (inline on HallazgoDetailPage or standalone; aprobar/rechazar con observacion) in `frontend/src/pages/acciones/SolicitudCierreAdminView.jsx`
 
 **Checkpoint**: Empleado completa las 3 acciones → cada una pasa por EN_PROGRESO → SOLICITUD_CIERRE → CERRADA; al cerrar la tercera, `Hallazgo.estado` cambia a CERRADO automáticamente (SC-002, SC-004)
 
@@ -128,14 +131,14 @@
 
 ### Implementation for User Story 4
 
-- [ ] T048 [P] [US4] Implement `Chat` model (OneToOne con Hallazgo, participantes M2M con CustomUser) and `Mensaje` model (chat FK, autor FK, contenido, fecha_hora auto) in `backend/apps/chat/models.py`; create migration; auto-create Chat when Hallazgo is created (extend signal in `backend/apps/hallazgos/models.py`)
-- [ ] T049 [US4] Implement `ChatConsumer` WebSocket consumer: connect (validate participante or Admin read-only), receive (`chat.send` type → save Mensaje → broadcast `chat.message` to group `chat_{hallazgo_id}`), disconnect; group `chat_{hallazgo_id}`; handle `chat.participant_removed` event type (sends removal notice and closes connection with code 4003) in `backend/apps/chat/consumers.py`
-- [ ] T050 [US4] Register `ChatConsumer` route `ws/chat/{hallazgo_id}/` in `backend/config/asgi.py` URLRouter
-- [ ] T051 [US4] Extend `hallazgo_service.asignar_responsable()` to add user to `Chat.participantes`; extend `remover_responsable()` to remove from `Chat.participantes` and send `chat.participant_removed` via channel_layer (FR-013, SC-003) in `backend/apps/hallazgos/services.py`
-- [ ] T052 [US4] Implement `ChatSerializer`, `MensajeSerializer` in `backend/apps/chat/serializers.py`
-- [ ] T053 [US4] Implement `ChatView` (GET `/api/v1/hallazgos/{id}/chat/` — returns participantes + mensajes históricos; permission: participante vigente OR Admin) in `backend/apps/chat/views.py`; register in `backend/apps/chat/urls.py` and `backend/config/urls.py`
-- [ ] T054 [P] [US4] Implement frontend Chat API + WebSocket client (connectChat, sendMessage, disconnect) in `frontend/src/api/chat.js`
-- [ ] T055 [US4] Implement `ChatPage` (message history list, live WebSocket feed, message input disabled for Admin read-only mode) in `frontend/src/pages/chat/ChatPage.jsx`; link from `HallazgoDetailPage`
+- [X] T048 [P] [US4] Implement `Chat` model (OneToOne con Hallazgo, participantes M2M con CustomUser) and `Mensaje` model (chat FK, autor FK, contenido, fecha_hora auto) in `backend/apps/chat/models.py`; create migration; auto-create Chat when Hallazgo is created (extend signal in `backend/apps/hallazgos/models.py`)
+- [X] T049 [US4] Implement `ChatConsumer` WebSocket consumer: connect (validate participante or Admin read-only), receive (`chat.send` type → save Mensaje → broadcast `chat.message` to group `chat_{hallazgo_id}`), disconnect; group `chat_{hallazgo_id}`; handle `chat.participant_removed` event type (sends removal notice and closes connection with code 4003) in `backend/apps/chat/consumers.py`
+- [X] T050 [US4] Register `ChatConsumer` route `ws/chat/{hallazgo_id}/` in `backend/config/asgi.py` URLRouter
+- [X] T051 [US4] Extend `hallazgo_service.asignar_responsable()` to add user to `Chat.participantes`; extend `remover_responsable()` to remove from `Chat.participantes` and send `chat.participant_removed` via channel_layer (FR-013, SC-003) in `backend/apps/hallazgos/services.py`
+- [X] T052 [US4] Implement `ChatSerializer`, `MensajeSerializer` in `backend/apps/chat/serializers.py`
+- [X] T053 [US4] Implement `ChatView` (GET `/api/v1/hallazgos/{id}/chat/` — returns participantes + mensajes históricos; permission: participante vigente OR Admin) in `backend/apps/chat/views.py`; register in `backend/apps/chat/urls.py` and `backend/config/urls.py`
+- [X] T054 [P] [US4] Implement frontend Chat API + WebSocket client (connectChat, sendMessage, disconnect) in `frontend/src/api/chat.js`
+- [X] T055 [US4] Implement `ChatPage` (message history list, live WebSocket feed, message input disabled for Admin read-only mode) in `frontend/src/pages/chat/ChatPage.jsx`; link from `HallazgoDetailPage`
 
 **Checkpoint**: Dos responsables ven mensajes en tiempo real; Admin ve el chat pero input está deshabilitado; al remover responsable, su conexión se cierra en < 2 s (SC-003) y no puede reconectarse
 
@@ -162,14 +165,16 @@
 
 **Purpose**: Observability, security hardening, employee notifications, and end-to-end validation.
 
-- [ ] T060 [P] Configure structured logging in `backend/config/settings/base.py` `LOGGING` dict: formatters (json-style), handlers (console + file), loggers for all apps at INFO level; add log calls for critical actions (hallazgo create/approve/reject, accion cierre, responsable assign/remove)
-- [ ] T061 [P] Implement `NotificacionViewSet` (list filtered by `request.user`, mark-read action) in `backend/apps/notificaciones/views.py`; register in `backend/config/urls.py` under `/api/v1/notificaciones/`
-- [ ] T062 [P] Extend `notificacion_service.py` to send employee notifications for: hallazgo aprobado/rechazado (to creador, FR-033a), asignado/removido como responsable (FR-033b) in `backend/apps/notificaciones/services.py`
-- [ ] T063 [P] Implement `NotificacionesPage` (unread list with mark-read; badge count fed from NotificacionContext) in `frontend/src/pages/hallazgos/NotificacionesPage.jsx`; link from main nav
-- [ ] T064 [P] Add HTTPS redirect and security headers (HSTS, X-Frame-Options, X-Content-Type-Options) in `nginx/nginx.conf` and `backend/config/settings/production.py`
+- [X] T060 [P] Configure structured logging in `backend/config/settings/base.py` `LOGGING` dict: formatters (json-style), handlers (console + file), loggers for all apps at INFO level; add log calls for critical actions (hallazgo create/approve/reject, accion cierre, responsable assign/remove)
+- [X] T061 [P] Implement `NotificacionViewSet` (list filtered by `request.user`, mark-read action) in `backend/apps/notificaciones/views.py`; register in `backend/config/urls.py` under `/api/v1/notificaciones/`
+- [X] T062 [P] Extend `notificacion_service.py` to send employee notifications for: hallazgo aprobado/rechazado (to creador, FR-033a), asignado/removido como responsable (FR-033b) in `backend/apps/notificaciones/services.py`
+- [X] T063 [P] Implement `NotificacionesPage` (unread list with mark-read; badge count fed from NotificacionContext) in `frontend/src/pages/hallazgos/NotificacionesPage.jsx`; link from main nav
+- [X] T064 [P] Add HTTPS redirect and security headers (HSTS, X-Frame-Options, X-Content-Type-Options) in `nginx/nginx.conf` and `backend/config/settings/production.py`
 - [ ] T065 Run all quickstart.md validation scenarios (VS-01 through VS-08) end-to-end and confirm SC-001 through SC-006 pass
+- [X] T084 [P] Implement `HomeDashboardPage` as default authenticated home with role-aware summary cards and quick actions in `frontend/src/pages/home/HomeDashboardPage.jsx`; set as `/` route in `frontend/src/App.jsx`
+- [X] T085 [P] Implement reusable `MainNavbar` with links by role (Home, Hallazgos, Quejas, Usuarios, Notificaciones) and integrate in app layout in `frontend/src/components/navigation/MainNavbar.jsx` and `frontend/src/App.jsx`
 
-**Checkpoint**: All 8 quickstart scenarios pass; structured logs visible in container output; employee notifications delivered; HTTPS enforced in production config
+**Checkpoint**: All 8 quickstart scenarios pass; structured logs visible in container output; employee notifications delivered; HTTPS enforced in production config; authenticated users land on dashboard home and can navigate through sections using the navbar
 
 ---
 

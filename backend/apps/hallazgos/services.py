@@ -1,9 +1,11 @@
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 
 from apps.hallazgos.models import EstadoHallazgo, Hallazgo, HallazgoResponsable, TipoHallazgo
-from apps.notificaciones.models import Notificacion
+from apps.notificaciones.services import crear_y_enviar
 
 User = get_user_model()
 
@@ -18,19 +20,13 @@ def _notify_admins_new_hallazgo(hallazgo):
     if getattr(hallazgo.creado_por, "is_admin", False):
         admins = admins.exclude(pk=hallazgo.creado_por_id)
 
-    notifications = [
-        Notificacion(
-            titulo="Nuevo hallazgo registrado",
-            mensaje=(
-                f"Se registro un hallazgo de tipo {hallazgo.tipo} con estado {hallazgo.estado}."
-            ),
+    for admin in admins:
+        crear_y_enviar(
             destinatario=admin,
-            hallazgo_relacionado=hallazgo,
+            titulo="Nuevo hallazgo registrado",
+            mensaje=f"Se registro un hallazgo de tipo {hallazgo.tipo} con estado {hallazgo.estado}.",
+            hallazgo=hallazgo,
         )
-        for admin in admins
-    ]
-    if notifications:
-        Notificacion.objects.bulk_create(notifications)
 
 
 @transaction.atomic
@@ -47,9 +43,11 @@ def crear_hallazgo(user, data):
     elif getattr(user, "is_cliente", False):
         if tipo != TipoHallazgo.QUEJA_CLIENTE:
             raise ValidationError("Un cliente solo puede crear Queja de Cliente.")
+        # FR-007: a client complaint is auto-approved at creation time.
         estado = EstadoHallazgo.APROBADO
     elif getattr(user, "is_admin", False):
-        estado = EstadoHallazgo.APROBADO if tipo == TipoHallazgo.QUEJA_CLIENTE else EstadoHallazgo.PENDIENTE
+        # FR-040: admin inherits normal-user creation capabilities with auto-approval.
+        estado = EstadoHallazgo.APROBADO
     else:
         raise PermissionDenied("Tipo de usuario sin permisos para crear hallazgos.")
 
@@ -114,6 +112,15 @@ def asignar_responsable(hallazgo, admin, user):
         responsable=user,
     )
 
+    # FR-012: Add user to Chat.participantes when assigned as responsable
+    if created:
+        try:
+            chat = hallazgo.chat
+            chat.participantes.add(user)
+        except Exception:
+            # Chat might not exist yet in edge cases; fail silently to avoid blocking assignment
+            pass
+
     return {
         "asignacion": asignacion,
         "created": created,
@@ -135,6 +142,27 @@ def remover_responsable(hallazgo, admin, user):
         hallazgo=hallazgo,
         responsable=user,
     ).delete()
+
+    if deleted_count > 0:
+        # FR-013: Remove user from Chat.participantes and send removal notification
+        try:
+            chat = hallazgo.chat
+            chat.participantes.remove(user)
+
+            # Send chat.participant_removed event to user's connection
+            channel_layer = get_channel_layer()
+            if channel_layer is not None:
+                group_name = f"chat_{hallazgo.id}"
+                async_to_sync(channel_layer.group_send)(
+                    group_name,
+                    {
+                        "type": "chat.participant_removed",
+                        "user_id": user.id,
+                    },
+                )
+        except Exception:
+            # Chat might not exist; fail silently to avoid blocking removal
+            pass
 
     return {
         "removed": deleted_count > 0,

@@ -11,6 +11,7 @@ import {
   uploadArchivo,
 } from "../../api/hallazgos.js";
 import { useAuth } from "../../context/AuthContext.jsx";
+import SolicitudCierreAdminView from "../acciones/SolicitudCierreAdminView.jsx";
 
 const tipoLabel = {
   NO_CONFORMIDAD: "No Conformidad",
@@ -23,6 +24,19 @@ const estadoLabel = {
   APROBADO: "Aprobado",
   RECHAZADO: "Rechazado",
   CERRADO: "Cerrado",
+};
+
+const estadoAccionLabel = {
+  PENDIENTE: "Pendiente",
+  EN_PROGRESO: "En progreso",
+  SOLICITUD_CIERRE: "Solicitud de cierre",
+  CERRADA: "Cerrada",
+};
+
+const tipoAccionLabel = {
+  INMEDIATA: "Inmediata",
+  CORRECTIVA: "Correctiva",
+  VERIFICACION_EFICIENCIA: "Verificacion de Eficiencia",
 };
 
 export default function HallazgoDetailPage() {
@@ -153,10 +167,49 @@ export default function HallazgoDetailPage() {
 
       {error && <p style={{ margin: 0, color: "#b91c1c", fontWeight: 700 }}>{error}</p>}
 
+      <section style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: "1rem", background: "#f0f4f8" }}>
+        <Link
+          to={`/hallazgos/${hallazgo.id}/chat`}
+          style={{
+            textDecoration: "none",
+            color: "#0f172a",
+            fontWeight: 600,
+            display: "inline-block",
+            padding: "8px 12px",
+            backgroundColor: "#3b82f6",
+            color: "white",
+            borderRadius: "4px",
+          }}
+        >
+          💬 Open Chat
+        </Link>
+      </section>
+
       <section style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: "1rem", background: "#fff" }}>
         <p style={{ marginTop: 0 }}><strong>Descripcion:</strong> {hallazgo.descripcion}</p>
         <p><strong>Ubicacion:</strong> {hallazgo.ubicacion}</p>
         <p><strong>Estado:</strong> {estadoLabel[hallazgo.estado] || hallazgo.estado}</p>
+      </section>
+
+      <section style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: "1rem", background: "#fff", display: "grid", gap: 8 }}>
+        <h2 style={{ margin: 0 }}>Acciones Correctivas</h2>
+        {Array.isArray(hallazgo.acciones) && hallazgo.acciones.length > 0 ? (
+          <ul style={{ margin: 0, paddingLeft: 18 }}>
+            {hallazgo.acciones.map((accion) => (
+              <li key={accion.id} style={{ marginBottom: 6 }}>
+                {tipoAccionLabel[accion.tipo] || accion.tipo} - {estadoAccionLabel[accion.estado] || accion.estado}
+                <Link
+                  to={`/acciones/${accion.id}?hallazgo=${hallazgo.id}`}
+                  style={{ marginLeft: 10, textDecoration: "none", fontWeight: 600 }}
+                >
+                  Ver detalle
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p style={{ margin: 0 }}>No hay acciones registradas.</p>
+        )}
       </section>
 
       {isAdmin && (
@@ -252,6 +305,8 @@ export default function HallazgoDetailPage() {
           </button>
         </form>
       </section>
+
+      {isAdmin && <SolicitudCierreAdminView hallazgoId={hallazgo.id} onChanged={refreshDetail} />}
     </main>
   );
 }

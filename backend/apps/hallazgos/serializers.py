@@ -45,6 +45,7 @@ class ResponsableSerializer(serializers.Serializer):
 class HallazgoSerializer(serializers.ModelSerializer):
 	creado_por = serializers.SerializerMethodField()
 	responsables = serializers.SerializerMethodField()
+	acciones = serializers.SerializerMethodField()
 
 	class Meta:
 		model = Hallazgo
@@ -57,6 +58,7 @@ class HallazgoSerializer(serializers.ModelSerializer):
 			"fecha_creacion",
 			"creado_por",
 			"responsables",
+			"acciones",
 		]
 		read_only_fields = fields
 
@@ -71,6 +73,16 @@ class HallazgoSerializer(serializers.ModelSerializer):
 
 	def get_responsables(self, obj):
 		return ResponsableSerializer(obj.responsables.all(), many=True).data
+
+	def get_acciones(self, obj):
+		return [
+			{
+				"id": a.id,
+				"tipo": a.tipo,
+				"estado": a.estado,
+			}
+			for a in obj.acciones.all().order_by("id")
+		]
 
 
 class HallazgoCreateSerializer(serializers.ModelSerializer):

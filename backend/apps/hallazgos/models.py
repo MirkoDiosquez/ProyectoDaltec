@@ -125,19 +125,28 @@ _TIPOS_ACCION = ["INMEDIATA", "CORRECTIVA", "VERIFICACION_EFICIENCIA"]
 @receiver(post_save, sender=Hallazgo)
 def crear_acciones_iniciales(sender, instance, created, **kwargs):
     """
-    Auto-creates the 3 required Accion instances for a new Hallazgo.
+    Auto-creates the 3 required Accion instances and Chat for a new Hallazgo.
 
     FR-014: Each Hallazgo must have exactly 3 actions — INMEDIATA, CORRECTIVA,
     VERIFICACION_EFICIENCIA — created automatically in state PENDIENTE at the
     moment the Hallazgo is created.
 
-    Uses apps.get_model to avoid circular imports with the acciones app.
+    FR-012/T048: Auto-creates Chat for communication about the Hallazgo.
+    Participantes are initially empty (synced via service when responsables assigned).
+
+    Uses apps.get_model to avoid circular imports with other apps.
     """
     if not created:
         return
 
     Accion = apps.get_model("acciones", "Accion")
+    Chat = apps.get_model("chat", "Chat")
+
+    # Create the 3 required Accion instances
     Accion.objects.bulk_create(
         [Accion(hallazgo=instance, tipo=tipo) for tipo in _TIPOS_ACCION]
     )
+
+    # Create Chat for this Hallazgo
+    Chat.objects.create(hallazgo=instance)
 

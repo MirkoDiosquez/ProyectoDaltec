@@ -12,10 +12,12 @@ urlpatterns = [
     # T012
     path("api/v1/auth/", include("apps.users.urls.auth")),
     path("api/v1/hallazgos/", include("apps.hallazgos.urls")),
-    # T043: path("api/v1/", include("apps.acciones.urls")),
-    # T053: path("api/v1/", include("apps.chat.urls")),
+    path("api/v1/", include("apps.acciones.urls")),
+    # T053
+    path("api/v1/", include("apps.chat.urls")),
+    # T061
+    path("api/v1/", include("apps.notificaciones.urls")),
     # T057: path("api/v1/", include("apps.users.urls")),
-    # T061: path("api/v1/", include("apps.notificaciones.urls")),
 ]
 
 if settings.DEBUG:

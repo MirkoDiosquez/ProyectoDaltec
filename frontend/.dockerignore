@@ -1,0 +1,19 @@
+# VCS and editor metadata
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# Dependencies and build outputs
+node_modules/
+dist/
+build/
+coverage/
+
+# Logs and temp
+*.log
+*.tmp
+
+# Local env files
+.env
+.env.*

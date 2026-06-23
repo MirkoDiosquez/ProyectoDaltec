@@ -30,7 +30,7 @@ export const authRef = { current: null };
 const client = axios.create({
   baseURL: "/api/v1",
   headers: { "Content-Type": "application/json" },
-  withCredentials: true, // Send HttpOnly refresh cookie on refresh calls
+  withCredentials: false,
 });
 
 // ---------------------------------------------------------------------------

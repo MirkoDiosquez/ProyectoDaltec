@@ -3,11 +3,12 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.archivos.models import Archivo
+from apps.archivos.validators import validate_uploaded_file
 from apps.hallazgos.models import Hallazgo, TipoHallazgo
 from apps.hallazgos.permissions import HallazgoTipoPermission
 from apps.hallazgos.serializers import (
@@ -25,9 +26,16 @@ from apps.hallazgos.services import (
 
 
 class HallazgoViewSet(viewsets.ModelViewSet):
-	queryset = Hallazgo.objects.select_related("creado_por").prefetch_related("responsables")
+	queryset = Hallazgo.objects.select_related("creado_por").prefetch_related("responsables", "acciones")
 	permission_classes = [IsAuthenticated]
-	parser_classes = [MultiPartParser, FormParser]
+	parser_classes = [JSONParser, MultiPartParser, FormParser]
+
+	def create(self, request, *args, **kwargs):
+		serializer = self.get_serializer(data=request.data)
+		serializer.is_valid(raise_exception=True)
+		hallazgo = serializer.save()
+		output = HallazgoSerializer(hallazgo, context={"request": request})
+		return Response(output.data, status=status.HTTP_201_CREATED)
 
 	def get_permissions(self):
 		permissions = [IsAuthenticated]
@@ -135,6 +143,7 @@ class HallazgoViewSet(viewsets.ModelViewSet):
 		archivo = request.FILES.get("archivo")
 		if archivo is None:
 			raise ValidationError({"archivo": "Debe enviar un archivo."})
+		validate_uploaded_file(archivo)
 
 		created = Archivo.objects.create(
 			nombre=archivo.name,

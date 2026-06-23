@@ -86,14 +86,31 @@ export function AuthProvider({ children }) {
   const sessionVersionRef = useRef(0);
 
   const persistSession = useCallback((access, refresh, currentUser) => {
+    // Save to storage FIRST so the router guard can read them even before
+    // React state propagates to ProtectedRoute.
+    try {
+      localStorage.setItem(ACCESS_TOKEN_KEY, access);
+      localStorage.setItem(REFRESH_TOKEN_KEY, refresh);
+      localStorage.setItem(USER_KEY, JSON.stringify(currentUser ?? null));
+    } catch (storageErr) {
+      console.error("[Auth] localStorage.setItem failed:", storageErr);
+    }
+    // Update React state
     setAccessToken(access);
     setRefreshTokenValue(refresh);
     setUser(currentUser);
-    localStorage.setItem(ACCESS_TOKEN_KEY, access);
-    localStorage.setItem(REFRESH_TOKEN_KEY, refresh);
-    localStorage.setItem(USER_KEY, JSON.stringify(currentUser));
-    authRef.current.accessToken = access;
-  }, []);
+    // Update authRef for Axios interceptor (null-safe)
+    if (authRef.current) {
+      authRef.current.accessToken = access;
+    } else {
+      authRef.current = { accessToken: access, refreshTokenRef };
+    }
+    console.log("[Auth] persistSession OK", {
+      access: access?.slice(0, 20) + "...",
+      lsAccess: Boolean(localStorage.getItem(ACCESS_TOKEN_KEY)),
+      lsRefresh: Boolean(localStorage.getItem(REFRESH_TOKEN_KEY)),
+    });
+  }, [refreshTokenRef]);
 
   /**
    * Attempt to renew the access token using the HttpOnly refresh cookie.
@@ -152,17 +169,19 @@ export function AuthProvider({ children }) {
    * Stores the access token in memory; backend sets the refresh cookie.
    */
   const login = useCallback(async (dni, password) => {
+    console.log("[Auth] login() called");
     const data = await apiLogin(dni, password);
+    console.log("[Auth] apiLogin response keys:", Object.keys(data || {}));
     const access = data?.access || data?.access_token;
     const refresh = data?.refresh || data?.refresh_token;
     if (!access || !refresh) {
+      console.error("[Auth] Missing tokens in response", data);
       throw new Error("Login response missing tokens");
     }
-
     const currentUser = data?.user || null;
-
     sessionVersionRef.current += 1;
     persistSession(access, refresh, currentUser);
+    console.log("[Auth] login() complete, isAuthenticated should be true next render");
     return data;
   }, [persistSession]);
 

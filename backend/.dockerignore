@@ -1,0 +1,26 @@
+# VCS and editor metadata
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# Python cache and virtualenv
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Build/test artifacts
+.pytest_cache/
+.mypy_cache/
+coverage/
+*.log
+
+# Local env files
+.env
+.env.*
+
+# Uploaded/media and static build outputs
+media/
+staticfiles/

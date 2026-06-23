@@ -19,9 +19,14 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext.jsx";
 import LoginPage from "./pages/auth/LoginPage.jsx";
+import HomeDashboardPage from "./pages/home/HomeDashboardPage.jsx";
 import HallazgoListPage from "./pages/hallazgos/HallazgoListPage.jsx";
 import CrearHallazgoPage from "./pages/hallazgos/CrearHallazgoPage.jsx";
+import CrearQuejaPage from "./pages/hallazgos/CrearQuejaPage.jsx";
 import HallazgoDetailPage from "./pages/hallazgos/HallazgoDetailPage.jsx";
+import AccionDetailPage from "./pages/acciones/AccionDetailPage.jsx";
+import ChatPage from "./pages/chat/ChatPage.jsx";
+import MainNavbar from "./components/navigation/MainNavbar.jsx";
 
 // ---------------------------------------------------------------------------
 // Route guards
@@ -29,12 +34,19 @@ import HallazgoDetailPage from "./pages/hallazgos/HallazgoDetailPage.jsx";
 
 /**
  * Redirects to /login when the user is not authenticated.
- * Shows nothing while the initial token refresh is in progress.
+ * Shows nothing while the initial session restore is in progress.
+ *
+ * We check localStorage directly in addition to React state to avoid
+ * a race condition: login() saves tokens to localStorage synchronously
+ * then calls navigate(), but React state propagation is async — so
+ * ProtectedRoute might still see isAuthenticated=false on the first
+ * render after navigate if the state flush hasn't happened yet.
  */
 export function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
   if (loading) return null;
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  const hasStoredToken = Boolean(localStorage.getItem("daltec_access_token"));
+  if (!isAuthenticated && !hasStoredToken) return <Navigate to="/login" replace />;
   return children;
 }
 
@@ -47,9 +59,39 @@ export function ProtectedRoute({ children }) {
 export function RoleRoute({ roles, children }) {
   const { user, isAuthenticated, loading } = useAuth();
   if (loading) return null;
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (!roles.includes(user?.tipo)) return <Navigate to="/unauthorized" replace />;
+  const hasStoredToken = Boolean(localStorage.getItem("daltec_access_token"));
+  if (!isAuthenticated && !hasStoredToken) return <Navigate to="/login" replace />;
+  // Fall back to localStorage user when state hasn't propagated yet
+  const effectiveUser = user || (() => {
+    try { return JSON.parse(localStorage.getItem("daltec_user") || "null"); }
+    catch { return null; }
+  })();
+  if (!roles.includes(effectiveUser?.tipo)) return <Navigate to="/unauthorized" replace />;
   return children;
+}
+
+export function PublicOnlyRoute({ children }) {
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) return null;
+  const hasStoredToken = Boolean(localStorage.getItem("daltec_access_token"));
+  if (isAuthenticated || hasStoredToken) return <Navigate to="/" replace />;
+  return children;
+}
+
+/**
+ * ProtectedLayout — Wraps authenticated pages with MainNavbar.
+ */
+function ProtectedLayout({ children }) {
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) return null;
+  const hasStoredToken = Boolean(localStorage.getItem("daltec_access_token"));
+  if (!isAuthenticated && !hasStoredToken) return <Navigate to="/login" replace />;
+  return (
+    <>
+      <MainNavbar />
+      {children}
+    </>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -61,51 +103,79 @@ function App() {
     <BrowserRouter>
       <Routes>
         {/* T016 */}
-        <Route path="/login" element={<LoginPage />} />
+        <Route path="/login" element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />
+
+        <Route
+          path="/"
+          element={<ProtectedLayout><HomeDashboardPage /></ProtectedLayout>}
+        />
 
         <Route
           path="/hallazgos"
-          element={<ProtectedRoute><HallazgoListPage /></ProtectedRoute>}
+          element={<ProtectedLayout><HallazgoListPage /></ProtectedLayout>}
         />
 
         <Route
           path="/hallazgos/crear"
-          element={<RoleRoute roles={["EMPLEADO"]}><CrearHallazgoPage /></RoleRoute>}
+          element={
+            <ProtectedLayout>
+              <RoleRoute roles={["ADMIN", "EMPLEADO"]}>
+                <CrearHallazgoPage />
+              </RoleRoute>
+            </ProtectedLayout>
+          }
         />
 
-        {/* T036: Create queja — CLIENTE only
         <Route
           path="/hallazgos/queja"
-          element={<RoleRoute roles={["CLIENTE"]}><CrearQuejaPage /></RoleRoute>}
-        /> */}
+          element={
+            <ProtectedLayout>
+              <RoleRoute roles={["ADMIN", "CLIENTE"]}>
+                <CrearQuejaPage />
+              </RoleRoute>
+            </ProtectedLayout>
+          }
+        />
 
         <Route
           path="/hallazgos/:id"
-          element={<ProtectedRoute><HallazgoDetailPage /></ProtectedRoute>}
+          element={<ProtectedLayout><HallazgoDetailPage /></ProtectedLayout>}
         />
 
-        {/* T059: Create user — ADMIN only
+        <Route
+          path="/acciones/:id"
+          element={<ProtectedLayout><AccionDetailPage /></ProtectedLayout>}
+        />
+
+        {/* T063: Notificaciones page (placeholder for now) */}
+        <Route
+          path="/notificaciones"
+          element={
+            <ProtectedLayout>
+              <div style={{ padding: "2rem", maxWidth: 1200, margin: "0 auto" }}>
+                <h1>Notificaciones</h1>
+                <p style={{ color: "#64748b" }}>Próximamente: panel de notificaciones</p>
+              </div>
+            </ProtectedLayout>
+          }
+        />
+
+        {/* T059: Create user — ADMIN only (placeholder for now)
         <Route
           path="/usuarios/crear"
-          element={<RoleRoute roles={["ADMIN"]}><CrearUsuarioPage /></RoleRoute>}
+          element={
+            <ProtectedLayout>
+              <RoleRoute roles={["ADMIN"]}>
+                <CrearUsuarioPage />
+              </RoleRoute>
+            </ProtectedLayout>
+          }
         /> */}
 
         {/* T055: Chat — authenticated users
         <Route
           path="/hallazgos/:id/chat"
-          element={<ProtectedRoute><ChatPage /></ProtectedRoute>}
-        /> */}
-
-        {/* T046: Accion detail — authenticated users
-        <Route
-          path="/acciones/:id"
-          element={<ProtectedRoute><AccionDetailPage /></ProtectedRoute>}
-        /> */}
-
-        {/* T075: Crear hallazgo (Admin with cliente_asociado) — ADMIN + EMPLEADO
-        <Route
-          path="/hallazgos/crear"
-          element={<RoleRoute roles={["ADMIN","EMPLEADO"]}><CrearHallazgoPage /></RoleRoute>}
+          element={<ProtectedLayout><ChatPage /></ProtectedLayout>}
         /> */}
 
         {/* Unauthorized placeholder */}
@@ -120,7 +190,7 @@ function App() {
         />
 
         {/* Catch-all */}
-        <Route path="*" element={<Navigate to="/hallazgos" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );

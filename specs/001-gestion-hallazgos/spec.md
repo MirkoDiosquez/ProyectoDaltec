@@ -8,6 +8,13 @@
 
 ## Clarifications
 
+### Session 2026-06-23
+
+- Q: ¿Se permite eliminar archivos adjuntos después de cargarlos y quién puede hacerlo? → A: Sí. Solo el creador del archivo y con autorización explícita del Administrador.
+- Q: ¿Bajo qué condiciones se mide SC-001 (< 5 segundos)? → A: En entorno de producción, con hasta 50 usuarios concurrentes y considerando adjuntos de hasta 3 GB.
+- Q: ¿Cuál es el mínimo de usuarios concurrentes exigido para SC-006? → A: 30 usuarios simultáneos.
+- Q: ¿El Administrador puede usar además las funciones de usuario normal y requiere las mismas autorizaciones operativas? → A: Sí. El Administrador hereda las funciones de Empleado/Cliente sin requerir autorizaciones de usuario normal; cuando un Administrador crea un Hallazgo, queda autoaprobado.
+
 ### Session 2026-06-16 (ronda 3)
 
 - Q: ¿Qué dispara la transición PENDIENTE → EN_PROGRESO de una Acción? → A: Explícita — el responsable debe presionar "Iniciar Acción" para pasar de PENDIENTE a EN_PROGRESO; la edición de campos (descripción/fechas) solo está disponible una vez que la acción está en EN_PROGRESO.
@@ -57,6 +64,7 @@ Un empleado detecta una No Conformidad en su sector y la registra en el sistema 
 3. **Given** un hallazgo en estado PENDIENTE, **When** el Admin lo rechaza, **Then** el estado cambia a RECHAZADO.
 4. **Given** un hallazgo en estado PENDIENTE, **When** el Admin lo reclasifica a Oportunidad de Mejora, **Then** el tipo cambia y permanece PENDIENTE hasta nueva decisión.
 5. **Given** un Empleado, **When** intenta crear un hallazgo de tipo Queja de Cliente, **Then** el sistema rechaza la operación con mensaje de error apropiado.
+6. **Given** un Admin autenticado, **When** crea cualquier tipo de hallazgo, **Then** el hallazgo se registra en estado APROBADO automáticamente sin requerir aprobación posterior.
 
 ---
 
@@ -73,6 +81,7 @@ Un Cliente externo detecta un problema con el servicio y lo registra como Queja 
 1. **Given** un Cliente autenticado, **When** crea una Queja de Cliente, **Then** el hallazgo se registra automáticamente en estado APROBADO y se notifica al Admin.
 2. **Given** un Cliente autenticado, **When** intenta crear un hallazgo de tipo No Conformidad, **Then** el sistema rechaza la operación.
 3. **Given** una Queja de Cliente registrada, **When** el Admin la visualiza, **Then** puede asignar responsables sin necesidad de aprobarla.
+4. **Given** un Admin autenticado, **When** crea una Queja de Cliente, **Then** se registra en estado APROBADO automáticamente y queda disponible para asignación de responsables sin aprobación adicional.
 
 ---
 
@@ -133,6 +142,7 @@ El Administrador crea nuevos usuarios en el sistema, asignándoles tipo (Emplead
 - ¿Puede el Admin aprobar un hallazgo que ya fue rechazado anteriormente? No; RECHAZADO es un estado terminal (FR-026).
 - ¿Puede un Empleado acceder al chat de un hallazgo donde ya no es responsable? No; al ser removido como responsable pierde acceso inmediatamente (FR-013).
 - ¿Qué sucede si un Cliente intenta acceder a hallazgos que no le pertenecen? El sistema debe denegar el acceso (FR-025).
+- ¿Qué ocurre si el Admin crea un Hallazgo y luego intenta aprobarlo manualmente? No debe requerirse aprobación: el Hallazgo ya nace en estado APROBADO.
 
 ## Requirements *(mandatory)*
 
@@ -150,14 +160,15 @@ El Administrador crea nuevos usuarios en el sistema, asignándoles tipo (Emplead
 
 **Gestión de Hallazgos**
 
-- **FR-004**: El sistema DEBE permitir a los Empleados crear hallazgos de tipo No Conformidad y Oportunidad de Mejora.
-- **FR-005**: El sistema DEBE permitir a los Clientes crear hallazgos de tipo Queja de Cliente únicamente.
-- **FR-006**: Los hallazgos creados por Empleados (No Conformidad, Oportunidad de Mejora) DEBEN quedar en estado PENDIENTE hasta aprobación administrativa.
-- **FR-007**: Las Quejas de Cliente DEBEN registrarse automáticamente en estado APROBADO sin requerir aprobación.
+- **FR-004**: El sistema DEBE permitir a los Empleados crear hallazgos de tipo No Conformidad y Oportunidad de Mejora. El Administrador también DEBE poder crear esos mismos tipos.
+- **FR-005**: El sistema DEBE permitir a los Clientes crear hallazgos de tipo Queja de Cliente únicamente. El Administrador también DEBE poder crear Quejas de Cliente.
+- **FR-006**: Los hallazgos creados por Empleados (No Conformidad, Oportunidad de Mejora) DEBEN quedar en estado PENDIENTE hasta aprobación administrativa. Si el creador es Administrador, DEBEN registrarse en estado APROBADO automáticamente.
+- **FR-007**: Las Quejas de Cliente DEBEN registrarse automáticamente en estado APROBADO sin requerir aprobación, independientemente de si el creador es Cliente o Administrador.
 - **FR-008**: Todo hallazgo creado DEBE generar una notificación a **todos** los Administradores activos del sistema. Si quien crea el hallazgo es un Admin (caso de spec 002), ese Admin creador queda excluido de los destinatarios (ya está al tanto).
 - **FR-033**: El sistema DEBE enviar notificaciones a los Empleados afectados en los siguientes eventos: (a) el Admin aprueba o rechaza un hallazgo del cual el Empleado es creador; (b) el Admin asigna o remueve al Empleado como responsable de un hallazgo; (c) el Admin aprueba o rechaza una solicitud de cierre de acción — la notificación se envía a todos los responsables **vigentes** del hallazgo en ese momento. Si el Empleado que presentó la solicitud ya fue removido como responsable, no recibe la notificación.
 - **FR-009**: El Administrador DEBE poder aprobar, rechazar o reclasificar hallazgos en estado PENDIENTE.
 - **FR-010**: El Administrador DEBE poder asignar y remover responsables de cualquier hallazgo aprobado.
+- **FR-040**: El Administrador DEBE poder ejecutar las funciones operativas de usuario normal (creación de hallazgos y flujo operativo asociado) sin requerir autorizaciones adicionales de rol de Empleado o Cliente.
 
 **Gestión de Chat**
 
@@ -190,6 +201,7 @@ El Administrador crea nuevos usuarios en el sistema, asignándoles tipo (Emplead
 
 - **FR-020**: Los hallazgos y las acciones DEBEN permitir adjuntar archivos de evidencia.
 - **FR-021**: Cada archivo adjunto DEBE registrar: nombre, fecha de carga, usuario que lo cargó, y ubicación lógica del archivo.
+- **FR-039**: El sistema DEBE permitir la eliminación de un archivo adjunto únicamente al usuario que lo cargó y solo cuando exista autorización explícita del Administrador.
 
 ### Key Entities
 
@@ -206,18 +218,18 @@ El Administrador crea nuevos usuarios en el sistema, asignándoles tipo (Emplead
 
 ### Measurable Outcomes
 
-- **SC-001**: Un Empleado puede registrar un hallazgo y el Administrador recibe la notificación en menos de 5 segundos.
+- **SC-001**: Un Empleado puede registrar un hallazgo y el Administrador recibe la notificación en menos de 5 segundos, medido en entorno de producción con hasta 50 usuarios concurrentes y adjuntos de hasta 3 GB.
 - **SC-002**: El 100% de las acciones cerradas tiene aprobación explícita del Administrador registrada en el sistema.
 - **SC-003**: Al remover un responsable del hallazgo, el sistema elimina al usuario del chat en menos de 2 segundos sin intervención manual.
 - **SC-004**: Un usuario puede completar el flujo completo (crear hallazgo → aprobación → asignar responsables → completar acciones → solicitar cierre → aprobar cierre) en una sola sesión sin errores del sistema.
 - **SC-005**: El 100% de los hallazgos de tipo Queja de Cliente se registran en estado APROBADO de forma automática, sin acción del Administrador.
-- **SC-006**: El sistema soporta múltiples usuarios operando simultáneamente sin pérdida de datos ni inconsistencias en estados de hallazgos.
+- **SC-006**: El sistema soporta al menos 30 usuarios operando simultáneamente sin pérdida de datos ni inconsistencias en estados de hallazgos.
 
 ## Assumptions
 
 - Los usuarios acceden al sistema desde navegadores web de escritorio en entornos de red corporativa.
 - El almacenamiento de archivos adjuntos se gestiona en el servidor; el sistema registra la ruta lógica, no el contenido binario en base de datos.
-- Un Administrador también puede ser responsable de hallazgos si así se requiere en el futuro, pero no está contemplado en el alcance actual.
+- Un Administrador puede usar además las funciones operativas de usuario normal, y los Hallazgos creados por Administrador se autoaprueban en el momento de la creación.
 - La empresa del Cliente es un dato de catálogo cerrado (número fijo de empresas registradas); su gestión no es parte de este alcance.
 - Las notificaciones son en tiempo real dentro del sistema web; no se contempla envío por email o SMS en esta versión.
 - El sistema opera en un único tenant (organización); no se contempla multi-tenancy en este alcance.

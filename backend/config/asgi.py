@@ -21,15 +21,16 @@ django_asgi_app = get_asgi_application()
 from channels.routing import ProtocolTypeRouter, URLRouter  # noqa: E402
 from django.urls import path  # noqa: E402
 
+from apps.chat.consumers import ChatConsumer  # noqa: E402
 from apps.notificaciones.consumers import NotificacionConsumer  # noqa: E402
 from apps.users.middleware import TokenAuthMiddleware  # noqa: E402
 
 # WebSocket URL patterns — consumers added here as they are implemented:
 #   T025: ws/notificaciones/  → NotificacionConsumer
-#   T040: ws/chat/<hallazgo_id>/ → ChatConsumer
+#   T049: ws/chat/<hallazgo_id>/ → ChatConsumer
 websocket_urlpatterns: list = [
     path("ws/notificaciones/", NotificacionConsumer.as_asgi()),
-    # path("ws/chat/<int:hallazgo_id>/", ChatConsumer.as_asgi()),   # T040
+    path("ws/chat/<int:hallazgo_id>/", ChatConsumer.as_asgi()),
 ]
 
 application = ProtocolTypeRouter(
