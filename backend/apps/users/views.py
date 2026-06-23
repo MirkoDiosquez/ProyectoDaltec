@@ -23,22 +23,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 User = get_user_model()
 
 
-def _set_refresh_cookie(response: Response, refresh_token: str) -> None:
-    """
-    Attach the refresh token as an HttpOnly cookie.
-    Frontend Axios interceptors read this cookie via the browser automatically;
-    it is never accessible to JavaScript (mitigates XSS — Constitution VI).
-    """
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        httponly=True,
-        secure=True,       # HTTPS only in production (dev proxy handles this)
-        samesite="Lax",
-        max_age=60 * 60 * 24 * 7,  # 7 days — overridden by JWT_REFRESH_LIFETIME
-    )
-
-
 class LoginView(APIView):
     """
     POST /api/v1/auth/login/
@@ -84,7 +68,7 @@ class LoginView(APIView):
         access_token = str(refresh.access_token)
         refresh_token = str(refresh)
 
-        response = Response(
+        return Response(
             {
                 "access": access_token,
                 "refresh": refresh_token,
@@ -97,8 +81,6 @@ class LoginView(APIView):
             },
             status=status.HTTP_200_OK,
         )
-        _set_refresh_cookie(response, refresh_token)
-        return response
 
 
 class TokenRefreshView(APIView):
@@ -114,10 +96,7 @@ class TokenRefreshView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        # Prefer cookie (browser clients); fall back to body (API clients)
-        refresh_token = request.COOKIES.get("refresh_token") or request.data.get(
-            "refresh"
-        )
+        refresh_token = request.data.get("refresh")
 
         if not refresh_token:
             return Response(
@@ -127,18 +106,20 @@ class TokenRefreshView(APIView):
 
         try:
             refresh = RefreshToken(refresh_token)
+            # Accessing .access_token blacklists the old token and rotates to
+            # a new refresh token when ROTATE_REFRESH_TOKENS=True (settings).
             access_token = str(refresh.access_token)
+            new_refresh_token = str(refresh)
         except TokenError:
             return Response(
                 {"detail": "Refresh token inválido o expirado."},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-        response = Response({"access": access_token}, status=status.HTTP_200_OK)
-        # If ROTATE_REFRESH_TOKENS=True, a new refresh token is issued
-        if hasattr(refresh, "token") and str(refresh) != refresh_token:
-            _set_refresh_cookie(response, str(refresh))
-        return response
+        return Response(
+            {"access": access_token, "refresh": new_refresh_token},
+            status=status.HTTP_200_OK,
+        )
 
 
 class LogoutView(APIView):
@@ -154,9 +135,7 @@ class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        refresh_token = request.COOKIES.get("refresh_token") or request.data.get(
-            "refresh"
-        )
+        refresh_token = request.data.get("refresh")
 
         if refresh_token:
             try:
@@ -166,6 +145,4 @@ class LogoutView(APIView):
                 # Already blacklisted or invalid — treat as success (idempotent)
                 pass
 
-        response = Response(status=status.HTTP_204_NO_CONTENT)
-        response.delete_cookie("refresh_token")
-        return response
+        return Response(status=status.HTTP_204_NO_CONTENT)
