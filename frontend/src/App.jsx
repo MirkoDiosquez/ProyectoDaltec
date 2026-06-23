@@ -19,6 +19,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext.jsx";
 import LoginPage from "./pages/auth/LoginPage.jsx";
+import HallazgoListPage from "./pages/hallazgos/HallazgoListPage.jsx";
 
 // ---------------------------------------------------------------------------
 // Route guards
@@ -60,11 +61,10 @@ function App() {
         {/* T016 */}
         <Route path="/login" element={<LoginPage />} />
 
-        {/* T031: Hallazgo list — authenticated users (role filter applied inside component)
         <Route
           path="/hallazgos"
           element={<ProtectedRoute><HallazgoListPage /></ProtectedRoute>}
-        /> */}
+        />
 
         {/* T032: Create hallazgo — EMPLEADO only
         <Route
@@ -120,7 +120,7 @@ function App() {
         />
 
         {/* Catch-all */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/hallazgos" replace />} />
       </Routes>
     </BrowserRouter>
   );
