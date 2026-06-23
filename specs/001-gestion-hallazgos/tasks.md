@@ -69,7 +69,7 @@
 - [X] T025 [US1] Implement `NotificacionConsumer` WebSocket consumer (ADMIN-only, group `notificaciones_admin_{user_id}`, handles `notificacion.nueva` type) in `backend/apps/notificaciones/consumers.py`; register route `ws/notificaciones/` in `backend/config/asgi.py`
 - [X] T026 [US1] Implement `HallazgoSerializer` (list/detail), `HallazgoCreateSerializer`, `ResponsableSerializer` with role-based field validation in `backend/apps/hallazgos/serializers.py`
 - [X] T027 [US1] Implement `HallazgoViewSet` with actions: `create`, `list` (filtered by role per FR-023/024/025), `retrieve`, `aprobar`, `rechazar`, `reclasificar`, `add_responsable`, `remove_responsable`, `upload_archivo` in `backend/apps/hallazgos/views.py`
-- [ ] T028 [US1] Register Hallazgo router and action URLs in `backend/apps/hallazgos/urls.py`; include in `backend/config/urls.py` under `/api/v1/hallazgos/`
+- [X] T028 [US1] Register Hallazgo router and action URLs in `backend/apps/hallazgos/urls.py`; include in `backend/config/urls.py` under `/api/v1/hallazgos/`
 - [ ] T029 [P] [US1] Implement frontend Hallazgo API client functions (createHallazgo, listHallazgos, getHallazgo, aprobar, rechazar, reclasificar, addResponsable, removeResponsable, uploadArchivo) in `frontend/src/api/hallazgos.js`
 - [ ] T030 [US1] Implement `NotificacionContext` with WebSocket connection to `/ws/notificaciones/` and unread badge state in `frontend/src/context/NotificacionContext.jsx`
 - [ ] T031 [US1] Implement `HallazgoListPage` (role-filtered list with tipo/estado badges; "Crear Hallazgo" button for Empleados) in `frontend/src/pages/hallazgos/HallazgoListPage.jsx`

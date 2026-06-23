@@ -11,7 +11,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     # T012
     path("api/v1/auth/", include("apps.users.urls.auth")),
-    # T028: path("api/v1/", include("apps.hallazgos.urls")),
+    path("api/v1/hallazgos/", include("apps.hallazgos.urls")),
     # T043: path("api/v1/", include("apps.acciones.urls")),
     # T053: path("api/v1/", include("apps.chat.urls")),
     # T057: path("api/v1/", include("apps.users.urls")),
