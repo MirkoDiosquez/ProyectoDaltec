@@ -20,6 +20,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext.jsx";
 import LoginPage from "./pages/auth/LoginPage.jsx";
 import HallazgoListPage from "./pages/hallazgos/HallazgoListPage.jsx";
+import CrearHallazgoPage from "./pages/hallazgos/CrearHallazgoPage.jsx";
 
 // ---------------------------------------------------------------------------
 // Route guards
@@ -66,11 +67,10 @@ function App() {
           element={<ProtectedRoute><HallazgoListPage /></ProtectedRoute>}
         />
 
-        {/* T032: Create hallazgo — EMPLEADO only
         <Route
           path="/hallazgos/crear"
           element={<RoleRoute roles={["EMPLEADO"]}><CrearHallazgoPage /></RoleRoute>}
-        /> */}
+        />
 
         {/* T036: Create queja — CLIENTE only
         <Route
