@@ -74,7 +74,7 @@
 - [X] T030 [US1] Implement `NotificacionContext` with WebSocket connection to `/ws/notificaciones/` and unread badge state in `frontend/src/context/NotificacionContext.jsx`
 - [X] T031 [US1] Implement `HallazgoListPage` (role-filtered list with tipo/estado badges; "Crear Hallazgo" button for Empleados) in `frontend/src/pages/hallazgos/HallazgoListPage.jsx`
 - [X] T032 [US1] Implement `CrearHallazgoPage` (form with descripcion, ubicacion, tipo; Empleados see NO_CONFORMIDAD and OPORTUNIDAD_MEJORA only) in `frontend/src/pages/hallazgos/CrearHallazgoPage.jsx`
-- [ ] T033 [US1] Implement `HallazgoDetailPage` (detail view; Admin actions: aprobar/rechazar/reclasificar buttons, responsables panel with add/remove, archivos upload) in `frontend/src/pages/hallazgos/HallazgoDetailPage.jsx`
+- [X] T033 [US1] Implement `HallazgoDetailPage` (detail view; Admin actions: aprobar/rechazar/reclasificar buttons, responsables panel with add/remove, archivos upload) in `frontend/src/pages/hallazgos/HallazgoDetailPage.jsx`
 
 **Checkpoint**: Empleado crea hallazgo → `estado: PENDIENTE`; Admin recibe notificación WebSocket < 5 s (SC-001); Admin aprueba → `estado: APROBADO`; Admin asigna responsable → lista actualizada
 

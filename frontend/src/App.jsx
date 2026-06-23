@@ -21,6 +21,7 @@ import { useAuth } from "./context/AuthContext.jsx";
 import LoginPage from "./pages/auth/LoginPage.jsx";
 import HallazgoListPage from "./pages/hallazgos/HallazgoListPage.jsx";
 import CrearHallazgoPage from "./pages/hallazgos/CrearHallazgoPage.jsx";
+import HallazgoDetailPage from "./pages/hallazgos/HallazgoDetailPage.jsx";
 
 // ---------------------------------------------------------------------------
 // Route guards
@@ -78,11 +79,10 @@ function App() {
           element={<RoleRoute roles={["CLIENTE"]}><CrearQuejaPage /></RoleRoute>}
         /> */}
 
-        {/* T033: Hallazgo detail — authenticated users
         <Route
           path="/hallazgos/:id"
           element={<ProtectedRoute><HallazgoDetailPage /></ProtectedRoute>}
-        /> */}
+        />
 
         {/* T059: Create user — ADMIN only
         <Route
