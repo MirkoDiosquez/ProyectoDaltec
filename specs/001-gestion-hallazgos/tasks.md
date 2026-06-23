@@ -71,7 +71,7 @@
 - [X] T027 [US1] Implement `HallazgoViewSet` with actions: `create`, `list` (filtered by role per FR-023/024/025), `retrieve`, `aprobar`, `rechazar`, `reclasificar`, `add_responsable`, `remove_responsable`, `upload_archivo` in `backend/apps/hallazgos/views.py`
 - [X] T028 [US1] Register Hallazgo router and action URLs in `backend/apps/hallazgos/urls.py`; include in `backend/config/urls.py` under `/api/v1/hallazgos/`
 - [X] T029 [P] [US1] Implement frontend Hallazgo API client functions (createHallazgo, listHallazgos, getHallazgo, aprobar, rechazar, reclasificar, addResponsable, removeResponsable, uploadArchivo) in `frontend/src/api/hallazgos.js`
-- [ ] T030 [US1] Implement `NotificacionContext` with WebSocket connection to `/ws/notificaciones/` and unread badge state in `frontend/src/context/NotificacionContext.jsx`
+- [X] T030 [US1] Implement `NotificacionContext` with WebSocket connection to `/ws/notificaciones/` and unread badge state in `frontend/src/context/NotificacionContext.jsx`
 - [ ] T031 [US1] Implement `HallazgoListPage` (role-filtered list with tipo/estado badges; "Crear Hallazgo" button for Empleados) in `frontend/src/pages/hallazgos/HallazgoListPage.jsx`
 - [ ] T032 [US1] Implement `CrearHallazgoPage` (form with descripcion, ubicacion, tipo; Empleados see NO_CONFORMIDAD and OPORTUNIDAD_MEJORA only) in `frontend/src/pages/hallazgos/CrearHallazgoPage.jsx`
 - [ ] T033 [US1] Implement `HallazgoDetailPage` (detail view; Admin actions: aprobar/rechazar/reclasificar buttons, responsables panel with add/remove, archivos upload) in `frontend/src/pages/hallazgos/HallazgoDetailPage.jsx`
