@@ -13,14 +13,68 @@ cookie (so the frontend Axios interceptor can refresh silently).
 Contract: contracts/rest-api.md — Auth section
 """
 from django.contrib.auth import get_user_model
-from rest_framework import status
+from rest_framework import mixins, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from apps.users.serializers import UserCreateSerializer, UserListSerializer
+
 User = get_user_model()
+
+
+class IsAdminUserTipo(IsAuthenticated):
+    def has_permission(self, request, view):
+        return super().has_permission(request, view) and getattr(
+            request.user, "is_admin", False
+        )
+
+
+class UserViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet,
+):
+    queryset = User.objects.all().order_by("apellido", "nombre", "dni")
+
+    def get_permissions(self):
+        if self.action == "me":
+            return [IsAuthenticated()]
+        return [IsAdminUserTipo()]
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return UserCreateSerializer
+        return UserListSerializer
+
+    def get_queryset(self):
+        queryset = self.queryset
+        tipo = self.request.query_params.get("tipo")
+        if tipo:
+            queryset = queryset.filter(tipo=tipo)
+        return queryset
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        output = UserListSerializer(user, context={"request": request})
+        return Response(output.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=["get"])
+    def me(self, request):
+        user = request.user
+        data = UserListSerializer(user, context={"request": request}).data
+
+        if getattr(user, "is_empleado", False) and hasattr(user, "empleado_profile"):
+            data["sector"] = user.empleado_profile.sector
+        elif getattr(user, "is_cliente", False) and hasattr(user, "cliente_profile"):
+            data["empresa"] = user.cliente_profile.empresa
+
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class LoginView(APIView):

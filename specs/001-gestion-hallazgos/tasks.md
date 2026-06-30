@@ -152,10 +152,10 @@
 
 ### Implementation for User Story 5
 
-- [ ] T056 [P] [US5] Implement `UserCreateSerializer` (validates DNI unique, hashes password, creates `EmpleadoProfile` or `ClienteProfile` based on tipo) and `UserListSerializer` in `backend/apps/users/serializers.py`
-- [ ] T057 [US5] Implement `UserViewSet` with `create` (Admin-only), `list` (Admin-only), `me` (authenticated user profile) actions in `backend/apps/users/views.py`; register in `backend/apps/users/urls.py` and `backend/config/urls.py` under `/api/v1/usuarios/`
-- [ ] T058 [P] [US5] Implement frontend Users API client (createUser, listUsers, getMe) in `frontend/src/api/users.js`
-- [ ] T059 [US5] Implement `CrearUsuarioPage` (Admin-only; form with DNI, nombre, apellido, sexo, email, password, tipo selector; sector field when tipo=EMPLEADO; empresa selector when tipo=CLIENTE) in `frontend/src/pages/users/CrearUsuarioPage.jsx`; add Admin-only route in `frontend/src/App.jsx`
+- [X] T056 [P] [US5] Implement `UserCreateSerializer` (validates DNI unique, hashes password, creates `EmpleadoProfile` or `ClienteProfile` based on tipo) and `UserListSerializer` in `backend/apps/users/serializers.py`
+- [X] T057 [US5] Implement `UserViewSet` with `create` (Admin-only), `list` (Admin-only), `me` (authenticated user profile) actions in `backend/apps/users/views.py`; register in `backend/apps/users/urls.py` and `backend/config/urls.py` under `/api/v1/usuarios/`
+- [X] T058 [P] [US5] Implement frontend Users API client (createUser, listUsers, getMe) in `frontend/src/api/users.js`
+- [X] T059 [US5] Implement `CrearUsuarioPage` (Admin-only; form with DNI, nombre, apellido, sexo, email, password, tipo selector; sector field when tipo=EMPLEADO; empresa selector when tipo=CLIENTE) in `frontend/src/pages/users/CrearUsuarioPage.jsx`; add Admin-only route in `frontend/src/App.jsx`
 
 **Checkpoint**: Admin crea usuarios vía UI; usuarios creados pueden autenticarse; DNI duplicado muestra error en form; non-Admin recibe 403 on API call
 

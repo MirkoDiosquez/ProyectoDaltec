@@ -17,7 +17,7 @@ urlpatterns = [
     path("api/v1/", include("apps.chat.urls")),
     # T061
     path("api/v1/", include("apps.notificaciones.urls")),
-    # T057: path("api/v1/", include("apps.users.urls")),
+    path("api/v1/", include("apps.users.urls")),
 ]
 
 if settings.DEBUG:

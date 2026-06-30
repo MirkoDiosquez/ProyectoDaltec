@@ -26,6 +26,7 @@ import CrearQuejaPage from "./pages/hallazgos/CrearQuejaPage.jsx";
 import HallazgoDetailPage from "./pages/hallazgos/HallazgoDetailPage.jsx";
 import AccionDetailPage from "./pages/acciones/AccionDetailPage.jsx";
 import ChatPage from "./pages/chat/ChatPage.jsx";
+import CrearUsuarioPage from "./pages/users/CrearUsuarioPage.jsx";
 import MainNavbar from "./components/navigation/MainNavbar.jsx";
 
 // ---------------------------------------------------------------------------
@@ -145,6 +146,17 @@ function App() {
         <Route
           path="/acciones/:id"
           element={<ProtectedLayout><AccionDetailPage /></ProtectedLayout>}
+        />
+
+        <Route
+          path="/usuarios/crear"
+          element={
+            <ProtectedLayout>
+              <RoleRoute roles={["ADMIN"]}>
+                <CrearUsuarioPage />
+              </RoleRoute>
+            </ProtectedLayout>
+          }
         />
 
         {/* T063: Notificaciones page (placeholder for now) */}

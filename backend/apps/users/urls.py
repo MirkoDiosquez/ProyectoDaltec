@@ -1,6 +1,14 @@
 # This module is kept for backward compatibility.
 # Auth URLs: apps.users.urls.auth (T012)
 # User CRUD URLs: registered in T057
-from django.urls import path
+from django.urls import include, path
+from rest_framework.routers import DefaultRouter
 
-urlpatterns: list = []
+from apps.users.views import UserViewSet
+
+router = DefaultRouter()
+router.register(r"usuarios", UserViewSet, basename="usuario")
+
+urlpatterns = [
+    path("", include(router.urls)),
+]
