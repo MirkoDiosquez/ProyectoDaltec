@@ -1,0 +1,35 @@
+/* SectorSelector Component Styles */
+.sector-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sector-selector .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sector-selector label {
+  font-weight: 500;
+  color: #333;
+}
+
+.sector-selector select {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  background-color: white;
+}
+
+.sector-selector select:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.sector-selector .text-danger {
+  color: #dc3545;
+  font-size: 0.875rem;
+}

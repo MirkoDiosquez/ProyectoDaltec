@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from apps.chat.models import Chat, Mensaje
+from apps.archivos.serializers import ArchivoSerializer
 
 User = get_user_model()
 
@@ -31,13 +32,14 @@ class ParticipanteSerializer(serializers.Serializer):
 
 
 class MensajeSerializer(serializers.ModelSerializer):
-    """Serializer for individual messages in a chat."""
+    """Serializer for individual messages in a chat with archivos support (T083)."""
     autor = serializers.SerializerMethodField()
+    archivos = ArchivoSerializer(many=True, read_only=True)
 
     class Meta:
         model = Mensaje
-        fields = ["id", "chat_id", "contenido", "fecha_hora", "autor"]
-        read_only_fields = ["id", "chat_id", "fecha_hora", "autor"]
+        fields = ["id", "chat_id", "contenido", "fecha_hora", "autor", "archivos"]
+        read_only_fields = ["id", "chat_id", "fecha_hora", "autor", "archivos"]
 
     def get_autor(self, obj):
         """Serialize the autor (user) information."""

@@ -13,11 +13,15 @@ urlpatterns = [
     path("api/v1/auth/", include("apps.users.urls.auth")),
     path("api/v1/hallazgos/", include("apps.hallazgos.urls")),
     path("api/v1/", include("apps.acciones.urls")),
+    # T034: Phase 3 catalog routes
+    path("api/v1/", include("apps.catalogos.urls")),
     # T053
     path("api/v1/", include("apps.chat.urls")),
     # T061
     path("api/v1/", include("apps.notificaciones.urls")),
     path("api/v1/", include("apps.users.urls")),
+    # T068: Phase 6 file upload routes
+    path("api/v1/", include("apps.archivos.urls")),
 ]
 
 if settings.DEBUG:

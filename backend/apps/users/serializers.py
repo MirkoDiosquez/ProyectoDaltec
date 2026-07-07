@@ -7,6 +7,38 @@ from apps.users.models import ClienteProfile, EmpleadoProfile, UserTipo
 User = get_user_model()
 
 
+class UsuarioSimpleSerializer(serializers.ModelSerializer):
+    """
+    Simple user serializer for responsable management (T091).
+    Includes computed field es_responsable_de_hallazgo to indicate current status.
+    
+    Context must include:
+    - hallazgo_id: The hallazgo ID to check responsable status for
+    """
+    es_responsable_de_hallazgo = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ["id", "nombre", "apellido", "tipo", "es_responsable_de_hallazgo"]
+        read_only_fields = fields
+
+    def get_es_responsable_de_hallazgo(self, obj):
+        """
+        Check if user is a responsable of the hallazgo passed in context (T091).
+        """
+        hallazgo_id = self.context.get("hallazgo_id")
+        if not hallazgo_id:
+            return False
+        
+        # Import here to avoid circular imports
+        from apps.hallazgos.models import Hallazgo
+        try:
+            hallazgo = Hallazgo.objects.get(id=hallazgo_id)
+            return hallazgo.responsables.filter(id=obj.id).exists()
+        except Hallazgo.DoesNotExist:
+            return False
+
+
 class UserListSerializer(serializers.ModelSerializer):
     class Meta:
         model = User

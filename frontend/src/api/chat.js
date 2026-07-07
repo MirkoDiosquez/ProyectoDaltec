@@ -18,6 +18,8 @@
  * Refs: T054, contracts/websocket.md, FR-012
  */
 
+import client from "./client.js";
+
 // Determine WebSocket protocol based on current location
 const getWsProtocol = () => {
   return window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -64,6 +66,9 @@ export const connectChat = (hallazgoId, token, handlers = {}) => {
 
           if (data.type === "chat.message" && handlers.onMessageReceived) {
             handlers.onMessageReceived(data.mensaje);
+          } else if (data.type === "ping") {
+            // Respond to server keepalive ping with pong
+            ws.send(JSON.stringify({ type: "pong" }));
           } else if (data.type === "chat.participant_removed" && handlers.onParticipantRemoved) {
             handlers.onParticipantRemoved(data.detail);
           } else if (data.type === "error" && handlers.onError) {
@@ -155,4 +160,15 @@ export const disconnect = (ws) => {
  */
 export const isConnected = (ws) => {
   return ws && ws.readyState === WebSocket.OPEN;
+};
+
+/**
+ * Fetch chat data (history + participants) for a given hallazgo via REST.
+ *
+ * @param {number|string} hallazgoId - The hallazgo ID
+ * @returns {Promise<Object>} Chat object with messages and participants
+ */
+export const getChatByHallazgo = async (hallazgoId) => {
+  const { data } = await client.get(`/chats/${hallazgoId}/`);
+  return data;
 };

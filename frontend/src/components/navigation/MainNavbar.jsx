@@ -5,17 +5,19 @@
  * - Home link
  * - Hallazgos list
  * - Role-specific links (Crear Queja for CLIENTE, Crear Hallazgo for EMPLEADO/ADMIN, Usuarios for ADMIN)
- * - Notificaciones badge
+ * - Notificaciones badge (T129)
  * - User menu (logout)
  *
  * Task T085 — Navbar integration for page navigation.
+ * Task T127 — Integration of notification badge with navbar.
  */
 
 import { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
+import NotificationBadge from "../NotificationBadge.jsx";
 
-export default function MainNavbar() {
+export default function MainNavbar({ notificationCount = 0 }) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
@@ -173,23 +175,17 @@ export default function MainNavbar() {
             </>
           )}
 
-          {/* Notificaciones */}
+          {/* Notificaciones Badge (T127, T129) */}
           <Link
             to="/notificaciones"
             style={{
-              color: "#e2e8f0",
-              textDecoration: "none",
-              fontSize: "0.95rem",
-              fontWeight: 500,
-              transition: "color 0.2s",
-              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
               position: "relative",
             }}
-            onMouseEnter={(e) => (e.target.style.color = "#fff")}
-            onMouseLeave={(e) => (e.target.style.color = "#e2e8f0")}
             title="Notificaciones"
           >
-            🔔
+            <NotificationBadge count={notificationCount} />
           </Link>
         </div>
 

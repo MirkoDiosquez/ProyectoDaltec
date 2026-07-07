@@ -1,0 +1,134 @@
+[
+  {
+    "model": "catalogos.sectorcatalog",
+    "pk": 1,
+    "fields": {
+      "codigo": "RECLAMO_CLIENTE",
+      "nombre": "Reclamo Cliente",
+      "descripcion": "Hallazgos originados por reclamos de clientes externos.",
+      "activo": true,
+      "created_at": "2026-07-05T00:00:00Z",
+      "updated_at": "2026-07-05T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalogos.sectorcatalog",
+    "pk": 2,
+    "fields": {
+      "codigo": "PROVEEDOR",
+      "nombre": "Proveedor",
+      "descripcion": "Hallazgos relacionados con proveedores o cadena de suministro.",
+      "activo": true,
+      "created_at": "2026-07-05T00:00:00Z",
+      "updated_at": "2026-07-05T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalogos.sectorcatalog",
+    "pk": 3,
+    "fields": {
+      "codigo": "INTERNO",
+      "nombre": "Interno",
+      "descripcion": "Hallazgos internos de la organización. Requieren subsección.",
+      "activo": true,
+      "created_at": "2026-07-05T00:00:00Z",
+      "updated_at": "2026-07-05T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalogos.subsectioncatalog",
+    "pk": 1,
+    "fields": {
+      "codigo": "ADMIN",
+      "nombre": "Administración",
+      "sector": 3,
+      "activo": true,
+      "created_at": "2026-07-05T00:00:00Z",
+      "updated_at": "2026-07-05T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalogos.subsectioncatalog",
+    "pk": 2,
+    "fields": {
+      "codigo": "OPERACIONES",
+      "nombre": "Operaciones",
+      "sector": 3,
+      "activo": true,
+      "created_at": "2026-07-05T00:00:00Z",
+      "updated_at": "2026-07-05T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalogos.subsectioncatalog",
+    "pk": 3,
+    "fields": {
+      "codigo": "CALIDAD",
+      "nombre": "Calidad",
+      "sector": 3,
+      "activo": true,
+      "created_at": "2026-07-05T00:00:00Z",
+      "updated_at": "2026-07-05T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalogos.subsectioncatalog",
+    "pk": 4,
+    "fields": {
+      "codigo": "SEGURIDAD",
+      "nombre": "Seguridad",
+      "sector": 3,
+      "activo": true,
+      "created_at": "2026-07-05T00:00:00Z",
+      "updated_at": "2026-07-05T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalogos.tipocatalog",
+    "pk": 1,
+    "fields": {
+      "codigo": "NO_CONFORMIDAD",
+      "nombre": "No Conformidad",
+      "descripcion": "Incumplimiento de un requisito especificado.",
+      "activo": true,
+      "created_at": "2026-07-05T00:00:00Z",
+      "updated_at": "2026-07-05T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalogos.tipocatalog",
+    "pk": 2,
+    "fields": {
+      "codigo": "OBSERVACION",
+      "nombre": "Observación",
+      "descripcion": "Oportunidad de mejora o situación potencialmente problemática.",
+      "activo": true,
+      "created_at": "2026-07-05T00:00:00Z",
+      "updated_at": "2026-07-05T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalogos.tipocatalog",
+    "pk": 3,
+    "fields": {
+      "codigo": "MEJORA",
+      "nombre": "Mejora",
+      "descripcion": "Propuesta de mejora del sistema o proceso.",
+      "activo": true,
+      "created_at": "2026-07-05T00:00:00Z",
+      "updated_at": "2026-07-05T00:00:00Z"
+    }
+  },
+  {
+    "model": "catalogos.tipocatalog",
+    "pk": 4,
+    "fields": {
+      "codigo": "QUEJA",
+      "nombre": "Queja",
+      "descripcion": "Expresión de insatisfacción de un cliente o parte interesada.",
+      "activo": true,
+      "created_at": "2026-07-05T00:00:00Z",
+      "updated_at": "2026-07-05T00:00:00Z"
+    }
+  }
+]

@@ -46,6 +46,10 @@ LOCAL_APPS = [
     "apps.chat",
     "apps.archivos",
     "apps.notificaciones",
+    "apps.catalogos",
+    "apps.contacto_externo",
+    "apps.analisis_cinco_porques",
+    "apps.solicitud_cambio_responsable",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -113,7 +117,13 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [os.environ.get("REDIS_URL", "redis://redis:6379/0")],
+            # socket_timeout=None prevents redis-py's default 5s socket timeout
+            # from racing with channels_redis's brpop_timeout=5 and raising
+            # redis.exceptions.TimeoutError that crashes the WS consumer.
+            "hosts": [{"address": os.environ.get("REDIS_URL", "redis://redis:6379/0"), "socket_timeout": None}],
+            "capacity": 1500,        # max messages queued per channel
+            "expiry": 60,            # message TTL in Redis (seconds)
+            "group_expiry": 86400,   # group membership TTL (24 h)
         },
     }
 }
@@ -197,8 +207,8 @@ SIMPLE_JWT = {
 # ---------------------------------------------------------------------------
 # File upload constraints (from env — Constitution Principle II)
 # ---------------------------------------------------------------------------
-# MAX_FILE_SIZE is in bytes (e.g. 10485760 = 10 MB)
-MAX_FILE_SIZE = int(os.environ.get("MAX_FILE_SIZE", str(10 * 1024 * 1024)))
+# MAX_FILE_SIZE is in bytes (default 1 GiB)
+MAX_FILE_SIZE = int(os.environ.get("MAX_FILE_SIZE", str(1024 * 1024 * 1024)))
 # Comma-separated MIME types e.g. "application/pdf,image/jpeg,image/png"
 ALLOWED_FILE_TYPES = [
     t.strip()
@@ -207,61 +217,52 @@ ALLOWED_FILE_TYPES = [
         "application/pdf,image/jpeg,image/png,image/gif,"
         "application/msword,"
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document,"
+        "text/plain,text/csv,application/json,application/xml,text/xml,"
+        "application/rtf,application/vnd.ms-powerpoint,"
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation,"
         "application/vnd.ms-excel,"
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,"
+        "application/zip,application/x-zip-compressed,application/x-rar-compressed,"
+        "application/x-7z-compressed,image/webp,video/mp4,video/mpeg,video/quicktime,"
+        "audio/mpeg,audio/wav,audio/x-wav",
     ).split(",")
     if t.strip()
 ]
 
-# ---------------------------------------------------------------------------
-# Logging — Structured logging for observability (T060)
-# ---------------------------------------------------------------------------
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {
-        "verbose": {
-            "format": "{levelname} {asctime} {name} {process:d} {thread:d} {message}",
-            "style": "{",
-            "datefmt": "%Y-%m-%d %H:%M:%S",
-        },
-        "simple": {
-            "format": "{levelname} {message}",
-            "style": "{",
-        },
-    },
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-            "level": "INFO",
-            "formatter": "verbose",
-        },
-    },
-    "loggers": {
-        "django": {
-            "handlers": ["console"],
-            "level": "INFO",
-            "propagate": False,
-        },
-        "apps.hallazgos": {
-            "handlers": ["console"],
-            "level": "INFO",
-            "propagate": False,
-        },
-        "apps.acciones": {
-            "handlers": ["console"],
-            "level": "INFO",
-            "propagate": False,
-        },
-        "apps.notificaciones": {
-            "handlers": ["console"],
-            "level": "INFO",
-            "propagate": False,
-        },
-        "apps.users": {
-            "handlers": ["console"],
-            "level": "INFO",
-            "propagate": False,
-        },
-    },
+# FILE_UPLOAD_WHITELIST: per-MIME-type max file sizes (in bytes)
+FILE_UPLOAD_WHITELIST = {
+    "image/jpeg": MAX_FILE_SIZE,
+    "image/png": MAX_FILE_SIZE,
+    "image/gif": MAX_FILE_SIZE,
+    "image/webp": MAX_FILE_SIZE,
+    "application/pdf": MAX_FILE_SIZE,
+    "application/msword": MAX_FILE_SIZE,
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": MAX_FILE_SIZE,
+    "application/rtf": MAX_FILE_SIZE,
+    "application/vnd.ms-excel": MAX_FILE_SIZE,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": MAX_FILE_SIZE,
+    "application/vnd.ms-powerpoint": MAX_FILE_SIZE,
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": MAX_FILE_SIZE,
+    "text/plain": MAX_FILE_SIZE,
+    "text/csv": MAX_FILE_SIZE,
+    "application/json": MAX_FILE_SIZE,
+    "application/xml": MAX_FILE_SIZE,
+    "text/xml": MAX_FILE_SIZE,
+    "application/zip": MAX_FILE_SIZE,
+    "application/x-zip-compressed": MAX_FILE_SIZE,
+    "application/x-rar-compressed": MAX_FILE_SIZE,
+    "application/x-7z-compressed": MAX_FILE_SIZE,
+    "video/mp4": MAX_FILE_SIZE,
+    "video/mpeg": MAX_FILE_SIZE,
+    "video/quicktime": MAX_FILE_SIZE,
+    "audio/mpeg": MAX_FILE_SIZE,
+    "audio/wav": MAX_FILE_SIZE,
+    "audio/x-wav": MAX_FILE_SIZE,
 }
+
+# ---------------------------------------------------------------------------
+# Logging — Structured logging for observability
+# ---------------------------------------------------------------------------
+from config.logging_config import get_log_config
+
+LOGGING = get_log_config()

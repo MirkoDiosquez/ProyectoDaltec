@@ -250,6 +250,16 @@ Phase 8 (Polish)         → depends on all desired user stories being complete
 
 ---
 
+## Phase 8: Bugfixes & Improvements
+
+**Purpose**: Resolución de bugs encontrados en desarrollo y mejoras de UX/DX.
+
+- [X] T099 [BUGFIX] Mejorar `ResponsableSerializer` en `backend/apps/hallazgos/serializers.py` para aceptar tanto ID (pk) como DNI del usuario. Cambiar `validate_id()` para: 1) intentar búsqueda por pk primero; 2) si falla, intentar por dni; 3) error descriptivo si ambas fallan. Permite que usuarios usen DNI en lugar de memorizar IDs de BD. **Impacto**: Endpoint `/api/v1/hallazgos/{id}/add_responsable/` ahora acepta `{"id": <DNI_o_ID>}` indistintamente.
+
+**Checkpoint**: POST a `add_responsable/` con DNI retorna 200 (no 400); usuarios no necesitan conocer IDs de BD
+
+---
+
 ## Implementation Strategy (MVP First)
 
 **MVP Scope** — Phase 1 + Phase 2 + Phase 3 (US1):
@@ -273,20 +283,20 @@ Phase 8 (Polish)         → depends on all desired user stories being complete
 
 **Spec**: [002-admin-crear-quejas-cliente/spec.md](../002-admin-crear-quejas-cliente/spec.md)
 
-- [ ] T066 Add `cliente_asociado` nullable FK (→ `CustomUser`, `on_delete=SET_NULL`, `related_name="quejas_asociadas"`) to `Hallazgo` model in `backend/apps/hallazgos/models.py`
-- [ ] T067 Create additive migration `backend/apps/hallazgos/migrations/000X_add_cliente_asociado_to_hallazgo.py` for the new field (depends on T066)
-- [ ] T068 [P] Extract private `_crear_chat(hallazgo)` helper from `hallazgo_service.aprobar()` and call it inside `crear_hallazgo()` when `tipo == QUEJA_CLIENTE` (Chat created in same transaction as creation, per spec 002 FR-010) in `backend/apps/hallazgos/services.py` — depends on T023 + T048
-- [ ] T069 [P] Add `exclude_user_id=None` optional parameter to `notificacion_service.crear_y_enviar()` and filter out that user from notification recipients in `backend/apps/notificaciones/services.py` (depends on T024)
-- [ ] T070 Add `cliente_asociado` field to `HallazgoCreateSerializer` with `validate()` cross-field rule: obligatorio si `creado_por.is_admin and tipo == QUEJA_CLIENTE`; must reference existing user with `tipo=CLIENTE`; ignored for other types in `backend/apps/hallazgos/serializers.py` (depends on T026 + T066)
-- [ ] T071 Update `hallazgo_service.crear_hallazgo()` to: (a) auto-fill `cliente_asociado = user` when `user.is_cliente and tipo == QUEJA_CLIENTE` (spec 002 FR-012); (b) pass `exclude_user_id=user.pk` to `notificacion_service` when `user.is_admin` (spec 002 FR-007) in `backend/apps/hallazgos/services.py` (depends on T068 + T069)
-- [ ] T072 [P] Update `HallazgoSerializer` (detail + list) to include `cliente_asociado` as nested read-only field (`id`, `nombre`, `apellido`, `tipo`; null for non-QUEJA_CLIENTE) in `backend/apps/hallazgos/serializers.py` (depends on T026 + T066)
-- [ ] T073 [P] Make `cliente_asociado` immutable on update: strip field in `HallazgoSerializer.update()` or `HallazgoViewSet.partial_update` so any PATCH/PUT attempt is silently ignored (spec 002 FR-004) in `backend/apps/hallazgos/serializers.py`
-- [ ] T074 Update Hallazgo list queryset for CLIENTE role to filter by `cliente_asociado=request.user` (replacing previous `creado_por=request.user`) in `backend/apps/hallazgos/views.py` (depends on T027 + T066)
-- [ ] T075 [US2-002] Update `CrearHallazgoPage` to show conditional `cliente_asociado` selector (dropdown of users with `tipo=CLIENTE`) only when `tipo === "QUEJA_CLIENTE"` is selected; send field in POST body only when visible in `frontend/src/pages/hallazgos/CrearHallazgoPage.jsx` (depends on T032)
-- [ ] T076 [P] [US2-002] Add `GET /api/v1/usuarios/?tipo=CLIENTE` API call in `frontend/src/api/usuarios.js` to populate the `cliente_asociado` selector (depends on T057)
-- [ ] T077 [US2-002] Update `HallazgoDetailPage` to display `cliente_asociado` field when populated (show `nombre apellido (CLIENTE)`; hide row when null) in `frontend/src/pages/hallazgos/HallazgoDetailPage.jsx` (depends on T033)
-- [ ] T078 [P] Add `?cliente_asociado=<id>` query filter to Admin Hallazgo list so Admin can filter by client in `backend/apps/hallazgos/views.py`
-- [ ] T079 [P] Register `cliente_asociado` in `HallazgoAdmin` in `backend/apps/hallazgos/admin.py` (list_display, search_fields, list_filter)
+- [X] T066 Add `cliente_asociado` nullable FK (→ `CustomUser`, `on_delete=SET_NULL`, `related_name="quejas_asociadas"`) to `Hallazgo` model in `backend/apps/hallazgos/models.py`
+- [X] T067 Create additive migration `backend/apps/hallazgos/migrations/000X_add_cliente_asociado_to_hallazgo.py` for the new field (depends on T066)
+- [X] T068 [P] Extract private `_crear_chat(hallazgo)` helper from `hallazgo_service.aprobar()` and call it inside `crear_hallazgo()` when `tipo == QUEJA_CLIENTE` (Chat created in same transaction as creation, per spec 002 FR-010) in `backend/apps/hallazgos/services.py` — depends on T023 + T048
+- [X] T069 [P] Add `exclude_user_id=None` optional parameter to `notificacion_service.crear_y_enviar()` and filter out that user from notification recipients in `backend/apps/notificaciones/services.py` (depends on T024)
+- [X] T070 Add `cliente_asociado` field to `HallazgoCreateSerializer` with `validate()` cross-field rule: obligatorio si `creado_por.is_admin and tipo == QUEJA_CLIENTE`; must reference existing user with `tipo=CLIENTE`; ignored for other types in `backend/apps/hallazgos/serializers.py` (depends on T026 + T066)
+- [X] T071 Update `hallazgo_service.crear_hallazgo()` to: (a) auto-fill `cliente_asociado = user` when `user.is_cliente and tipo == QUEJA_CLIENTE` (spec 002 FR-012); (b) pass `exclude_user_id=user.pk` to `notificacion_service` when `user.is_admin` (spec 002 FR-007) in `backend/apps/hallazgos/services.py` (depends on T068 + T069)
+- [X] T072 [P] Update `HallazgoSerializer` (detail + list) to include `cliente_asociado` as nested read-only field (`id`, `nombre`, `apellido`, `tipo`; null for non-QUEJA_CLIENTE) in `backend/apps/hallazgos/serializers.py` (depends on T026 + T066)
+- [X] T073 [P] Make `cliente_asociado` immutable on update: strip field in `HallazgoSerializer.update()` or `HallazgoViewSet.partial_update` so any PATCH/PUT attempt is silently ignored (spec 002 FR-004) in `backend/apps/hallazgos/serializers.py`
+- [X] T074 Update Hallazgo list queryset for CLIENTE role to filter by `cliente_asociado=request.user` (replacing previous `creado_por=request.user`) in `backend/apps/hallazgos/views.py` (depends on T027 + T066)
+- [X] T075 [US2-002] Update `CrearHallazgoPage` to show conditional `cliente_asociado` selector (dropdown of users with `tipo=CLIENTE`) only when `tipo === "QUEJA_CLIENTE"` is selected; send field in POST body only when visible in `frontend/src/pages/hallazgos/CrearHallazgoPage.jsx` (depends on T032)
+- [X] T076 [P] [US2-002] Add `GET /api/v1/usuarios/?tipo=CLIENTE` API call in `frontend/src/api/usuarios.js` to populate the `cliente_asociado` selector (depends on T057)
+- [X] T077 [US2-002] Update `HallazgoDetailPage` to display `cliente_asociado` field when populated (show `nombre apellido (CLIENTE)`; hide row when null) in `frontend/src/pages/hallazgos/HallazgoDetailPage.jsx` (depends on T033)
+- [X] T078 [P] Add `?cliente_asociado=<id>` query filter to Admin Hallazgo list so Admin can filter by client in `backend/apps/hallazgos/views.py`
+- [X] T079 [P] Register `cliente_asociado` in `HallazgoAdmin` in `backend/apps/hallazgos/admin.py` (list_display, search_fields, list_filter)
 - [ ] T080 Verify quickstart scenarios VS-01–VS-08 from `specs/002-admin-crear-quejas-cliente/quickstart.md` pass end-to-end
 
 **Checkpoint**: Admin crea QUEJA_CLIENTE con `cliente_asociado`; queja pasa a APROBADO con Chat creado en la misma transacción; cliente asociado ve la queja en su lista; Admin creador no recibe la propia notificación

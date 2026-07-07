@@ -8,7 +8,9 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-# Output the built files so they can be picked up by the frontend_build volume
+# Copy built files to volume on every container start
 FROM alpine:3.19
-WORKDIR /app/dist
-COPY --from=builder /app/dist .
+WORKDIR /app
+COPY --from=builder /app/dist ./dist
+# Use sh as entrypoint so files are always synced into the mounted volume
+CMD ["sh", "-c", "cp -r /app/dist/. /app/volume/ && echo 'Frontend files copied' && tail -f /dev/null"]

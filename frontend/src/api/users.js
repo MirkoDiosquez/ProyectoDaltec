@@ -10,6 +10,11 @@ export async function listUsers(params = {}) {
   return data;
 }
 
+export async function listClientes() {
+  const { data } = await client.get("/usuarios/", { params: { tipo: "CLIENTE" } });
+  return data;
+}
+
 export async function getMe() {
   const { data } = await client.get("/usuarios/me/");
   return data;

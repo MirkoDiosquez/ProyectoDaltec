@@ -28,6 +28,10 @@ import AccionDetailPage from "./pages/acciones/AccionDetailPage.jsx";
 import ChatPage from "./pages/chat/ChatPage.jsx";
 import CrearUsuarioPage from "./pages/users/CrearUsuarioPage.jsx";
 import MainNavbar from "./components/navigation/MainNavbar.jsx";
+import { useNotificaciones } from "./hooks/useNotificaciones.js";
+import AdminNotificationPanel from "./components/AdminPanel/AdminNotificationPanel.jsx";
+import EmployeeNotificationPanel from "./components/NotificationPanel/EmployeeNotificationPanel.jsx";
+import NotificacionesPage from "./pages/hallazgos/NotificacionesPage.jsx";
 
 // ---------------------------------------------------------------------------
 // Route guards
@@ -80,18 +84,51 @@ export function PublicOnlyRoute({ children }) {
 }
 
 /**
- * ProtectedLayout — Wraps authenticated pages with MainNavbar.
+ * ProtectedLayout — Wraps authenticated pages with MainNavbar and initializes notifications (T127).
  */
 function ProtectedLayout({ children }) {
   const { isAuthenticated, loading } = useAuth();
+  // Initialize notifications hook to maintain WebSocket connection
+  const { notifications, markAsRead } = useNotificaciones();
+  
   if (loading) return null;
   const hasStoredToken = Boolean(localStorage.getItem("daltec_access_token"));
   if (!isAuthenticated && !hasStoredToken) return <Navigate to="/login" replace />;
   return (
     <>
-      <MainNavbar />
+      <MainNavbar notificationCount={notifications.filter(n => !n.leida).length} />
       {children}
     </>
+  );
+}
+
+/**
+ * NotificationsPage — Displays role-specific notification panels (T127).
+ * 
+ * - Admins see AdminNotificationPanel with categorized notifications
+ * - Employees see EmployeeNotificationPanel with assignments and urgent messages
+ */
+function NotificationsPageWrapper() {
+  const { user } = useAuth();
+  const { notifications, markAsRead } = useNotificaciones();
+
+  return (
+    <div style={{ padding: "2rem", maxWidth: 1200, margin: "0 auto" }}>
+      {user?.tipo === "ADMIN" ? (
+        <AdminNotificationPanel
+          notifications={notifications}
+          onNavigate={(tipo) => {
+            // Can add routing logic here if needed
+            console.log("Navigate to:", tipo);
+          }}
+        />
+      ) : (
+        <EmployeeNotificationPanel
+          notifications={notifications}
+          onNotificationRead={markAsRead}
+        />
+      )}
+    </div>
   );
 }
 
@@ -159,15 +196,12 @@ function App() {
           }
         />
 
-        {/* T063: Notificaciones page (placeholder for now) */}
+        {/* T127: Notificaciones page (T124-T126 components integrated) */}
         <Route
           path="/notificaciones"
           element={
             <ProtectedLayout>
-              <div style={{ padding: "2rem", maxWidth: 1200, margin: "0 auto" }}>
-                <h1>Notificaciones</h1>
-                <p style={{ color: "#64748b" }}>Próximamente: panel de notificaciones</p>
-              </div>
+              <NotificationsPageWrapper />
             </ProtectedLayout>
           }
         />
@@ -184,11 +218,11 @@ function App() {
           }
         /> */}
 
-        {/* T055: Chat — authenticated users
+        {/* T055: Chat — authenticated users */}
         <Route
           path="/hallazgos/:id/chat"
           element={<ProtectedLayout><ChatPage /></ProtectedLayout>}
-        /> */}
+        />
 
         {/* Unauthorized placeholder */}
         <Route

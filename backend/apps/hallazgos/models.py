@@ -11,8 +11,9 @@ Refs: FR-004–010, FR-022, FR-027, data-model.md
 """
 from django.apps import apps
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.db import models
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 
 
@@ -59,6 +60,14 @@ class Hallazgo(models.Model):
         related_name="hallazgos_creados",
         verbose_name="Creado por",
     )
+    cliente_asociado = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="quejas_asociadas",
+        verbose_name="Cliente Asociado",
+    )
     responsables = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         through="HallazgoResponsable",
@@ -66,14 +75,69 @@ class Hallazgo(models.Model):
         blank=True,
         verbose_name="Responsables",
     )
+    
+    # Phase 2: Catalog-based classification (orthogonal to tipo enum)
+    sector = models.ForeignKey(
+        'catalogos.SectorCatalog',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='hallazgos',
+        verbose_name="Sector",
+        help_text="Hallazgo sector classification (RECLAMO_CLIENTE, PROVEEDOR, INTERNO, etc.)"
+    )
+    
+    subseccion = models.ForeignKey(
+        'catalogos.SubsectionCatalog',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='hallazgos',
+        verbose_name="Subsección",
+        help_text="Subsection (only for sector=INTERNO)"
+    )
+    
+    tipo_catalogo = models.ForeignKey(
+        'catalogos.TipoCatalog',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='hallazgos',
+        verbose_name="Tipo (Catalogo)",
+        help_text="Hallazgo type from dynamic catalog (QUEJA_CLIENTE, NO_CONFORMIDAD, etc.)"
+    )
 
     class Meta:
         verbose_name = "Hallazgo"
         verbose_name_plural = "Hallazgos"
         ordering = ["-fecha_creacion"]
+        indexes = [
+            models.Index(fields=['sector', 'estado']),
+            models.Index(fields=['tipo_catalogo', 'estado']),
+        ]
 
     def __str__(self):
         return f"[{self.tipo}] {self.descripcion[:60]} ({self.estado})"
+    
+    def clean(self):
+        """Validate hallazgo data.
+        
+        Phase 2 validation: If sector=INTERNO, subseccion is required.
+        """
+        from django.core.exceptions import ValidationError
+        
+        # Check if sector is INTERNO and subseccion is required
+        if self.sector and self.sector.codigo == 'INTERNO':
+            if not self.subseccion:
+                raise ValidationError(
+                    "Subsección is required for sector=INTERNO"
+                )
+        
+        # Warn if subseccion is set but sector is not INTERNO
+        if self.subseccion and self.sector and self.sector.codigo != 'INTERNO':
+            raise ValidationError(
+                f"Subsección can only be set for sector=INTERNO, not {self.sector.codigo}"
+            )
 
 
 class HallazgoResponsable(models.Model):
@@ -149,4 +213,50 @@ def crear_acciones_iniciales(sender, instance, created, **kwargs):
 
     # Create Chat for this Hallazgo
     Chat.objects.create(hallazgo=instance)
+
+
+@receiver(post_delete, sender=HallazgoResponsable)
+def notificar_admin_sin_responsables_con_porques_pendientes(sender, instance, **kwargs):
+    """Edge case (spec.md): When the last responsable is removed from a hallazgo
+    that still has porqués in 'pendiente' state, notify all admin users.
+
+    FR-016/FR-017: Only the Admin can approve porqués; without responsables there is
+    no one to submit new porqués either. This notification alerts the admin that
+    manual attention is needed.
+
+    Task T164 — covers Issue I13 from speckit.analyze 2026-07-07.
+    """
+    hallazgo = instance.hallazgo
+
+    # Check if the hallazgo now has no responsables left
+    remaining = HallazgoResponsable.objects.filter(hallazgo=hallazgo).count()
+    if remaining > 0:
+        return  # Still has responsables, no alert needed
+
+    # Check for pending porqués
+    AnalisisCincoPorques = apps.get_model("analisis_cinco_porques", "AnalisisCincoPorques")
+    pending_count = AnalisisCincoPorques.objects.filter(
+        hallazgo=hallazgo, estado="pendiente"
+    ).count()
+
+    if pending_count == 0:
+        return  # No pending porqués, nothing to alert
+
+    # Notify all admin users
+    User = get_user_model()
+    Notificacion = apps.get_model("notificaciones", "Notificacion")
+
+    admin_users = User.objects.filter(is_staff=True)
+    for admin in admin_users:
+        Notificacion.objects.create(
+            destinatario=admin,
+            hallazgo_relacionado=hallazgo,
+            tipo="aprobacion_porque_pendiente",
+            titulo=f"Sin responsables: hallazgo #{hallazgo.pk} tiene porqués pendientes",
+            mensaje=(
+                f"Se removió el último responsable del hallazgo #{hallazgo.pk} "
+                f"({hallazgo.descripcion[:60]}). "
+                f"Quedan {pending_count} porqué(s) pendientes de aprobación sin responsables asignados."
+            ),
+        )
 

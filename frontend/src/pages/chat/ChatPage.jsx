@@ -1,19 +1,21 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { connectChat, sendMessage, disconnect, isConnected } from "../../api/chat.js";
+import { connectChat, sendMessage, disconnect, isConnected, getChatByHallazgo } from "../../api/chat.js";
 import { useAuth } from "../../context/AuthContext.jsx";
+import ChatMessage from "../../components/ChatMessage.jsx";
+import ChatMessageComposer from "../../components/ChatMessageComposer.jsx";
 
 /**
- * ChatPage component for real-time hallazgo chat.
+ * ChatPage component for real-time hallazgo chat with file attachment support (T087).
  *
  * Displays message history and live WebSocket feed.
- * Users who are chat participants can send messages.
+ * Users who are chat participants can send messages with optional file attachments.
  * Admins can view but not send (read-only mode).
  *
- * Refs: T055, contracts/websocket.md, FR-012
+ * Refs: T055, contracts/websocket.md, FR-012, T087
  */
 export default function ChatPage() {
-  const { hallazgoId } = useParams();
+  const { id: hallazgoId } = useParams();  // route is /hallazgos/:id/chat
   const navigate = useNavigate();
   const { user, accessToken } = useAuth();
 
@@ -21,109 +23,117 @@ export default function ChatPage() {
   const [ws, setWs] = useState(null);
   const [connected, setConnected] = useState(false);
   const [connectionError, setConnectionError] = useState("");
+  const [loadingHistory, setLoadingHistory] = useState(true);
 
   // Message state
   const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState("");
-  const [sendingMessage, setSendingMessage] = useState(false);
-  const [sendError, setSendError] = useState("");
+  const [composerError, setComposerError] = useState("");
+
+  // Reconnect state
+  const wsRef = useRef(null);
+  const reconnectTimerRef = useRef(null);
+  const reconnectAttemptRef = useRef(0);
+  const isMountedRef = useRef(true);
 
   // Determine if user can send (participants can, admins cannot)
   const canSendMessage = user?.tipo !== "ADMIN";
   const isAdmin = user?.tipo === "ADMIN";
 
-  // Connect to WebSocket on mount or when hallazgoId/token changes
+  // Load chat history via REST on mount
   useEffect(() => {
+    if (!hallazgoId) return;
+    setLoadingHistory(true);
+    getChatByHallazgo(hallazgoId)
+      .then((chat) => {
+        if (chat?.mensajes?.length) {
+          setMessages(chat.mensajes);
+        }
+      })
+      .catch((err) => {
+        console.error("[ChatPage] Failed to load history:", err);
+        setConnectionError("No se pudo cargar el historial del chat.");
+      })
+      .finally(() => setLoadingHistory(false));
+  }, [hallazgoId]);
+
+  // Connect WebSocket with automatic reconnect
+  useEffect(() => {
+    isMountedRef.current = true;
+
     if (!hallazgoId || !accessToken) {
-      setConnectionError("Missing hallazgo ID or authentication token.");
+      setConnectionError("Faltan datos de autenticación.");
       return;
     }
 
-    const connect = async () => {
+    // Non-recoverable close codes — don't reconnect
+    const FATAL_CODES = new Set([4001, 4003, 4000]);
+
+    const doConnect = async () => {
+      if (!isMountedRef.current) return;
+
       try {
         setConnectionError("");
         const websocket = await connectChat(hallazgoId, accessToken, {
           onConnected: () => {
             console.log("[ChatPage] Connected");
-            setConnected(true);
+            reconnectAttemptRef.current = 0;
+            if (isMountedRef.current) setConnected(true);
           },
           onMessageReceived: (mensaje) => {
-            console.log("[ChatPage] New message:", mensaje);
-            setMessages((prev) => [...prev, mensaje]);
+            if (isMountedRef.current) setMessages((prev) => [...prev, mensaje]);
           },
           onParticipantRemoved: (detail) => {
-            console.warn("[ChatPage] Participant removed:", detail);
-            setConnectionError(detail);
-            setConnected(false);
+            if (isMountedRef.current) {
+              setConnectionError(detail);
+              setConnected(false);
+            }
           },
           onError: (error) => {
-            console.error("[ChatPage] Error:", error);
-            setConnectionError(error);
+            console.error("[ChatPage] WS error:", error);
           },
           onDisconnected: (code) => {
-            console.log("[ChatPage] Disconnected with code:", code);
+            console.log("[ChatPage] Disconnected code:", code);
+            if (!isMountedRef.current) return;
             setConnected(false);
+            wsRef.current = null;
+
+            // Don't reconnect on fatal codes (removed from chat / auth error)
+            if (FATAL_CODES.has(code)) {
+              if (code === 4001) setConnectionError("Sesión expirada. Recargá la página.");
+              if (code === 4003) setConnectionError("Ya no tenés acceso a este chat.");
+              return;
+            }
+
+            // Exponential backoff: 1s, 2s, 4s, 8s, max 30s
+            const delay = Math.min(1000 * 2 ** reconnectAttemptRef.current, 30000);
+            reconnectAttemptRef.current += 1;
+            console.log(`[ChatPage] Reconnecting in ${delay}ms (attempt ${reconnectAttemptRef.current})`);
+            reconnectTimerRef.current = setTimeout(doConnect, delay);
           },
         });
 
-        setWs(websocket);
+        wsRef.current = websocket;
+        if (isMountedRef.current) setWs(websocket);
       } catch (error) {
         console.error("[ChatPage] Connection failed:", error);
-        setConnectionError(`Failed to connect: ${error.message}`);
+        if (!isMountedRef.current) return;
+        setConnectionError("No se pudo conectar al chat.");
         setConnected(false);
+        // Retry after 3 seconds on initial failure
+        reconnectTimerRef.current = setTimeout(doConnect, 3000);
       }
     };
 
-    connect();
+    doConnect();
 
-    // Cleanup on unmount
     return () => {
-      if (ws && isConnected(ws)) {
-        disconnect(ws);
+      isMountedRef.current = false;
+      clearTimeout(reconnectTimerRef.current);
+      if (wsRef.current && isConnected(wsRef.current)) {
+        disconnect(wsRef.current);
       }
     };
   }, [hallazgoId, accessToken]);
-
-  // Import isConnected function
-  const wsIsConnected = (websocket) => {
-    return websocket && websocket.readyState === WebSocket.OPEN;
-  };
-
-  // Handle message submission
-  const handleSendMessage = useCallback(
-    async (e) => {
-      e.preventDefault();
-
-      if (!newMessage.trim()) {
-        setSendError("Message cannot be empty.");
-        return;
-      }
-
-      if (!ws || !wsIsConnected(ws)) {
-        setSendError("Not connected to chat. Please refresh.");
-        return;
-      }
-
-      if (!canSendMessage) {
-        setSendError("You cannot send messages (admin read-only mode).");
-        return;
-      }
-
-      setSendingMessage(true);
-      setSendError("");
-
-      try {
-        sendMessage(ws, newMessage);
-        setNewMessage("");
-      } catch (error) {
-        console.error("[ChatPage] Send error:", error);
-        setSendError(error.message || "Failed to send message.");
-      } finally {
-        setSendingMessage(false);
-      }
-    },
-    [ws, newMessage, canSendMessage]
-  );
 
   // Render
   return (
@@ -166,7 +176,7 @@ export default function ChatPage() {
         </div>
       )}
 
-      {/* Messages Container */}
+      {/* Messages Container (T087) */}
       <div
         style={{
           border: "1px solid #d1d5db",
@@ -179,33 +189,16 @@ export default function ChatPage() {
         }}
       >
         {messages.length === 0 ? (
-          <p style={{ color: "#999" }}>No messages yet. Start the conversation!</p>
+          <p style={{ color: "#999" }}>
+            {loadingHistory ? "Cargando historial..." : "No hay mensajes aún. ¡Empezá la conversación!"}
+          </p>
         ) : (
-          messages.map((msg, idx) => (
-            <div
-              key={idx}
-              style={{
-                marginBottom: "12px",
-                paddingBottom: "12px",
-                borderBottom: "1px solid #e5e7eb",
-              }}
-            >
-              <div style={{ fontWeight: "bold", color: "#1f2937" }}>
-                {msg.autor?.nombre} {msg.autor?.apellido}
-              </div>
-              <div style={{ color: "#6b7280", fontSize: "12px", marginBottom: "4px" }}>
-                {new Date(msg.fecha_hora).toLocaleString()}
-              </div>
-              <div style={{ color: "#111827", wordWrap: "break-word" }}>
-                {msg.contenido}
-              </div>
-            </div>
-          ))
+          messages.map((msg, idx) => <ChatMessage key={idx} mensaje={msg} index={idx} />)
         )}
       </div>
 
-      {/* Send Error */}
-      {sendError && (
+      {/* Composer Error (T087) */}
+      {composerError && (
         <div
           style={{
             padding: "10px",
@@ -216,69 +209,17 @@ export default function ChatPage() {
             fontSize: "14px",
           }}
         >
-          {sendError}
+          {composerError}
         </div>
       )}
 
-      {/* Message Input */}
-      <form onSubmit={handleSendMessage}>
-        <div style={{ display: "flex", gap: "10px" }}>
-          <textarea
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder={
-              canSendMessage ? "Type a message..." : "You are in read-only mode (Admin)"
-            }
-            disabled={!canSendMessage || !connected || sendingMessage}
-            style={{
-              flex: 1,
-              padding: "10px",
-              border: "1px solid #d1d5db",
-              borderRadius: "4px",
-              fontFamily: "monospace",
-              fontSize: "14px",
-              minHeight: "50px",
-              resize: "vertical",
-              opacity: !canSendMessage || !connected ? 0.6 : 1,
-            }}
-          />
-          <button
-            type="submit"
-            disabled={!canSendMessage || !connected || sendingMessage || !newMessage.trim()}
-            style={{
-              padding: "10px 20px",
-              backgroundColor:
-                !canSendMessage || !connected || sendingMessage || !newMessage.trim()
-                  ? "#d1d5db"
-                  : "#0f172a",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: !canSendMessage || !connected || sendingMessage ? "not-allowed" : "pointer",
-              fontWeight: "bold",
-            }}
-          >
-            {sendingMessage ? "Sending..." : "Send"}
-          </button>
-        </div>
-      </form>
-
-      {/* Read-only Mode Notice */}
-      {isAdmin && (
-        <div
-          style={{
-            marginTop: "15px",
-            padding: "12px",
-            backgroundColor: "#fef3c7",
-            color: "#92400e",
-            borderRadius: "4px",
-            fontSize: "13px",
-          }}
-        >
-          <strong>ℹ️ Admin Read-Only:</strong> You are viewing this chat in read-only mode.
-          Only chat participants can send messages.
-        </div>
-      )}
+      {/* Message Composer with File Attachments (T087) */}
+      <ChatMessageComposer
+        ws={ws}
+        onMessageSent={() => setComposerError("")}
+        onError={setComposerError}
+        disabled={!canSendMessage || !connected}
+      />
     </div>
   );
 }

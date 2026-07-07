@@ -1,11 +1,13 @@
 from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
 from django.core.exceptions import ValidationError as DjangoValidationError
-from rest_framework import status, viewsets
+from django.contrib.auth import get_user_model
+from rest_framework import status, viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend
 
 from apps.archivos.models import Archivo
 from apps.archivos.validators import validate_uploaded_file
@@ -22,13 +24,22 @@ from apps.hallazgos.services import (
 	reclasificar,
 	rechazar,
 	remover_responsable,
+	ResponsableService,
 )
+
+User = get_user_model()
+
 
 
 class HallazgoViewSet(viewsets.ModelViewSet):
-	queryset = Hallazgo.objects.select_related("creado_por").prefetch_related("responsables", "acciones")
+	queryset = Hallazgo.objects.select_related("creado_por", "sector", "subseccion", "tipo_catalogo").prefetch_related("responsables", "acciones")
 	permission_classes = [IsAuthenticated]
 	parser_classes = [JSONParser, MultiPartParser, FormParser]
+	# Phase 3: Add filters for sector, subseccion, tipo_catalogo
+	filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+	filterset_fields = ['sector', 'subseccion', 'tipo_catalogo', 'estado', 'tipo']
+	search_fields = ['descripcion', 'ubicacion']
+	ordering_fields = ['fecha_creacion', 'estado']
 
 	def create(self, request, *args, **kwargs):
 		serializer = self.get_serializer(data=request.data)
@@ -48,11 +59,17 @@ class HallazgoViewSet(viewsets.ModelViewSet):
 		base = self.queryset
 
 		if getattr(user, "is_admin", False):
-			return base
+			qs = base
+			# T078: allow Admin to filter by cliente_asociado
+			cliente_asociado_id = self.request.query_params.get("cliente_asociado")
+			if cliente_asociado_id:
+				qs = qs.filter(cliente_asociado_id=cliente_asociado_id)
+			return qs
 		if getattr(user, "is_empleado", False):
 			return base.filter(responsables=user).distinct()
 		if getattr(user, "is_cliente", False):
-			return base.filter(creado_por=user, tipo=TipoHallazgo.QUEJA_CLIENTE)
+			# FR-006: Cliente sees QUEJA_CLIENTE where they are the cliente_asociado
+			return base.filter(cliente_asociado=user, tipo=TipoHallazgo.QUEJA_CLIENTE)
 
 		return base.none()
 
@@ -165,4 +182,40 @@ class HallazgoViewSet(viewsets.ModelViewSet):
 			},
 			status=status.HTTP_201_CREATED,
 		)
+
+	# T092: PATCH /hallazgos/{id}/responsables/{user_id}/add/ (T092, admin-only)
+	@action(detail=True, methods=["patch"], url_path="responsables/(?P<user_id>[0-9]+)/add")
+	def add_responsable_detail(self, request, pk=None, user_id=None):
+		"""Add a responsable to a hallazgo (T092, T095)."""
+		hallazgo = self._get_hallazgo()
+		
+		try:
+			user_to_add = User.objects.get(id=user_id)
+		except User.DoesNotExist:
+			raise ValidationError({"user_id": "Usuario no encontrado."})
+		
+		try:
+			result = ResponsableService.add_responsable(hallazgo, request.user, user_to_add)
+		except Exception as exc:
+			self._translate_service_error(exc)
+		
+		return Response(result, status=status.HTTP_200_OK)
+
+	# T093: DELETE /hallazgos/{id}/responsables/{user_id}/remove/ (T093, admin-only)
+	@action(detail=True, methods=["delete"], url_path="responsables/(?P<user_id>[0-9]+)/remove")
+	def remove_responsable_detail(self, request, pk=None, user_id=None):
+		"""Remove a responsable from a hallazgo (T093, T095)."""
+		hallazgo = self._get_hallazgo()
+		
+		try:
+			user_to_remove = User.objects.get(id=user_id)
+		except User.DoesNotExist:
+			raise ValidationError({"user_id": "Usuario no encontrado."})
+		
+		try:
+			result = ResponsableService.remove_responsable(hallazgo, request.user, user_to_remove)
+		except Exception as exc:
+			self._translate_service_error(exc)
+		
+		return Response(result, status=status.HTTP_200_OK)
 

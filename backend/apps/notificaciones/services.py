@@ -1,5 +1,6 @@
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
+from django.contrib.auth import get_user_model
 from django.db import transaction
 
 from apps.notificaciones.models import Notificacion
@@ -108,3 +109,26 @@ def notificar_responsable_removido(responsable, hallazgo):
         ),
         hallazgo=hallazgo,
     )
+
+
+def notificar_admins_nuevo_hallazgo(hallazgo, exclude_user_id=None):
+    """
+    Notify all active Admins about a new hallazgo.
+
+    exclude_user_id: pk of the admin who created the hallazgo — they already
+    know about it so they should NOT receive the notification (spec 002 FR-007).
+    """
+    User = get_user_model()
+    admins = User.objects.filter(tipo="ADMIN", is_active=True)
+    if exclude_user_id is not None:
+        admins = admins.exclude(pk=exclude_user_id)
+    for admin in admins:
+        crear_y_enviar(
+            destinatario=admin,
+            titulo="Nuevo hallazgo registrado",
+            mensaje=(
+                f"Se registro un hallazgo de tipo {hallazgo.tipo} "
+                f"con estado {hallazgo.estado}."
+            ),
+            hallazgo=hallazgo,
+        )

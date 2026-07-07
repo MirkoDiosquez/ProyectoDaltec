@@ -6,9 +6,14 @@ and automatic message persistence to the database.
 
 Refs: T049, contracts/websocket.md, FR-012
 """
+import asyncio
+import logging
+
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.apps import apps
+
+logger = logging.getLogger(__name__)
 
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
@@ -22,9 +27,13 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
     Event types:
     - chat.send (client → server): {"type": "chat.send", "contenido": "..."}
+    - pong      (client → server): {"type": "pong"}  (keepalive response)
     - chat.message (server → client): Broadcast of new message
+    - ping         (server → client): {"type": "ping"} keepalive every 25s
     - chat.participant_removed: Sent when user is removed as responsable
     """
+
+    PING_INTERVAL = 25  # seconds — must be < Nginx proxy_read_timeout
 
     async def connect(self):
         """
@@ -53,36 +62,62 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
 
+        # Start keepalive ping task to prevent idle timeout through Nginx/Redis
+        self._ping_task = asyncio.ensure_future(self._ping_loop())
+
     async def disconnect(self, close_code):
-        """Remove from group on disconnect."""
+        """Cancel ping task and remove from group on disconnect."""
+        if hasattr(self, "_ping_task"):
+            self._ping_task.cancel()
         if hasattr(self, "group_name"):
-            await self.channel_layer.group_discard(self.group_name, self.channel_name)
+            try:
+                await self.channel_layer.group_discard(self.group_name, self.channel_name)
+            except Exception:
+                pass
 
     async def receive_json(self, content, **kwargs):
         """
         Handle incoming messages from client.
 
-        Only chat.send type is handled:
-        - Validate contenido is not empty
-        - Validate user is still a participant
-        - Save message to database
-        - Broadcast to group
+        - chat.send: save and broadcast message
+        - pong:      keepalive acknowledgement (no action needed)
         """
         message_type = content.get("type")
 
         if message_type == "chat.send":
-            await self._handle_chat_send(content)
+            try:
+                await self._handle_chat_send(content)
+            except Exception as exc:
+                logger.exception("[ChatConsumer] Unhandled error in chat.send: %s", exc)
+                await self.send_json({"type": "error", "detail": "Error interno al procesar el mensaje."})
+        elif message_type == "pong":
+            pass  # Client alive — no action needed
+
+    async def _ping_loop(self):
+        """Send periodic pings to keep connection alive through Nginx and Redis."""
+        while True:
+            try:
+                await asyncio.sleep(self.PING_INTERVAL)
+                await self.send_json({"type": "ping"})
+            except asyncio.CancelledError:
+                break
+            except Exception:
+                # Connection is already dead — stop the loop
+                break
 
     async def _handle_chat_send(self, content):
         """
-        Handle chat.send message: save to DB and broadcast.
+        Handle chat.send message: save to DB and broadcast (T084, T088).
 
         Validates contenido is not empty and user is still a participant.
+        Accepts optional archivos_ids list for file attachments.
         """
         contenido = content.get("contenido", "").strip()
-        if not contenido:
+        archivos_ids = content.get("archivos_ids", [])
+        
+        if not contenido and not archivos_ids:
             await self.send_json(
-                {"type": "error", "detail": "Message content cannot be empty"}
+                {"type": "error", "detail": "Message content and/or files required"}
             )
             return
 
@@ -97,14 +132,14 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             return
 
         # Save message to database
-        mensaje = await self._save_mensaje(contenido, user)
+        mensaje = await self._save_mensaje(contenido, user, archivos_ids)
         if not mensaje:
             await self.send_json(
                 {"type": "error", "detail": "Failed to save message"}
             )
             return
 
-        # Broadcast to group
+        # Broadcast to group (T088)
         await self.channel_layer.group_send(
             self.group_name,
             {
@@ -117,6 +152,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                         "id": mensaje["autor"]["id"],
                         "nombre": mensaje["autor"]["nombre"],
                     },
+                    "archivos": mensaje.get("archivos", []),
                 },
             },
         )
@@ -164,21 +200,70 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             return False
 
     @database_sync_to_async
-    def _save_mensaje(self, contenido, user):
+    def _save_mensaje(self, contenido, user, archivos_ids=None):
         """
-        Create and save a Mensaje in the database.
+        Create and save a Mensaje in the database with optional file attachments (T084, T088).
+        Links existing Archivo records to the mensaje.
+        
+        T122: If message contains #urgente, dispatch urgent notifications to all chat participants.
+        
         Returns serialized mensaje data or None on error.
         """
         Chat = apps.get_model("chat", "Chat")
         Mensaje = apps.get_model("chat", "Mensaje")
+        Archivo = apps.get_model("archivos", "Archivo")
+        Notificacion = apps.get_model("notificaciones", "Notificacion")
 
         try:
             chat = Chat.objects.get(hallazgo_id=self.hallazgo_id)
+            
+            # Check for #urgente flag (case-insensitive)
+            tiene_urgente = "#urgente" in contenido.lower()
+            
             mensaje = Mensaje.objects.create(
                 chat=chat,
                 autor=user,
                 contenido=contenido,
+                tiene_urgente=tiene_urgente,  # T122: Set urgente flag
             )
+            
+            # Link archivos to mensaje if provided
+            if archivos_ids:
+                # Validate all archivos exist and belong to user
+                archivos = Archivo.objects.filter(
+                    id__in=archivos_ids,
+                    cargado_por=user,
+                    mensaje__isnull=True,  # Not already attached to a message
+                )
+                # Update archivos to link to this mensaje
+                archivos.update(mensaje=mensaje)
+            
+            # Serialize archivos for response
+            archivos_data = [
+                {
+                    "id": a.id,
+                    "nombre": a.nombre,
+                    "tipo_mime": a.tipo_mime,
+                    "tamanio": a.tamanio,
+                    "preview_url": f"/api/v1/archivos/{a.id}/preview/",
+                    "download_url": f"/api/v1/archivos/{a.id}/download/",
+                }
+                for a in mensaje.archivos.all()
+            ]
+            
+            # T122: Send urgent notifications to all participants if #urgente
+            if tiene_urgente:
+                participants = chat.participantes.all()
+                for participant in participants:
+                    if participant.id != user.id:  # Don't notify the sender
+                        Notificacion.objects.create(
+                            titulo="Mensaje urgente en chat",
+                            mensaje=f"Mensaje urgente de {user.nombre} {user.apellido}: {contenido[:100]}",
+                            tipo="mensaje_urgente",
+                            destinatario=participant,
+                            hallazgo_relacionado=chat.hallazgo,
+                        )
+            
             return {
                 "id": mensaje.id,
                 "contenido": mensaje.contenido,
@@ -187,6 +272,10 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                     "id": user.id,
                     "nombre": user.nombre,
                 },
+                "archivos": archivos_data,
+                "tiene_urgente": tiene_urgente,  # T122: Include in response
             }
-        except Exception:
+        except Exception as exc:
+            logger.exception("Error saving mensaje: %s", exc)
             return None
+

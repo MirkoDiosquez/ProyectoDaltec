@@ -2,14 +2,14 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
-import { NotificacionProvider } from "./context/NotificacionContext.jsx";
+import { CatalogoProvider } from "./context/CatalogoContext.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <AuthProvider>
-      <NotificacionProvider>
+      <CatalogoProvider>
         <App />
-      </NotificacionProvider>
+      </CatalogoProvider>
     </AuthProvider>
   </React.StrictMode>
 );
