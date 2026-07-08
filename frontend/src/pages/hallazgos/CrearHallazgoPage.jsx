@@ -267,11 +267,13 @@ export default function CrearHallazgoPage() {
           <Link
             to="/hallazgos"
             style={{
-              border: "1px solid #cbd5e1",
+              border: "1.5px solid #1e3a8a",
               borderRadius: 8,
               padding: "0.55rem 0.95rem",
               textDecoration: "none",
-              color: "#0f172a",
+              color: "#1e3a8a",
+              fontWeight: 600,
+              fontSize: "0.9rem",
             }}
           >
             Cancelar
@@ -279,15 +281,7 @@ export default function CrearHallazgoPage() {
           <button
             type="submit"
             disabled={loading}
-            style={{
-              border: "none",
-              borderRadius: 8,
-              padding: "0.55rem 0.95rem",
-              background: "#0f172a",
-              color: "#fff",
-              cursor: loading ? "not-allowed" : "pointer",
-              opacity: loading ? 0.7 : 1,
-            }}
+            style={{ padding: "0.55rem 0.95rem", opacity: loading ? 0.6 : 1 }}
           >
             {loading ? "Guardando..." : "Crear Hallazgo"}
           </button>

@@ -32,7 +32,7 @@ User = get_user_model()
 
 
 class HallazgoViewSet(viewsets.ModelViewSet):
-	queryset = Hallazgo.objects.select_related("creado_por", "sector", "subseccion", "tipo_catalogo").prefetch_related("responsables", "acciones")
+	queryset = Hallazgo.objects.select_related("creado_por", "sector", "subseccion", "tipo_catalogo").prefetch_related("responsables", "acciones", "archivos")
 	permission_classes = [IsAuthenticated]
 	parser_classes = [JSONParser, MultiPartParser, FormParser]
 	# Phase 3: Add filters for sector, subseccion, tipo_catalogo
@@ -168,10 +168,8 @@ class HallazgoViewSet(viewsets.ModelViewSet):
 			tipo_mime=getattr(archivo, "content_type", "application/octet-stream"),
 			tamanio=archivo.size,
 			cargado_por=request.user,
+			hallazgo=hallazgo,
 		)
-
-		if hasattr(hallazgo, "archivos"):
-			hallazgo.archivos.add(created)
 
 		return Response(
 			{

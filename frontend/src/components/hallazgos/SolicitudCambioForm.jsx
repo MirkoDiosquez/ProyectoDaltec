@@ -155,14 +155,7 @@ export default function SolicitudCambioForm({
       <button
         type="submit"
         disabled={isLoading}
-        style={{
-          padding: '0.5rem 1rem',
-          background: isLoading ? '#ccc' : '#0066cc',
-          color: '#fff',
-          border: 'none',
-          borderRadius: 4,
-          cursor: isLoading ? 'not-allowed' : 'pointer',
-        }}
+        style={{ padding: '0.5rem 1rem', opacity: isLoading ? 0.6 : 1 }}
       >
         {isLoading ? 'Enviando...' : 'Enviar Solicitud'}
       </button>

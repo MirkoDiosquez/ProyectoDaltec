@@ -56,15 +56,13 @@ export default function MainNavbar({ notificationCount = 0 }) {
         {/* Brand / Logo */}
         <Link
           to="/"
-          style={{
-            color: "#fff",
-            textDecoration: "none",
-            fontWeight: 700,
-            fontSize: "1.1rem",
-            letterSpacing: "0.5px",
-          }}
+          style={{ display: "flex", alignItems: "center", textDecoration: "none" }}
         >
-          Daltec
+          <img
+            src="https://daltectools.com/wp-content/uploads/2024/09/Daltec-logo-azul-y-blanco-200px-02.png"
+            alt="Daltec"
+            style={{ height: 36, width: "auto", display: "block" }}
+          />
         </Link>
 
         {/* Main Menu */}
@@ -202,25 +200,7 @@ export default function MainNavbar({ notificationCount = 0 }) {
           </span>
           <button
             onClick={handleLogout}
-            style={{
-              background: "#1e293b",
-              color: "#e2e8f0",
-              border: "1px solid #334155",
-              borderRadius: 6,
-              padding: "0.4rem 0.75rem",
-              fontSize: "0.85rem",
-              fontWeight: 500,
-              cursor: "pointer",
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = "#334155";
-              e.target.style.borderColor = "#475569";
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = "#1e293b";
-              e.target.style.borderColor = "#334155";
-            }}
+            style={{ padding: "0.4rem 0.85rem", fontSize: "0.85rem" }}
           >
             Cerrar Sesión
           </button>

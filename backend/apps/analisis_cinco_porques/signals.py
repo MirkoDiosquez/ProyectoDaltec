@@ -27,7 +27,7 @@ def create_approval_pending_notification(sender, instance, created, **kwargs):
         from django.contrib.auth import get_user_model
         User = get_user_model()
         
-        admin_users = User.objects.filter(is_admin=True, is_active=True)
+        admin_users = User.objects.filter(tipo="ADMIN", is_active=True)
         
         for admin_user in admin_users:
             Notificacion.objects.create(

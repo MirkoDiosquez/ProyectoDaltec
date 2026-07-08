@@ -22,6 +22,7 @@ import {
 import { useAuth } from "../../context/AuthContext.jsx";
 import SolicitudCierreAdminView from "../acciones/SolicitudCierreAdminView.jsx";
 import FilePreview from "../../components/FilePreview.jsx";
+import FileUpload from "../../components/FileUpload.jsx";
 import ResponsableList from "../../components/ResponsableList.jsx";
 import SolicitudCambioForm from "../../components/hallazgos/SolicitudCambioForm.jsx";
 import SolicitudList from "../../components/hallazgos/SolicitudList.jsx";
@@ -162,7 +163,7 @@ export default function HallazgoDetailPage() {
   };
 
   const onUploadArchivo = async (event) => {
-    event.preventDefault();
+    if (event?.preventDefault) event.preventDefault();
     if (!archivo) return;
 
     setActionLoading(true);
@@ -287,8 +288,8 @@ export default function HallazgoDetailPage() {
             ID #{hallazgo.id} · {tipoLabel[hallazgo.tipo] || hallazgo.tipo}
           </p>
         </div>
-        <Link to="/hallazgos" style={{ textDecoration: "none", color: "#0f172a", fontWeight: 600 }}>
-          Volver al listado
+        <Link to="/hallazgos" style={{ textDecoration: "none", color: "#1e3a8a", fontWeight: 600, fontSize: "14px" }}>
+          ← Volver al listado
         </Link>
       </header>
 
@@ -300,14 +301,17 @@ export default function HallazgoDetailPage() {
           style={{
             textDecoration: "none",
             fontWeight: 600,
-            display: "inline-block",
-            padding: "8px 12px",
-            backgroundColor: "#3b82f6",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "8px 16px",
+            backgroundColor: "#1e3a8a",
             color: "white",
-            borderRadius: "4px",
+            borderRadius: "8px",
+            fontSize: "14px",
           }}
         >
-          💬 Open Chat
+          💬 Chat del Hallazgo
         </Link>
       </section>
 
@@ -380,7 +384,12 @@ export default function HallazgoDetailPage() {
             <button type="button" disabled={actionLoading} onClick={() => doAdminAction(aprobar)}>
               Aprobar
             </button>
-            <button type="button" disabled={actionLoading} onClick={() => doAdminAction(rechazar)}>
+            <button
+              type="button"
+              disabled={actionLoading}
+              onClick={() => doAdminAction(rechazar)}
+              style={{ background: "#dc2626" }}
+            >
               Rechazar
             </button>
           </div>
@@ -499,7 +508,12 @@ export default function HallazgoDetailPage() {
                     <button type="button" disabled={actionLoading} onClick={() => onApprovePorque(p.id)}>
                       Aprobar
                     </button>
-                    <button type="button" disabled={actionLoading} onClick={() => onRejectPorque(p.id)}>
+                    <button
+                      type="button"
+                      disabled={actionLoading}
+                      onClick={() => onRejectPorque(p.id)}
+                      style={{ background: "#dc2626" }}
+                    >
                       Rechazar
                     </button>
                   </div>
@@ -514,17 +528,24 @@ export default function HallazgoDetailPage() {
 
       <section style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: "1rem", background: "#fff", display: "grid", gap: 10 }}>
         <h2 style={{ margin: 0 }}>Archivos</h2>
-        <form onSubmit={onUploadArchivo} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <input
-            type="file"
-            onChange={(event) => setArchivo(event.target.files?.[0] || null)}
-            disabled={actionLoading}
-            required
-          />
-          <button type="submit" disabled={actionLoading || !archivo}>
-            Subir Archivo
-          </button>
-        </form>
+        <FileUpload
+          deferred
+          onFileSelect={(file) => setArchivo(file)}
+          onError={(msg) => setError(msg)}
+          maxSizeMB={1024}
+        />
+        {archivo && (
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <button
+              type="button"
+              disabled={actionLoading}
+              onClick={async (e) => { e.preventDefault(); await onUploadArchivo(e); }}
+              style={{ padding: "0.5rem 1.1rem" }}
+            >
+              {actionLoading ? "Subiendo…" : "Subir Archivo"}
+            </button>
+          </div>
+        )}
       </section>
 
       {isAdmin && <SolicitudCierreAdminView hallazgoId={hallazgo.id} onChanged={refreshDetail} />}

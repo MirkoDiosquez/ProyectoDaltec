@@ -44,7 +44,7 @@ def crear_notificacion_cambio_responsable_pendiente(sender, instance, created, *
         return
     
     # Get all admin users
-    admins = User.objects.filter(is_admin=True)
+    admins = User.objects.filter(tipo="ADMIN")
     
     for admin in admins:
         titulo = f"Solicitud de cambio de responsable pendiente - Hallazgo #{instance.hallazgo_id}"

@@ -99,7 +99,7 @@ class AnalisisCincoPorquesService:
         porque.save()
         
         # Create notification for hallazgo creator/responsables
-        _notify_approval(porque, approved=True)
+      #  _notify_approval(porque, approved=True)
         
         return porque
 

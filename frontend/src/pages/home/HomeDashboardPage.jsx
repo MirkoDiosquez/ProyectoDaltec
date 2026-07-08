@@ -96,12 +96,12 @@ export default function HomeDashboardPage() {
             style={{
               marginTop: "1rem",
               display: "inline-block",
-              color: "#0f172a",
+              color: "#1e3a8a",
               textDecoration: "none",
               fontSize: "0.9rem",
-              fontWeight: 500,
+              fontWeight: 600,
               padding: "0.5rem 0.75rem",
-              border: "1px solid #cbd5e1",
+              border: "1.5px solid #1e3a8a",
               borderRadius: 6,
               cursor: "pointer",
             }}
@@ -135,85 +135,76 @@ export default function HomeDashboardPage() {
           <div style={{ marginTop: "1rem", display: "grid", gap: "0.75rem" }}>
             {user?.tipo === "ADMIN" && (
               <>
-                <Link
-                  to="/hallazgos/crear"
-                  style={{
-                    padding: "0.65rem 1rem",
-                    background: "#0f172a",
-                    color: "#fff",
-                    textDecoration: "none",
-                    borderRadius: 6,
-                    fontSize: "0.9rem",
-                    fontWeight: 500,
-                    textAlign: "center",
-                    cursor: "pointer",
-                    transition: "opacity 0.2s",
-                  }}
-                  onMouseEnter={(e) => (e.target.style.opacity = "0.85")}
-                  onMouseLeave={(e) => (e.target.style.opacity = "1")}
-                >
-                  Crear Hallazgo
-                </Link>
+            <Link
+              to="/hallazgos/crear"
+              style={{
+                padding: "0.65rem 1rem",
+                background: "#1e3a8a",
+                color: "#fff",
+                textDecoration: "none",
+                borderRadius: 8,
+                fontSize: "0.9rem",
+                fontWeight: 600,
+                textAlign: "center",
+                cursor: "pointer",
+                transition: "opacity 0.2s",
+              }}
+              onMouseEnter={(e) => (e.target.style.opacity = "0.85")}
+              onMouseLeave={(e) => (e.target.style.opacity = "1")}
+            >
+              Crear Hallazgo
+            </Link>
                 <Link
                   to="/usuarios/crear"
                   style={{
                     padding: "0.65rem 1rem",
-                    border: "1px solid #cbd5e1",
-                    background: "#fff",
-                    color: "#0f172a",
+                    border: "1.5px solid #1e3a8a",
+                    background: "transparent",
+                    color: "#1e3a8a",
                     textDecoration: "none",
-                    borderRadius: 6,
+                    borderRadius: 8,
                     fontSize: "0.9rem",
-                    fontWeight: 500,
+                    fontWeight: 600,
                     textAlign: "center",
                     cursor: "pointer",
-                    transition: "opacity 0.2s",
                   }}
-                  onMouseEnter={(e) => (e.target.style.opacity = "0.75")}
-                  onMouseLeave={(e) => (e.target.style.opacity = "1")}
                 >
                   Crear Usuario
                 </Link>
               </>
             )}
             {user?.tipo === "EMPLEADO" && (
-              <Link
-                to="/hallazgos/crear"
-                style={{
-                  padding: "0.65rem 1rem",
-                  background: "#0f172a",
-                  color: "#fff",
-                  textDecoration: "none",
-                  borderRadius: 6,
-                  fontSize: "0.9rem",
-                  fontWeight: 500,
-                  textAlign: "center",
-                  cursor: "pointer",
-                  transition: "opacity 0.2s",
-                }}
-                onMouseEnter={(e) => (e.target.style.opacity = "0.85")}
-                onMouseLeave={(e) => (e.target.style.opacity = "1")}
-              >
-                Registrar Hallazgo
-              </Link>
+            <Link
+              to="/hallazgos/crear"
+              style={{
+                padding: "0.65rem 1rem",
+                background: "#1e3a8a",
+                color: "#fff",
+                textDecoration: "none",
+                borderRadius: 8,
+                fontSize: "0.9rem",
+                fontWeight: 600,
+                textAlign: "center",
+                cursor: "pointer",
+              }}
+            >
+              Registrar Hallazgo
+            </Link>
             )}
             {user?.tipo === "CLIENTE" && (
               <Link
                 to="/hallazgos/queja"
                 style={{
                   padding: "0.65rem 1rem",
-                  background: "#0f172a",
+                  background: "#1e3a8a",
                   color: "#fff",
                   textDecoration: "none",
-                  borderRadius: 6,
+                  borderRadius: 8,
                   fontSize: "0.9rem",
-                  fontWeight: 500,
+                  fontWeight: 600,
                   textAlign: "center",
                   cursor: "pointer",
-                  transition: "opacity 0.2s",
                 }}
-                onMouseEnter={(e) => (e.target.style.opacity = "0.85")}
-                onMouseLeave={(e) => (e.target.style.opacity = "1")}
               >
                 Registrar Queja
               </Link>
@@ -261,12 +252,12 @@ export default function HomeDashboardPage() {
             style={{
               marginTop: "1rem",
               display: "inline-block",
-              color: "#0f172a",
+              color: "#1e3a8a",
               textDecoration: "none",
               fontSize: "0.9rem",
-              fontWeight: 500,
+              fontWeight: 600,
               padding: "0.5rem 0.75rem",
-              border: "1px solid #cbd5e1",
+              border: "1.5px solid #1e3a8a",
               borderRadius: 6,
               cursor: "pointer",
             }}

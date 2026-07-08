@@ -68,12 +68,6 @@ export default class ErrorBoundary extends Component {
             style={{
               marginTop: '1rem',
               padding: '0.5rem 1rem',
-              background: '#dc2626',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 4,
-              cursor: 'pointer',
-              fontWeight: 600,
             }}
           >
             Recargar Página

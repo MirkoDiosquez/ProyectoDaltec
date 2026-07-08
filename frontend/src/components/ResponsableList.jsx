@@ -147,13 +147,9 @@ export default function ResponsableList({
                       disabled={isProcessing}
                       style={{
                         padding: "6px 12px",
-                        backgroundColor: "#ef4444",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: isProcessing ? "default" : "pointer",
-                        opacity: isProcessing ? 0.6 : 1,
+                        background: "#dc2626",
                         fontSize: "12px",
+                        opacity: isProcessing ? 0.6 : 1,
                       }}
                     >
                       {isProcessing ? "Removiendo..." : "Remover"}
@@ -164,13 +160,8 @@ export default function ResponsableList({
                       disabled={isProcessing}
                       style={{
                         padding: "6px 12px",
-                        backgroundColor: "#10b981",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: isProcessing ? "default" : "pointer",
-                        opacity: isProcessing ? 0.6 : 1,
                         fontSize: "12px",
+                        opacity: isProcessing ? 0.6 : 1,
                       }}
                     >
                       {isProcessing ? "Agregando..." : "Agregar"}

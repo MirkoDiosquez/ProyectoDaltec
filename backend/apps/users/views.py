@@ -41,7 +41,7 @@ class UserViewSet(
     queryset = User.objects.all().order_by("apellido", "nombre", "dni")
 
     def get_permissions(self):
-        if self.action == "me":
+        if self.action in ("me", "list"):
             return [IsAuthenticated()]
         return [IsAdminUserTipo()]
 

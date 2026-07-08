@@ -7,6 +7,8 @@ import {
   updateAccion,
   uploadArchivoAccion,
 } from "../../api/acciones.js";
+import FileUpload from "../../components/FileUpload.jsx";
+import FilePreview from "../../components/FilePreview.jsx";
 
 const estadoLabel = {
   PENDIENTE: "Pendiente",
@@ -82,8 +84,7 @@ export default function AccionDetailPage() {
     }
   };
 
-  const onUpload = async (event) => {
-    event.preventDefault();
+  const onUpload = async () => {
     if (!hallazgoId || !archivo) return;
     setSaving(true);
     setError("");
@@ -114,77 +115,219 @@ export default function AccionDetailPage() {
   };
 
   if (loading) {
-    return <main style={{ padding: "2rem" }}>Cargando accion...</main>;
+    return (
+      <main style={{ padding: "2rem", fontFamily: "inherit", color: "#64748b" }}>
+        Cargando accion...
+      </main>
+    );
   }
 
   if (!accion) {
-    return <main style={{ padding: "2rem" }}>Accion no encontrada.</main>;
+    return (
+      <main style={{ padding: "2rem", fontFamily: "inherit", color: "#64748b" }}>
+        Accion no encontrada.
+      </main>
+    );
   }
 
+  const cardStyle = {
+    border: "1px solid #e2e8f0",
+    borderRadius: "14px",
+    padding: "1.25rem 1.5rem",
+    background: "#ffffff",
+    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+    display: "grid",
+    gap: "12px",
+  };
+
+  const labelStyle = {
+    display: "flex",
+    flexDirection: "column",
+    gap: "4px",
+    fontSize: "13px",
+    fontWeight: "600",
+    color: "#475569",
+  };
+
+  const inputStyle = {
+    padding: "8px 10px",
+    borderRadius: "8px",
+    border: "1px solid #cbd5e1",
+    fontSize: "14px",
+    color: "#1e293b",
+    background: "#f8fafc",
+    fontFamily: "inherit",
+  };
+
+  const textareaStyle = {
+    ...inputStyle,
+    resize: "vertical",
+    width: "100%",
+  };
+
+  const btnPrimary = {
+    padding: "9px 20px",
+    borderRadius: "8px",
+    border: "none",
+    background: "#1e3a8a",
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: "14px",
+    cursor: "pointer",
+    fontFamily: "inherit",
+  };
+
+  const btnSecondary = {
+    padding: "9px 20px",
+    borderRadius: "8px",
+    border: "1.5px solid #1e3a8a",
+    background: "transparent",
+    color: "#1e3a8a",
+    fontWeight: "600",
+    fontSize: "14px",
+    cursor: "pointer",
+    fontFamily: "inherit",
+  };
+
   return (
-    <main style={{ maxWidth: 860, margin: "0 auto", padding: "2rem 1rem", display: "grid", gap: 14 }}>
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+    <main style={{ maxWidth: 860, margin: "0 auto", padding: "2rem 1rem", display: "grid", gap: 16 }}>
+      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
-          <h1 style={{ margin: 0 }}>Accion {tipoLabel[accion.tipo] || accion.tipo}</h1>
-          <p style={{ marginTop: 6, color: "#475569" }}>Estado: {estadoLabel[accion.estado] || accion.estado}</p>
+          <h1 style={{ margin: 0, fontSize: "1.35rem", fontWeight: 700, color: "#0f172a" }}>
+            Acción {tipoLabel[accion.tipo] || accion.tipo}
+          </h1>
+          <p style={{ marginTop: 4, color: "#64748b", fontSize: "14px" }}>
+            Estado:{" "}
+            <span style={{ fontWeight: 600, color: "#1e293b" }}>
+              {estadoLabel[accion.estado] || accion.estado}
+            </span>
+          </p>
         </div>
         {hallazgoId && (
-          <Link to={`/hallazgos/${hallazgoId}`} style={{ fontWeight: 600, textDecoration: "none", color: "#0f172a" }}>
-            Volver al hallazgo
+          <Link
+            to={`/hallazgos/${hallazgoId}`}
+            style={{
+              fontWeight: 600,
+              textDecoration: "none",
+              color: "#1e3a8a",
+              fontSize: "14px",
+              padding: "8px 16px",
+              borderRadius: "8px",
+              border: "1.5px solid #1e3a8a",
+              background: "transparent",
+            }}
+          >
+            ← Volver al hallazgo
           </Link>
         )}
       </header>
 
-      {error && <p style={{ margin: 0, color: "#b91c1c", fontWeight: 700 }}>{error}</p>}
+      {error && (
+        <p style={{
+          margin: 0,
+          color: "#991b1b",
+          fontWeight: 600,
+          padding: "10px 14px",
+          background: "#fef2f2",
+          borderRadius: "8px",
+          border: "1px solid #fecaca",
+          fontSize: "14px",
+        }}>
+          {error}
+        </p>
+      )}
 
-      <form onSubmit={onGuardar} style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: "1rem", background: "#fff", display: "grid", gap: 10 }}>
-        <h2 style={{ margin: 0 }}>Edicion</h2>
-        <textarea
-          rows={4}
-          value={form.descripcion}
-          onChange={(e) => setForm((p) => ({ ...p, descripcion: e.target.value }))}
-          placeholder="Descripcion de la accion"
-        />
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <input
-            type="date"
-            value={form.fecha_inicio}
-            onChange={(e) => setForm((p) => ({ ...p, fecha_inicio: e.target.value }))}
+      <form onSubmit={onGuardar} style={cardStyle}>
+        <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 700, color: "#0f172a" }}>Edición</h2>
+        <label style={labelStyle}>
+          Descripción
+          <textarea
+            rows={4}
+            value={form.descripcion}
+            onChange={(e) => setForm((p) => ({ ...p, descripcion: e.target.value }))}
+            placeholder="Descripcion de la accion"
+            style={textareaStyle}
           />
-          <input
-            type="date"
-            value={form.fecha_fin}
-            onChange={(e) => setForm((p) => ({ ...p, fecha_fin: e.target.value }))}
-          />
+        </label>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <label style={{ ...labelStyle, flex: 1, minWidth: 160 }}>
+            Fecha inicio
+            <input
+              type="date"
+              value={form.fecha_inicio}
+              onChange={(e) => setForm((p) => ({ ...p, fecha_inicio: e.target.value }))}
+              style={inputStyle}
+            />
+          </label>
+          <label style={{ ...labelStyle, flex: 1, minWidth: 160 }}>
+            Fecha fin
+            <input
+              type="date"
+              value={form.fecha_fin}
+              onChange={(e) => setForm((p) => ({ ...p, fecha_fin: e.target.value }))}
+              style={inputStyle}
+            />
+          </label>
         </div>
-        <button type="submit" disabled={saving}>Guardar cambios</button>
+        <div>
+          <button type="submit" disabled={saving} style={saving ? { ...btnPrimary, opacity: 0.6 } : btnPrimary}>
+            {saving ? "Guardando…" : "Guardar cambios"}
+          </button>
+        </div>
       </form>
 
-      <form onSubmit={onUpload} style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: "1rem", background: "#fff", display: "grid", gap: 10 }}>
-        <h2 style={{ margin: 0 }}>Evidencia</h2>
-        <input type="file" onChange={(e) => setArchivo(e.target.files?.[0] || null)} required />
-        <button type="submit" disabled={saving || !archivo}>Subir archivo</button>
-        {Array.isArray(accion.archivos) && accion.archivos.length > 0 && (
-          <ul style={{ margin: 0, paddingLeft: 18 }}>
-            {accion.archivos.map((a) => (
-              <li key={a.id}>{a.nombre} ({a.tipo_mime})</li>
-            ))}
-          </ul>
-        )}
-      </form>
-
-      <section style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: "1rem", background: "#fff", display: "grid", gap: 10 }}>
-        <h2 style={{ margin: 0 }}>Solicitud de cierre</h2>
-        <textarea
-          rows={3}
-          placeholder="Observacion para el administrador"
-          value={observacion}
-          onChange={(e) => setObservacion(e.target.value)}
-          disabled={saving || !puedeSolicitarCierre}
+      <section style={cardStyle}>
+        <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 700, color: "#0f172a" }}>Evidencia</h2>
+        <FileUpload
+          deferred
+          onFileSelect={(file) => setArchivo(file)}
+          onError={(msg) => setError(msg)}
+          maxSizeMB={1024}
         />
-        <button type="button" onClick={onSolicitarCierre} disabled={saving || !puedeSolicitarCierre}>
-          Solicitar cierre
-        </button>
+        {archivo && (
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={onUpload}
+              style={saving ? { ...btnPrimary, opacity: 0.6 } : btnPrimary}
+            >
+              {saving ? "Subiendo…" : "Subir archivo"}
+            </button>
+          </div>
+        )}
+        {Array.isArray(accion.archivos) && accion.archivos.length > 0 && (
+          <div style={{ display: "grid", gap: 8, marginTop: 4 }}>
+            {accion.archivos.map((a) => (
+              <FilePreview key={a.id} archivo={a} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section style={cardStyle}>
+        <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 700, color: "#0f172a" }}>Solicitud de cierre</h2>
+        <label style={labelStyle}>
+          Observación para el administrador
+          <textarea
+            rows={3}
+            placeholder="Observacion para el administrador"
+            value={observacion}
+            onChange={(e) => setObservacion(e.target.value)}
+            disabled={saving || !puedeSolicitarCierre}
+            style={{ ...textareaStyle, opacity: puedeSolicitarCierre ? 1 : 0.55 }}
+          />
+        </label>
+        <div>
+          <button
+            type="button"
+            onClick={onSolicitarCierre}
+            disabled={saving || !puedeSolicitarCierre}
+            style={saving || !puedeSolicitarCierre ? { ...btnSecondary, opacity: 0.55 } : btnSecondary}
+          >
+            Solicitar cierre
+          </button>
+        </div>
       </section>
     </main>
   );

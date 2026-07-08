@@ -74,6 +74,8 @@ class HallazgoSerializer(serializers.ModelSerializer):
 	contacto_externo = ContactoExternoSerializer(read_only=True)
 	# Phase 5: Include porques (read-only, nested list)
 	porques = serializers.SerializerMethodField()
+	# Phase 6: Include attached files
+	archivos = serializers.SerializerMethodField()
 
 	class Meta:
 		model = Hallazgo
@@ -96,6 +98,8 @@ class HallazgoSerializer(serializers.ModelSerializer):
 			"contacto_externo",
 			# Phase 5 fields
 			"porques",
+			# Phase 6 fields
+			"archivos",
 		]
 		read_only_fields = fields
 	
@@ -104,6 +108,18 @@ class HallazgoSerializer(serializers.ModelSerializer):
 		from apps.analisis_cinco_porques.serializers import AnalisisCincoPorquesSerializer
 		porques = obj.porques.all().order_by('-created_at')
 		return AnalisisCincoPorquesSerializer(porques, many=True).data
+
+	def get_archivos(self, obj):
+		"""Return list of files attached to this hallazgo (Phase 6)."""
+		return [
+			{
+				"id": a.id,
+				"nombre": a.nombre,
+				"tipo_mime": a.tipo_mime,
+				"tamanio": a.tamanio,
+			}
+			for a in obj.archivos.all().order_by("fecha_carga")
+		]
 
 	def get_creado_por(self, obj):
 		return {

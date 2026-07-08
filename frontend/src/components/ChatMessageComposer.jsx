@@ -85,13 +85,14 @@ export default function ChatMessageComposer({
       onSubmit={handleSendMessage}
       ref={composerRef}
       style={{
-        borderTop: "1px solid #d1d5db",
-        paddingTop: "15px",
-        marginTop: "15px",
+        borderTop: "1px solid #e2e8f0",
+        paddingTop: "14px",
+        display: "grid",
+        gap: "10px",
       }}
     >
       {/* File Upload Zone */}
-      <div style={{ marginBottom: "12px" }}>
+      <div>
         <FileUpload
           onFileUpload={handleFileUpload}
           onError={handleFileError}
@@ -103,15 +104,14 @@ export default function ChatMessageComposer({
       {uploadedFiles.length > 0 && (
         <div
           style={{
-            marginBottom: "12px",
-            padding: "10px",
-            backgroundColor: "#f3f4f6",
-            borderRadius: "4px",
-            border: "1px solid #e5e7eb",
+            padding: "10px 12px",
+            backgroundColor: "#f0f9ff",
+            borderRadius: "10px",
+            border: "1px solid #bae6fd",
           }}
         >
-          <div style={{ fontSize: "12px", fontWeight: "500", marginBottom: "8px" }}>
-            Archivos adjuntos ({uploadedFiles.length}):
+          <div style={{ fontSize: "11px", fontWeight: "700", color: "#0369a1", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            Archivos adjuntos ({uploadedFiles.length})
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
             {uploadedFiles.map((file) => (
@@ -121,11 +121,12 @@ export default function ChatMessageComposer({
                   display: "flex",
                   alignItems: "center",
                   gap: "6px",
-                  padding: "6px 10px",
-                  backgroundColor: "white",
-                  borderRadius: "4px",
-                  border: "1px solid #d1d5db",
-                  fontSize: "12px",
+                  padding: "5px 10px",
+                  backgroundColor: "#ffffff",
+                  borderRadius: "8px",
+                  border: "1px solid #bae6fd",
+                  fontSize: "13px",
+                  color: "#0c4a6e",
                 }}
               >
                 <span>{file.nombre}</span>
@@ -139,6 +140,8 @@ export default function ChatMessageComposer({
                     color: "#ef4444",
                     cursor: "pointer",
                     fontSize: "14px",
+                    padding: 0,
+                    lineHeight: 1,
                   }}
                   title="Eliminar archivo"
                 >
@@ -151,38 +154,41 @@ export default function ChatMessageComposer({
       )}
 
       {/* Message Input */}
-      <div style={{ display: "flex", gap: "10px" }}>
+      <div style={{ display: "flex", gap: "10px", alignItems: "flex-end" }}>
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder={disabled ? "Sin permisos para escribir" : "Escribí un mensaje..."}
+          placeholder={disabled ? "Sin permisos para escribir" : "Escribí un mensaje…"}
           disabled={disabled || sending}
+          rows={2}
           style={{
             flex: 1,
-            padding: "10px",
-            border: "1px solid #d1d5db",
-            borderRadius: "4px",
-            fontFamily: "monospace",
+            padding: "10px 12px",
+            border: "1px solid #cbd5e1",
+            borderRadius: "10px",
+            fontFamily: "inherit",
             fontSize: "14px",
-            minHeight: "50px",
             resize: "vertical",
+            background: disabled ? "#f1f5f9" : "#ffffff",
+            color: "#1e293b",
             opacity: disabled || sending ? 0.6 : 1,
+            outline: "none",
           }}
         />
         <button
           type="submit"
           disabled={disabled || sending || (!content.trim() && uploadedFiles.length === 0)}
           style={{
-            padding: "10px 20px",
-            backgroundColor: "#0f172a",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
+            padding: "10px 22px",
+            borderRadius: "10px",
+            fontWeight: 700,
+            fontSize: "14px",
             cursor: sending ? "default" : "pointer",
-            opacity: disabled || sending || (!content.trim() && uploadedFiles.length === 0) ? 0.5 : 1,
+            opacity: disabled || sending || (!content.trim() && uploadedFiles.length === 0) ? 0.45 : 1,
+            whiteSpace: "nowrap",
           }}
         >
-          {sending ? "Enviando..." : "Enviar"}
+          {sending ? "Enviando…" : "Enviar"}
         </button>
       </div>
     </form>

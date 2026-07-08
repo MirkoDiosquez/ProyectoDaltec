@@ -133,12 +133,7 @@ export default function EmployeeNotificationPanel({
                   <button
                     onClick={() => onNotificationRead?.(notif.id)}
                     style={{
-                      padding: '0.5rem 1rem',
-                      background: config.color,
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 4,
-                      cursor: 'pointer',
+                      padding: '0.4rem 0.85rem',
                       fontSize: '0.8rem',
                       whiteSpace: 'nowrap',
                     }}

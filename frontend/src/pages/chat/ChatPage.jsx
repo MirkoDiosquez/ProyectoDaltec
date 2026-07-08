@@ -137,39 +137,59 @@ export default function ChatPage() {
 
   // Render
   return (
-    <div style={{ padding: "20px" }}>
+    <div style={{ maxWidth: 780, margin: "0 auto", padding: "24px 16px", display: "grid", gap: 16 }}>
       {/* Header */}
-      <div style={{ marginBottom: "20px" }}>
+      <header style={{ display: "flex", alignItems: "center", gap: 16 }}>
         <button
           onClick={() => navigate(`/hallazgos/${hallazgoId}`)}
           style={{
-            padding: "8px 12px",
-            backgroundColor: "#0f172a",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
+            padding: "8px 16px",
+            borderRadius: "8px",
             cursor: "pointer",
-            marginBottom: "10px",
+            fontWeight: 600,
+            fontSize: "13px",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
           }}
         >
-          ← Back to Hallazgo
+          ← Volver al hallazgo
         </button>
-        <h1>Chat - Hallazgo #{hallazgoId}</h1>
-        <p style={{ color: connected ? "green" : "red", fontSize: "14px" }}>
-          {connected ? "✓ Connected" : "✗ Disconnected"}
-        </p>
-      </div>
+        <div>
+          <h1 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 700, color: "#0f172a" }}>
+            Chat · Hallazgo #{hallazgoId}
+          </h1>
+          <p style={{
+            margin: "2px 0 0 0",
+            fontSize: "12px",
+            fontWeight: 500,
+            color: connected ? "#16a34a" : "#dc2626",
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+          }}>
+            <span style={{
+              width: 7,
+              height: 7,
+              borderRadius: "50%",
+              background: connected ? "#16a34a" : "#dc2626",
+              display: "inline-block",
+            }} />
+            {connected ? "Conectado" : "Desconectado"}
+          </p>
+        </div>
+      </header>
 
       {/* Connection Error */}
       {connectionError && (
         <div
           style={{
-            padding: "12px",
-            marginBottom: "15px",
-            backgroundColor: "#fee2e2",
-            color: "#dc2626",
-            borderRadius: "4px",
-            borderLeft: "4px solid #dc2626",
+            padding: "12px 16px",
+            backgroundColor: "#fef2f2",
+            color: "#991b1b",
+            borderRadius: "10px",
+            borderLeft: "4px solid #ef4444",
+            fontSize: "14px",
           }}
         >
           <strong>Error:</strong> {connectionError}
@@ -179,17 +199,20 @@ export default function ChatPage() {
       {/* Messages Container (T087) */}
       <div
         style={{
-          border: "1px solid #d1d5db",
-          borderRadius: "4px",
-          height: "400px",
+          border: "1px solid #e2e8f0",
+          borderRadius: "14px",
+          height: "480px",
           overflowY: "auto",
-          padding: "15px",
-          marginBottom: "15px",
-          backgroundColor: "#f9fafb",
+          padding: "16px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+          backgroundColor: "#f8fafc",
+          boxShadow: "inset 0 2px 6px rgba(0,0,0,0.04)",
         }}
       >
         {messages.length === 0 ? (
-          <p style={{ color: "#999" }}>
+          <p style={{ color: "#94a3b8", fontSize: "14px", margin: "auto", textAlign: "center" }}>
             {loadingHistory ? "Cargando historial..." : "No hay mensajes aún. ¡Empezá la conversación!"}
           </p>
         ) : (
@@ -201,12 +224,12 @@ export default function ChatPage() {
       {composerError && (
         <div
           style={{
-            padding: "10px",
-            marginBottom: "15px",
-            backgroundColor: "#fee2e2",
-            color: "#dc2626",
-            borderRadius: "4px",
-            fontSize: "14px",
+            padding: "10px 14px",
+            backgroundColor: "#fef2f2",
+            color: "#991b1b",
+            borderRadius: "8px",
+            fontSize: "13px",
+            border: "1px solid #fecaca",
           }}
         >
           {composerError}
@@ -223,3 +246,4 @@ export default function ChatPage() {
     </div>
   );
 }
+

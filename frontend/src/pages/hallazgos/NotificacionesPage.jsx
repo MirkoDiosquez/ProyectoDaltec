@@ -96,16 +96,7 @@ export default function NotificacionesPage() {
                 </div>
                 {!notif.leida && (
                   <button
-                    style={{
-                      background: "#0284c7",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: 6,
-                      padding: "0.4rem 0.75rem",
-                      fontSize: "0.85rem",
-                      fontWeight: 500,
-                      cursor: "pointer",
-                    }}
+                    style={{ padding: "0.4rem 0.75rem", fontSize: "0.85rem" }}
                     onClick={() => {
                       // TODO: Mark as read via API when T061 is ready
                     }}

@@ -1,32 +1,114 @@
 /**
  * FilePreview component - Display preview based on MIME type (T073)
+ *
+ * Fixed: uses authenticated API client to fetch file content instead of
+ * direct browser navigation which cannot send the JWT Authorization header.
  */
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { getPreviewBlobUrl, downloadArchivo } from '../api/archivos.js';
 import PDFViewer from './PDFViewer';
 import ImageViewer from './ImageViewer';
 
 export default function FilePreview({ archivo }) {
+  const [blobUrl, setBlobUrl] = useState(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+  const [previewError, setPreviewError] = useState('');
+  const [downloading, setDownloading] = useState(false);
+  const blobUrlRef = useRef(null);
+
+  const isImage = archivo?.tipo_mime?.startsWith('image/');
+  const isPdf = archivo?.tipo_mime === 'application/pdf';
+  const needsPreview = isImage || isPdf;
+
+  // Fetch authenticated blob URL for images and PDFs
+  useEffect(() => {
+    if (!needsPreview || !archivo?.id) return;
+
+    setLoadingPreview(true);
+    setPreviewError('');
+    let cancelled = false;
+
+    getPreviewBlobUrl(archivo.id)
+      .then((url) => {
+        if (cancelled) {
+          URL.revokeObjectURL(url);
+          return;
+        }
+        // Revoke previous blob URL before setting new one
+        if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+        blobUrlRef.current = url;
+        setBlobUrl(url);
+      })
+      .catch(() => setPreviewError('No se pudo cargar la vista previa.'))
+      .finally(() => setLoadingPreview(false));
+
+    return () => {
+      cancelled = true;
+    };
+  }, [archivo?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Cleanup blob URL on unmount
+  useEffect(() => {
+    return () => {
+      if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+    };
+  }, []);
+
   if (!archivo) return null;
 
-  const previewType = (() => {
-    if (archivo.tipo_mime.startsWith('image/')) return 'image';
-    if (archivo.tipo_mime === 'application/pdf') return 'pdf';
-    return 'download';
-  })();
+  const handleDownload = async () => {
+    setDownloading(true);
+    try {
+      await downloadArchivo(archivo.id, archivo.nombre);
+    } catch {
+      // Silent fail — browser may have blocked popup
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const sizeMB = archivo.tamanio >= 1024 * 1024
+    ? `${(archivo.tamanio / 1024 / 1024).toFixed(2)} MB`
+    : `${(archivo.tamanio / 1024).toFixed(1)} KB`;
 
   return (
-    <div style={{ marginTop: '1rem', padding: '1rem', border: '1px solid #e0e0e0', borderRadius: '0.5rem' }}>
-      <p style={{ margin: '0 0 0.5rem 0', fontWeight: 600 }}>{archivo.nombre}</p>
-      <p style={{ margin: '0 0 1rem 0', fontSize: '0.875rem', color: '#666' }}>
-        {(archivo.tamanio / 1024 / 1024).toFixed(2)} MB • {archivo.tipo_mime}
-      </p>
+    <div style={{
+      border: '1px solid #e2e8f0',
+      borderRadius: 10,
+      padding: '1rem',
+      background: '#fff',
+      display: 'grid',
+      gap: '0.75rem',
+    }}>
+      {/* File header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+        <div>
+          <p style={{ margin: 0, fontWeight: 700, fontSize: '0.95rem' }}>{archivo.nombre}</p>
+          <p style={{ margin: '2px 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+            {sizeMB} · {archivo.tipo_mime}
+          </p>
+        </div>
+        <button
+          onClick={handleDownload}
+          disabled={downloading}
+          style={{ padding: '0.35rem 0.85rem', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+        >
+          {downloading ? 'Descargando…' : '⬇ Descargar'}
+        </button>
+      </div>
 
-      {previewType === 'image' && <ImageViewer src={archivo.preview_url} alt={archivo.nombre} />}
-      {previewType === 'pdf' && <PDFViewer url={archivo.preview_url} />}
-      {previewType === 'download' && (
-        <a href={archivo.download_url} download={archivo.nombre} style={{ display: 'inline-block', marginTop: '1rem', padding: '0.5rem 1rem', backgroundColor: '#2196F3', color: 'white', textDecoration: 'none', borderRadius: '0.25rem' }}>
-          Download {archivo.nombre}
-        </a>
+      {/* Preview area */}
+      {loadingPreview && (
+        <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>Cargando vista previa…</p>
+      )}
+      {previewError && (
+        <p style={{ margin: 0, fontSize: '0.85rem', color: '#dc2626' }}>{previewError}</p>
+      )}
+      {!loadingPreview && !previewError && blobUrl && isImage && (
+        <ImageViewer src={blobUrl} alt={archivo.nombre} />
+      )}
+      {!loadingPreview && !previewError && blobUrl && isPdf && (
+        <PDFViewer url={blobUrl} />
       )}
     </div>
   );

@@ -18,8 +18,8 @@ const estadoLabel = {
 };
 
 const estadoColor = {
-  PENDIENTE: "#f59e0b",
-  APROBADO: "#2563eb",
+  PENDIENTE: "#d97706",
+  APROBADO: "#1e3a8a",
   RECHAZADO: "#dc2626",
   CERRADO: "#16a34a",
 };
@@ -63,86 +63,97 @@ export default function HallazgoListPage() {
 
   return (
     <main style={{ maxWidth: 1100, margin: "0 auto", padding: "2rem 1rem" }}>
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
         <div>
-          <h1 style={{ margin: 0 }}>Hallazgos</h1>
-          <p style={{ marginTop: 6, color: "#475569" }}>
-            Listado filtrado segun tu rol.
+          <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "#0f172a" }}>Hallazgos</h1>
+          <p style={{ marginTop: 4, color: "#64748b", fontSize: "14px" }}>
+            Listado filtrado según tu rol.
           </p>
         </div>
         {canCreateHallazgo && (
           <Link
             to="/hallazgos/crear"
             style={{
-              background: "#0f172a",
+              background: "#1e3a8a",
               color: "#fff",
-              padding: "0.65rem 1rem",
-              borderRadius: 8,
+              padding: "0.6rem 1.25rem",
+              borderRadius: "8px",
               textDecoration: "none",
-              fontWeight: 600,
+              fontWeight: 700,
+              fontSize: "14px",
+              boxShadow: "0 2px 6px rgba(30,58,138,0.25)",
             }}
           >
-            Crear Hallazgo
+            + Crear Hallazgo
           </Link>
         )}
       </header>
 
-      {loading && <p style={{ marginTop: 20 }}>Cargando hallazgos...</p>}
+      {loading && (
+        <p style={{ color: "#64748b", fontSize: "14px" }}>Cargando hallazgos...</p>
+      )}
       {error && (
-        <p style={{ marginTop: 20, color: "#b91c1c", fontWeight: 600 }}>{error}</p>
+        <p style={{ color: "#991b1b", fontWeight: 600, padding: "10px 14px", background: "#fef2f2", borderRadius: "8px", fontSize: "14px" }}>
+          {error}
+        </p>
       )}
 
       {!loading && !error && hallazgos.length === 0 && (
-        <p style={{ marginTop: 20 }}>No hay hallazgos para mostrar.</p>
+        <p style={{ color: "#94a3b8", fontSize: "14px" }}>No hay hallazgos para mostrar.</p>
       )}
 
       {!loading && !error && hallazgos.length > 0 && (
-        <section style={{ marginTop: 20, display: "grid", gap: 12 }}>
+        <section style={{ display: "grid", gap: 12 }}>
           {hallazgos.map((item) => (
             <Link
               key={item.id}
               to={`/hallazgos/${item.id}`}
               style={{
                 border: "1px solid #e2e8f0",
-                borderRadius: 12,
-                padding: "1rem",
+                borderRadius: "14px",
+                padding: "1rem 1.25rem",
                 textDecoration: "none",
                 color: "inherit",
                 background: "#ffffff",
+                boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+                display: "block",
+                transition: "box-shadow 0.15s",
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                <strong style={{ fontSize: "1.03rem" }}>{item.descripcion}</strong>
+                <strong style={{ fontSize: "14px", color: "#1e293b", fontWeight: 600 }}>{item.descripcion}</strong>
                 <span
                   style={{
                     borderRadius: 999,
-                    padding: "0.2rem 0.65rem",
+                    padding: "0.2rem 0.75rem",
                     fontWeight: 700,
-                    fontSize: "0.75rem",
+                    fontSize: "11px",
                     color: "#fff",
-                    background: estadoColor[item.estado] || "#334155",
+                    background: estadoColor[item.estado] || "#475569",
                     whiteSpace: "nowrap",
+                    letterSpacing: "0.02em",
                   }}
                 >
                   {estadoLabel[item.estado] || item.estado}
                 </span>
               </div>
 
-              <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <div style={{ marginTop: 8, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                 <span
                   style={{
                     borderRadius: 999,
-                    padding: "0.2rem 0.6rem",
+                    padding: "0.2rem 0.65rem",
                     fontWeight: 600,
-                    fontSize: "0.75rem",
-                    background: "#e2e8f0",
-                    color: "#0f172a",
+                    fontSize: "11px",
+                    background: "#f1f5f9",
+                    color: "#334155",
+                    border: "1px solid #e2e8f0",
                   }}
                 >
                   {tipoLabel[item.tipo] || item.tipo}
                 </span>
-                <span style={{ color: "#64748b", fontSize: "0.85rem" }}>
-                  Ubicacion: {item.ubicacion}
+                <span style={{ color: "#94a3b8", fontSize: "13px" }}>
+                  {item.ubicacion}
                 </span>
               </div>
             </Link>

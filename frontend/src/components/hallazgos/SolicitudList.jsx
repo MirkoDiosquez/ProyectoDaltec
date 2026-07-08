@@ -160,11 +160,6 @@ export default function SolicitudList({
                     disabled={isLoading || actionInProgress[solicitud.id]}
                     style={{
                       padding: '0.5rem 1rem',
-                      background: '#00aa00',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 4,
-                      cursor: isLoading ? 'not-allowed' : 'pointer',
                       opacity: isLoading || actionInProgress[solicitud.id] ? 0.6 : 1,
                     }}
                   >
@@ -176,11 +171,7 @@ export default function SolicitudList({
                     disabled={isLoading || actionInProgress[solicitud.id]}
                     style={{
                       padding: '0.5rem 1rem',
-                      background: '#cc0000',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 4,
-                      cursor: isLoading ? 'not-allowed' : 'pointer',
+                      background: '#dc2626',
                       opacity: isLoading || actionInProgress[solicitud.id] ? 0.6 : 1,
                     }}
                   >
@@ -221,11 +212,8 @@ export default function SolicitudList({
                       disabled={isLoading || actionInProgress[solicitud.id]}
                       style={{
                         padding: '0.5rem 1rem',
-                        background: '#cc0000',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 4,
-                        cursor: isLoading ? 'not-allowed' : 'pointer',
+                        background: '#dc2626',
+                        opacity: isLoading || actionInProgress[solicitud.id] ? 0.6 : 1,
                       }}
                     >
                       {actionInProgress[solicitud.id] === 'reject' ? 'Rechazando...' : 'Confirmar Rechazo'}

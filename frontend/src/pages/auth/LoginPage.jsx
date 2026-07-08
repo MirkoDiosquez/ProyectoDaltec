@@ -60,7 +60,13 @@ export default function LoginPage() {
   return (
     <div style={styles.page}>
       <div style={styles.card}>
-        <h1 style={styles.title}>ProyectoDaltec</h1>
+        <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
+          <img
+            src="https://daltectools.com/wp-content/uploads/2024/09/Daltec-logo-azul-y-blanco-200px-02.png"
+            alt="Daltec"
+            style={{ height: 48, width: "auto" }}
+          />
+        </div>
         <h2 style={styles.subtitle}>Iniciar sesión</h2>
 
         <form onSubmit={handleSubmit} noValidate style={styles.form}>
@@ -189,16 +195,11 @@ const styles = {
   },
   button: {
     padding: "0.625rem",
-    backgroundColor: "#2563eb",
-    color: "#ffffff",
-    border: "none",
-    borderRadius: "6px",
     fontSize: "1rem",
-    fontWeight: 600,
-    cursor: "pointer",
+    width: "100%",
   },
   buttonDisabled: {
-    backgroundColor: "#93c5fd",
+    opacity: 0.6,
     cursor: "not-allowed",
   },
 };
