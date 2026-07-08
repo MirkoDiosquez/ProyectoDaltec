@@ -72,6 +72,12 @@ class CustomUser(AbstractUser):
     def __str__(self) -> str:
         return f"{self.nombre} {self.apellido} (DNI: {self.dni})"
 
+    def get_full_name(self) -> str:
+        return f"{self.nombre} {self.apellido}".strip()
+
+    def get_short_name(self) -> str:
+        return self.nombre
+
     @property
     def is_admin(self) -> bool:
         return self.tipo == UserTipo.ADMIN

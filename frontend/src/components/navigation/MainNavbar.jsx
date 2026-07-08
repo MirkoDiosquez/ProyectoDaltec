@@ -34,7 +34,7 @@ export default function MainNavbar({ notificationCount = 0 }) {
   return (
     <nav
       style={{
-        background: "#0f172a",
+        background: "var(--navy)",
         color: "#fff",
         padding: "0 1rem",
         boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
@@ -67,22 +67,7 @@ export default function MainNavbar({ notificationCount = 0 }) {
 
         {/* Main Menu */}
         <div style={{ display: "flex", gap: "2rem", alignItems: "center" }}>
-          {/* Home */}
-          <Link
-            to="/"
-            style={{
-              color: "#e2e8f0",
-              textDecoration: "none",
-              fontSize: "0.95rem",
-              fontWeight: 500,
-              transition: "color 0.2s",
-              cursor: "pointer",
-            }}
-            onMouseEnter={(e) => (e.target.style.color = "#fff")}
-            onMouseLeave={(e) => (e.target.style.color = "#e2e8f0")}
-          >
-            Inicio
-          </Link>
+
 
           {/* Hallazgos List */}
           <Link

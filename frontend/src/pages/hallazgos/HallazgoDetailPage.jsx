@@ -355,22 +355,75 @@ export default function HallazgoDetailPage() {
         )}
       </section>
 
-      <section style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: "1rem", background: "#fff", display: "grid", gap: 8 }}>
+      <section style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: "1.25rem", background: "#fff", display: "grid", gap: 16 }}>
         <h2 style={{ margin: 0 }}>Acciones Correctivas</h2>
         {Array.isArray(hallazgo.acciones) && hallazgo.acciones.length > 0 ? (
-          <ul style={{ margin: 0, paddingLeft: 18 }}>
-            {hallazgo.acciones.map((accion) => (
-              <li key={accion.id} style={{ marginBottom: 6 }}>
-                {tipoAccionLabel[accion.tipo] || accion.tipo} - {estadoAccionLabel[accion.estado] || accion.estado}
-                <Link
-                  to={`/acciones/${accion.id}?hallazgo=${hallazgo.id}`}
-                  style={{ marginLeft: 10, textDecoration: "none", fontWeight: 600 }}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+            {hallazgo.acciones.map((accion) => {
+              const estadoStyles = {
+                PENDIENTE:          { bg: "#fef9c3", border: "#fde047", text: "#854d0e", dot: "#ca8a04" },
+                EN_PROGRESO:        { bg: "#dbeafe", border: "#93c5fd", text: "#1e3a8a", dot: "#2563eb" },
+                SOLICITUD_CIERRE:   { bg: "#fef3c7", border: "#fcd34d", text: "#92400e", dot: "#d97706" },
+                CERRADA:            { bg: "#dcfce7", border: "#86efac", text: "#14532d", dot: "#16a34a" },
+              };
+              const s = estadoStyles[accion.estado] || { bg: "#f1f5f9", border: "#cbd5e1", text: "#334155", dot: "#64748b" };
+              const tipoIcons = {
+                INMEDIATA: "⚡",
+                CORRECTIVA: "🔧",
+                VERIFICACION_EFICIENCIA: "✅",
+              };
+              return (
+                <div
+                  key={accion.id}
+                  style={{
+                    border: `1.5px solid ${s.border}`,
+                    borderRadius: 12,
+                    padding: "1rem 1.1rem",
+                    background: s.bg,
+                    display: "grid",
+                    gap: 10,
+                  }}
                 >
-                  Ver detalle
-                </Link>
-              </li>
-            ))}
-          </ul>
+                  {/* Tipo */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: "1.3rem" }}>{tipoIcons[accion.tipo] || "📋"}</span>
+                    <strong style={{ fontSize: "0.9rem", color: "#0f172a" }}>
+                      {tipoAccionLabel[accion.tipo] || accion.tipo}
+                    </strong>
+                  </div>
+
+                  {/* Estado badge */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{
+                      width: 8, height: 8, borderRadius: "50%",
+                      background: s.dot, flexShrink: 0,
+                    }} />
+                    <span style={{ fontSize: "0.8rem", fontWeight: 700, color: s.text }}>
+                      {estadoAccionLabel[accion.estado] || accion.estado}
+                    </span>
+                  </div>
+
+                  {/* Link */}
+                  <Link
+                    to={`/acciones/${accion.id}?hallazgo=${hallazgo.id}`}
+                    style={{
+                      display: "inline-block",
+                      marginTop: 2,
+                      padding: "0.4rem 0.85rem",
+                      background: "#1e3a8a",
+                      color: "#fff",
+                      borderRadius: 7,
+                      fontWeight: 600,
+                      fontSize: "0.8rem",
+                      textAlign: "center",
+                    }}
+                  >
+                    Ver detalle →
+                  </Link>
+                </div>
+              );
+            })}
+          </div>
         ) : (
           <p style={{ margin: 0 }}>No hay acciones registradas.</p>
         )}
@@ -491,7 +544,7 @@ export default function HallazgoDetailPage() {
         )}
 
         {Array.isArray(porques) && porques.length > 0 ? (
-          <ul style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 8 }}>
+          <ul style={{ listStyleType: "none", margin: 0, paddingLeft: 18, display: "grid", gap: 8 }}>
             {porques.map((p) => (
               <li key={p.id} style={{ border: "1px solid #e2e8f0", borderRadius: 8, padding: "0.75rem" }}>
                 <p style={{ margin: 0, fontWeight: 600 }}>{p.texto_causa}</p>

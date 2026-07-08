@@ -13,13 +13,19 @@ export default function NotificationBadge({ count = 0, onClick }) {
         position: 'relative',
         background: 'none',
         border: 'none',
-        padding: '0.5rem',
+        padding: '0.25rem',
         cursor: 'pointer',
-        fontSize: '1.5rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}
       title={count > 0 ? `${count} notificación${count !== 1 ? 'es' : ''} sin leer` : 'Notificaciones'}
     >
-      🔔
+      <img
+        src="https://img.icons8.com/ios11/512/FFFFFF/appointment-reminders--v2.png"
+        alt="Notificaciones"
+        style={{ width: 26, height: 26, display: 'block' }}
+      />
       {count > 0 && (
         <span
           style={{

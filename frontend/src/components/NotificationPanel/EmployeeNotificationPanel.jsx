@@ -72,7 +72,7 @@ export default function EmployeeNotificationPanel({
           {relevantNotifications.map((notif) => {
             const config = categories[notif.tipo] || {
               label: 'Notificación',
-              icon: '🔔',
+              icon: '',
               color: '#2196f3',
             };
 
