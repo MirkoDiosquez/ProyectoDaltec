@@ -470,21 +470,6 @@ export default function HallazgoDetailPage() {
         </section>
       )}
 
-      <section style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: "1rem", background: "#fff", display: "grid", gap: 10 }}>
-        <h2 style={{ margin: 0 }}>Responsables</h2>
-
-        {Array.isArray(hallazgo.responsables) && hallazgo.responsables.length > 0 ? (
-          <ul style={{ margin: 0, paddingLeft: 18 }}>
-            {hallazgo.responsables.map((r) => (
-              <li key={r.id} style={{ marginBottom: 6 }}>
-                {r.nombre} {r.apellido} (DNI: {r.dni})
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p style={{ margin: 0 }}>Sin responsables asignados.</p>
-        )}
-      </section>
 
       {/* T097: Responsable Management Panel (Admin-only) */}
       {isAdmin && hallazgo && (
@@ -495,6 +480,76 @@ export default function HallazgoDetailPage() {
             onResponsableAdded={() => refreshDetail()}
             onResponsableRemoved={() => refreshDetail()}
           />
+        </section>
+      )}
+
+      {/* Responsables Display (for non-admin users) */}
+      {!isAdmin && hallazgo && (
+        <section style={{ border: "2px solid #10b981", borderRadius: 8, padding: "1.5rem", background: "#ecfdf5" }}>
+          <h3 style={{ margin: "0 0 1rem 0", color: "#065f46", display: "flex", alignItems: "center", gap: 8 }}>
+            ✓ Responsables Actuales
+            <span style={{ 
+              background: "#10b981", 
+              color: "#fff", 
+              borderRadius: "50%", 
+              width: 28, 
+              height: 28, 
+              display: "flex", 
+              alignItems: "center", 
+              justifyContent: "center",
+              fontSize: "0.85rem",
+              fontWeight: 700,
+            }}>
+              {hallazgo.responsables?.length || 0}
+            </span>
+          </h3>
+
+          {Array.isArray(hallazgo.responsables) && hallazgo.responsables.length > 0 ? (
+            <div style={{ display: "grid", gap: 10 }}>
+              {hallazgo.responsables.map((r) => (
+                <div
+                  key={r.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    padding: "1rem",
+                    background: "#fff",
+                    border: "1px solid #d1fae5",
+                    borderRadius: "6px",
+                    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: "50%",
+                      background: "#10b981",
+                      color: "#fff",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontWeight: 700,
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    {r.nombre.charAt(0)}{r.apellido.charAt(0)}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 600, color: "#1f2937", fontSize: "0.95rem" }}>
+                      {r.nombre} {r.apellido}
+                    </div>
+                    <div style={{ fontSize: "0.8rem", color: "#6b7280" }}>
+                      DNI: {r.dni} • {r.tipo}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={{ margin: 0, color: "#6b7280" }}>No hay responsables asignados.</p>
+          )}
         </section>
       )}
 
@@ -544,38 +599,253 @@ export default function HallazgoDetailPage() {
         )}
 
         {Array.isArray(porques) && porques.length > 0 ? (
-          <ul style={{ listStyleType: "none", margin: 0, paddingLeft: 18, display: "grid", gap: 8 }}>
-            {porques.map((p) => (
-              <li key={p.id} style={{ border: "1px solid #e2e8f0", borderRadius: 8, padding: "0.75rem" }}>
-                <p style={{ margin: 0, fontWeight: 600 }}>{p.texto_causa}</p>
-                <p style={{ margin: "4px 0 0 0", color: "#475569" }}>
-                  Estado: {p.estado} · Autor: {p.autor_nombre || "-"}
-                </p>
-                {p.observacion_rechazo ? (
-                  <p style={{ margin: "4px 0 0 0", color: "#b91c1c" }}>
-                    Observación: {p.observacion_rechazo}
-                  </p>
-                ) : null}
-                {isAdmin && p.estado === "pendiente" ? (
-                  <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                    <button type="button" disabled={actionLoading} onClick={() => onApprovePorque(p.id)}>
-                      Aprobar
-                    </button>
-                    <button
-                      type="button"
-                      disabled={actionLoading}
-                      onClick={() => onRejectPorque(p.id)}
-                      style={{ background: "#dc2626" }}
+          <div style={{ display: "grid", gap: 12, marginTop: "1rem" }}>
+            {porques.map((p, index) => {
+              // Estado styles with visual indicators
+              const estadoConfig = {
+                pendiente: {
+                  color: "#f59e0b",
+                  bgColor: "#fef3c7",
+                  borderColor: "#fcd34d",
+                  icon: "⏳",
+                  label: "Pendiente de aprobación",
+                  textColor: "#92400e",
+                },
+                aprobado: {
+                  color: "#10b981",
+                  bgColor: "#dcfce7",
+                  borderColor: "#86efac",
+                  icon: "✓",
+                  label: "Aprobado",
+                  textColor: "#14532d",
+                },
+                rechazado: {
+                  color: "#ef4444",
+                  bgColor: "#fee2e2",
+                  borderColor: "#fca5a5",
+                  icon: "✕",
+                  label: "Rechazado",
+                  textColor: "#7f1d1d",
+                },
+              };
+              
+              const config = estadoConfig[p.estado] || estadoConfig.pendiente;
+              
+              return (
+                <div
+                  key={p.id}
+                  style={{
+                    border: `2px solid ${config.borderColor}`,
+                    borderRadius: 8,
+                    padding: "1.25rem",
+                    background: config.bgColor,
+                    display: "grid",
+                    gap: 10,
+                    position: "relative",
+                    overflow: "hidden",
+                  }}
+                >
+                  {/* Visual timeline indicator */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: 0,
+                      top: 0,
+                      bottom: 0,
+                      width: "4px",
+                      background: config.color,
+                    }}
+                  />
+                  
+                  <div style={{ paddingLeft: "12px", display: "grid", gap: 8 }}>
+                    {/* Header with number, status badge, and icon */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 12,
+                      }}
                     >
-                      Rechazar
-                    </button>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div
+                          style={{
+                            background: config.color,
+                            color: "#fff",
+                            width: 32,
+                            height: 32,
+                            borderRadius: "50%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontWeight: 700,
+                            fontSize: "0.9rem",
+                          }}
+                        >
+                          {index + 1}
+                        </div>
+                        <div style={{ display: "grid", gap: 2 }}>
+                          <div
+                            style={{
+                              fontWeight: 600,
+                              fontSize: "0.9rem",
+                              color: config.textColor,
+                            }}
+                          >
+                            Porqué #{p.id}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: "0.75rem",
+                              color: config.textColor,
+                              opacity: 0.7,
+                            }}
+                          >
+                            por {p.autor_nombre || "Admin"}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          background: "rgba(255,255,255,0.6)",
+                          padding: "0.4rem 0.8rem",
+                          borderRadius: 6,
+                          fontWeight: 600,
+                          fontSize: "0.85rem",
+                          color: config.textColor,
+                        }}
+                      >
+                        <span style={{ fontSize: "1rem" }}>{config.icon}</span>
+                        {config.label}
+                      </div>
+                    </div>
+
+                    {/* Causa text */}
+                    <div
+                      style={{
+                        fontSize: "0.95rem",
+                        color: config.textColor,
+                        lineHeight: 1.5,
+                        padding: "0.75rem",
+                        background: "rgba(255,255,255,0.5)",
+                        borderRadius: 6,
+                        borderLeft: `3px solid ${config.color}`,
+                      }}
+                    >
+                      {p.texto_causa}
+                    </div>
+
+                    {/* Rejection observation if exists */}
+                    {p.observacion_rechazo && (
+                      <div
+                        style={{
+                          fontSize: "0.85rem",
+                          color: "#7f1d1d",
+                          padding: "0.75rem",
+                          background: "#fee2e2",
+                          borderRadius: 6,
+                          borderLeft: "3px solid #ef4444",
+                        }}
+                      >
+                        <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                          Motivo del rechazo:
+                        </div>
+                        {p.observacion_rechazo}
+                      </div>
+                    )}
+
+                    {/* Metadata footer */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        fontSize: "0.75rem",
+                        color: config.textColor,
+                        opacity: 0.7,
+                        paddingTop: "0.5rem",
+                        borderTop: `1px solid ${config.borderColor}`,
+                      }}
+                    >
+                      <span>
+                        {new Date(p.fecha_creacion || p.created_at).toLocaleDateString("es-AR")}
+                      </span>
+                      <span>
+                        {p.fecha_aprobacion
+                          ? `Aprobado: ${new Date(p.fecha_aprobacion).toLocaleDateString("es-AR")}`
+                          : "Aún no aprobado"}
+                      </span>
+                    </div>
+
+                    {/* Action buttons for admin */}
+                    {isAdmin && p.estado === "pendiente" && (
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: 8,
+                          marginTop: "0.5rem",
+                          paddingTop: "0.5rem",
+                          borderTop: `1px solid ${config.borderColor}`,
+                        }}
+                      >
+                        <button
+                          type="button"
+                          disabled={actionLoading}
+                          onClick={() => onApprovePorque(p.id)}
+                          style={{
+                            padding: "0.5rem 0.85rem",
+                            background: "#10b981",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: 6,
+                            cursor: "pointer",
+                            fontWeight: 600,
+                            fontSize: "0.8rem",
+                          }}
+                        >
+                          ✓ Aprobar
+                        </button>
+                        <button
+                          type="button"
+                          disabled={actionLoading}
+                          onClick={() => onRejectPorque(p.id)}
+                          style={{
+                            padding: "0.5rem 0.85rem",
+                            background: "#ef4444",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: 6,
+                            cursor: "pointer",
+                            fontWeight: 600,
+                            fontSize: "0.8rem",
+                          }}
+                        >
+                          ✕ Rechazar
+                        </button>
+                      </div>
+                    )}
                   </div>
-                ) : null}
-              </li>
-            ))}
-          </ul>
+                </div>
+              );
+            })}
+          </div>
         ) : (
-          <p style={{ margin: 0 }}>Todavía no hay porqués registrados.</p>
+          <div
+            style={{
+              textAlign: "center",
+              padding: "2rem",
+              color: "#999",
+              background: "#f5f5f5",
+              borderRadius: 8,
+              marginTop: "1rem",
+            }}
+          >
+            Todavía no hay porqués registrados. {canManagePorques ? "¡Agrega uno!" : ""}
+          </div>
         )}
       </section>
 

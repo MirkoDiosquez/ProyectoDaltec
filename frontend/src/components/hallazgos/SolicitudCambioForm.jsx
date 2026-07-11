@@ -62,51 +62,78 @@ export default function SolicitudCambioForm({
     <form
       onSubmit={handleSubmit}
       style={{
-        border: '1px solid #e2e8f0',
+        border: '2px solid #f59e0b',
         borderRadius: 12,
-        padding: '1rem',
-        background: '#fff',
+        padding: '1.5rem',
+        background: '#fffbeb',
         display: 'grid',
-        gap: 12,
+        gap: 16,
       }}
     >
-      <h3 style={{ margin: 0 }}>Solicitud de Cambio de Responsable</h3>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontSize: '1.3rem' }}>📝</span>
+        <h3 style={{ margin: 0, color: '#92400e' }}>Solicitud de Cambio de Responsable</h3>
+      </div>
 
       {error && (
-        <div style={{ background: '#fee', padding: '0.5rem', color: '#c00', borderRadius: 4 }}>
-          {error}
+        <div style={{ 
+          background: '#fee2e2', 
+          padding: '0.75rem', 
+          color: '#991b1b', 
+          borderRadius: 8,
+          border: '1px solid #fca5a5',
+          fontSize: '0.9rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+        }}>
+          ⚠️ {error}
         </div>
       )}
 
-      {/* Tipo selection */}
-      <div style={{ display: 'flex', gap: 16 }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <input
-            type="radio"
-            value="agregar"
-            checked={tipo === 'agregar'}
-            onChange={(e) => setTipo(e.target.value)}
-            disabled={isLoading}
-          />
-          Agregar responsable
+      {/* Tipo selection with better styling */}
+      <div style={{ 
+        background: '#fff',
+        padding: '1rem',
+        borderRadius: 8,
+        border: '1px solid #fcd34d',
+        display: 'grid',
+        gap: 12,
+      }}>
+        <label style={{ fontWeight: 600, color: '#92400e', fontSize: '0.95rem' }}>
+          Tipo de solicitud:
         </label>
+        <div style={{ display: 'flex', gap: 16 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <input
+              type="radio"
+              value="agregar"
+              checked={tipo === 'agregar'}
+              onChange={(e) => setTipo(e.target.value)}
+              disabled={isLoading}
+              style={{ width: 18, height: 18, cursor: 'pointer' }}
+            />
+            <span style={{ fontSize: '0.95rem' }}>➕ Agregar responsable</span>
+          </label>
 
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <input
-            type="radio"
-            value="cambiar"
-            checked={tipo === 'cambiar'}
-            onChange={(e) => setTipo(e.target.value)}
-            disabled={isLoading}
-          />
-          Reemplazarme
-        </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <input
+              type="radio"
+              value="cambiar"
+              checked={tipo === 'cambiar'}
+              onChange={(e) => setTipo(e.target.value)}
+              disabled={isLoading}
+              style={{ width: 18, height: 18, cursor: 'pointer' }}
+            />
+            <span style={{ fontSize: '0.95rem' }}>🔄 Reemplazarme</span>
+          </label>
+        </div>
       </div>
 
       {/* Usuario selection */}
-      <div style={{ display: 'grid', gap: 6 }}>
-        <label htmlFor={`usuario-select-${hallazgoId}`}>
-          Usuario a {tipo === 'agregar' ? 'agregar' : 'reemplazarme'}:
+      <div style={{ display: 'grid', gap: 8 }}>
+        <label htmlFor={`usuario-select-${hallazgoId}`} style={{ fontWeight: 600, color: '#374151' }}>
+          👤 Usuario a {tipo === 'agregar' ? 'agregar' : 'reemplazarme'}:
         </label>
         <select
           id={`usuario-select-${hallazgoId}`}
@@ -115,38 +142,46 @@ export default function SolicitudCambioForm({
           disabled={isLoading}
           required
           style={{
-            padding: '0.5rem',
-            borderRadius: 4,
-            border: '1px solid #ccc',
+            padding: '0.75rem',
+            borderRadius: 8,
+            border: '2px solid #e5e7eb',
+            fontSize: '0.95rem',
+            fontFamily: 'inherit',
+            background: '#fff',
+            cursor: isLoading ? 'not-allowed' : 'pointer',
+            transition: 'border-color 0.2s',
           }}
         >
           <option value="">-- Selecciona un usuario --</option>
           {Array.isArray(usuarios) &&
             usuarios.map((usuario) => (
               <option key={usuario.id} value={usuario.id}>
-                {usuario.nombre} {usuario.apellido} ({usuario.username})
+                {usuario.nombre} {usuario.apellido} (@{usuario.username})
               </option>
             ))}
         </select>
       </div>
 
       {/* Observacion textarea */}
-      <div style={{ display: 'grid', gap: 6 }}>
-        <label htmlFor={`observacion-${hallazgoId}`}>
-          Observación (opcional):
+      <div style={{ display: 'grid', gap: 8 }}>
+        <label htmlFor={`observacion-${hallazgoId}`} style={{ fontWeight: 600, color: '#374151' }}>
+          💬 Observación (opcional):
         </label>
         <textarea
           id={`observacion-${hallazgoId}`}
           value={observacion}
           onChange={(e) => setObservacion(e.target.value)}
           disabled={isLoading}
-          placeholder="Por favor explica el motivo de tu solicitud..."
-          rows={3}
+          placeholder="Explica el motivo de tu solicitud..."
+          rows={4}
           style={{
-            padding: '0.5rem',
-            borderRadius: 4,
-            border: '1px solid #ccc',
+            padding: '0.75rem',
+            borderRadius: 8,
+            border: '2px solid #e5e7eb',
             fontFamily: 'inherit',
+            fontSize: '0.95rem',
+            resize: 'vertical',
+            transition: 'border-color 0.2s',
           }}
         />
       </div>
@@ -155,9 +190,24 @@ export default function SolicitudCambioForm({
       <button
         type="submit"
         disabled={isLoading}
-        style={{ padding: '0.5rem 1rem', opacity: isLoading ? 0.6 : 1 }}
+        style={{
+          padding: '0.75rem 1.5rem',
+          background: isLoading ? '#d97706' : '#f59e0b',
+          color: '#fff',
+          border: 'none',
+          borderRadius: 8,
+          fontWeight: 700,
+          fontSize: '0.95rem',
+          cursor: isLoading ? 'not-allowed' : 'pointer',
+          opacity: isLoading ? 0.7 : 1,
+          transition: 'all 0.2s',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+        }}
       >
-        {isLoading ? 'Enviando...' : 'Enviar Solicitud'}
+        {isLoading ? '⏳ Enviando...' : '✓ Enviar Solicitud'}
       </button>
     </form>
   );

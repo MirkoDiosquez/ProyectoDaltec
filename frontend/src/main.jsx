@@ -4,13 +4,16 @@ import "./index.css";
 import App from "./App.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { CatalogoProvider } from "./context/CatalogoContext.jsx";
+import { NotificacionProvider } from "./context/NotificacionContext.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <AuthProvider>
-      <CatalogoProvider>
-        <App />
-      </CatalogoProvider>
+      <NotificacionProvider>
+        <CatalogoProvider>
+          <App />
+        </CatalogoProvider>
+      </NotificacionProvider>
     </AuthProvider>
   </React.StrictMode>
 );

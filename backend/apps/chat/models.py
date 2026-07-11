@@ -100,7 +100,7 @@ class Mensaje(models.Model):
 # Signals
 # ---------------------------------------------------------------------------
 
-from django.db.models.signals import pre_save
+from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 import re
 
@@ -121,4 +121,36 @@ def detect_urgente_tag(sender, instance, **kwargs):
             instance.tiene_urgente = False
     else:
         instance.tiene_urgente = False
+
+
+@receiver(post_save, sender=Mensaje)
+def send_chat_notification(sender, instance, created, **kwargs):
+    """
+    Post-save signal: Send notifications to chat participants when a new message is created.
+    
+    - If message has #urgente tag: sends "mensaje_urgente" notification
+    - Otherwise: sends "mensaje_sin_leer" notification
+    
+    Notifications are sent to all chat participants except the message author.
+    """
+    if not created:
+        return  # Only on creation
+    
+    from apps.notificaciones.models import Notificacion
+    
+    # Get all chat participants except the message author
+    participantes = instance.chat.participantes.exclude(id=instance.autor_id)
+    
+    # Determine notification type
+    tipo = "mensaje_urgente" if instance.tiene_urgente else "mensaje_sin_leer"
+    
+    # Create notifications for each participant
+    for participante in participantes:
+        Notificacion.objects.create(
+            titulo=f"Nuevo mensaje en hallazgo #{instance.chat.hallazgo_id}",
+            mensaje=f"{instance.autor.nombre} {instance.autor.apellido}: {instance.contenido[:100]}...",
+            tipo=tipo,
+            destinatario=participante,
+            hallazgo_relacionado=instance.chat.hallazgo,
+        )
 

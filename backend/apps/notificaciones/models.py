@@ -20,6 +20,7 @@ class Notificacion(models.Model):
 		('cambio_responsable_pendiente', 'Cambio de Responsable Pendiente'),
 		('asignado_responsable', 'Asignado como Responsable'),
 		('mensaje_urgente', 'Mensaje Urgente'),
+		('mensaje_sin_leer', 'Mensaje Sin Leer en Chat'),
 	]
 	
 	titulo = models.CharField(max_length=200, verbose_name="Titulo")

@@ -79,20 +79,29 @@ class Archivo(models.Model):
 		"""Validate that exactly one parent is populated.
 		
 		Exactly one of (hallazgo, porque, mensaje) must be not-null.
+		
+		Note: On initial file upload, this validation is skipped to allow files
+		to be created without a parent. They will be assigned to a parent
+		(hallazgo, mensaje, etc.) after creation.
+		Files created via chat uploads start without a parent and are assigned
+		to the mensaje after the message is saved via WebSocket.
 		"""
 		parents = [self.hallazgo, self.porque, self.mensaje]
 		parent_count = sum(1 for p in parents if p is not None)
 		
-		if parent_count == 0:
-			raise ValidationError(
-				"Archivo must be attached to exactly one parent: "
-				"hallazgo, porque, or mensaje"
-			)
-		elif parent_count > 1:
-			raise ValidationError(
-				"Archivo can only be attached to ONE parent: "
-				"hallazgo, porque, or mensaje (not multiple)"
-			)
+		# Allow 0 parents during initial creation (file will be assigned later)
+		# Only validate if updating an existing file
+		if self.pk:  # File already exists in DB - enforce exactly one parent
+			if parent_count == 0:
+				raise ValidationError(
+					"Archivo must be attached to exactly one parent: "
+					"hallazgo, porque, or mensaje"
+				)
+			elif parent_count > 1:
+				raise ValidationError(
+					"Archivo can only be attached to ONE parent: "
+					"hallazgo, porque, or mensaje (not multiple)"
+				)
 	
 	def save(self, *args, **kwargs):
 		"""Run validation before save."""

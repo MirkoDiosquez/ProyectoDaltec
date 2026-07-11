@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { connectChat, sendMessage, disconnect, isConnected, getChatByHallazgo } from "../../api/chat.js";
+import { getHallazgo } from "../../api/hallazgos.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import ChatMessage from "../../components/ChatMessage.jsx";
 import ChatMessageComposer from "../../components/ChatMessageComposer.jsx";
@@ -10,7 +11,7 @@ import ChatMessageComposer from "../../components/ChatMessageComposer.jsx";
  *
  * Displays message history and live WebSocket feed.
  * Users who are chat participants can send messages with optional file attachments.
- * Admins can view but not send (read-only mode).
+ * Admins can write if they are assigned as responsables for the hallazgo.
  *
  * Refs: T055, contracts/websocket.md, FR-012, T087
  */
@@ -29,31 +30,48 @@ export default function ChatPage() {
   const [messages, setMessages] = useState([]);
   const [composerError, setComposerError] = useState("");
 
+  // Hallazgo state (for responsables check)
+  const [hallazgo, setHallazgo] = useState(null);
+
   // Reconnect state
   const wsRef = useRef(null);
   const reconnectTimerRef = useRef(null);
   const reconnectAttemptRef = useRef(0);
   const isMountedRef = useRef(true);
 
-  // Determine if user can send (participants can, admins cannot)
-  const canSendMessage = user?.tipo !== "ADMIN";
+  // Determine if user can send: 
+  // - Non-admin participants can always send
+  // - Admins can send if they are assigned as responsables
   const isAdmin = user?.tipo === "ADMIN";
+  const isResponsable = hallazgo?.responsables?.some((r) => r.id === user?.id);
+  const canSendMessage = !isAdmin || (isAdmin && isResponsable);
 
   // Load chat history via REST on mount
   useEffect(() => {
     if (!hallazgoId) return;
+    
+    // Load hallazgo to check responsables
+    getHallazgo(hallazgoId)
+      .then((data) => {
+        if (isMountedRef.current) setHallazgo(data);
+      })
+      .catch((err) => console.error("[ChatPage] Failed to load hallazgo:", err));
+
+    // Load chat history
     setLoadingHistory(true);
     getChatByHallazgo(hallazgoId)
       .then((chat) => {
-        if (chat?.mensajes?.length) {
+        if (chat?.mensajes?.length && isMountedRef.current) {
           setMessages(chat.mensajes);
         }
       })
       .catch((err) => {
         console.error("[ChatPage] Failed to load history:", err);
-        setConnectionError("No se pudo cargar el historial del chat.");
+        if (isMountedRef.current) setConnectionError("No se pudo cargar el historial del chat.");
       })
-      .finally(() => setLoadingHistory(false));
+      .finally(() => {
+        if (isMountedRef.current) setLoadingHistory(false);
+      });
   }, [hallazgoId]);
 
   // Connect WebSocket with automatic reconnect

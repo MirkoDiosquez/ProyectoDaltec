@@ -38,10 +38,12 @@ export default function FileUpload({ onFileUpload, onFileSelect, onError, maxSiz
       return;
     }
 
-    // Deferred mode: hand the raw file back to the caller
+    // Deferred mode: hand the raw file back to the caller and reset
     if (deferred) {
       setSelectedName(file.name);
       onFileSelect?.(file);
+      // Reset after a short delay so user can see the file name briefly
+      setTimeout(() => setSelectedName(null), 1000);
       return;
     }
 

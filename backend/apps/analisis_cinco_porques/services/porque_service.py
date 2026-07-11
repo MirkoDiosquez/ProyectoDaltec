@@ -149,27 +149,29 @@ def _notify_approval(porque, approved=True):
         approved: bool, True if approved, False if rejected
     """
     if approved:
-        tipo = 'aprobacion_porque_aprobado'
-        contenido = f"Tu porqué en Hallazgo #{porque.hallazgo.id} ha sido aprobado."
+        tipo = 'aprobacion_porque_pendiente'
+        titulo = f"Tu porqué fue aprobado - Hallazgo #{porque.hallazgo.id}"
+        mensaje = f"Tu porqué en Hallazgo #{porque.hallazgo.id} ha sido aprobado."
     else:
-        tipo = 'aprobacion_porque_rechazado'
-        contenido = f"Tu porqué en Hallazgo #{porque.hallazgo.id} ha sido rechazado."
+        tipo = 'aprobacion_porque_pendiente'
+        titulo = f"Tu porqué fue rechazado - Hallazgo #{porque.hallazgo.id}"
+        mensaje = f"Tu porqué en Hallazgo #{porque.hallazgo.id} ha sido rechazado."
     
     # Notify hallazgo creator
     Notificacion.objects.create(
-        usuario=porque.hallazgo.creado_por,
-        hallazgo=porque.hallazgo,
+        destinatario=porque.hallazgo.creado_por,
+        hallazgo_relacionado=porque.hallazgo,
         tipo=tipo,
-        contenido=contenido,
-        porque=porque,
+        titulo=titulo,
+        mensaje=mensaje,
     )
     
     # Notify all responsables of the hallazgo
     for responsable in porque.hallazgo.responsables.all():
         Notificacion.objects.create(
-            usuario=responsable,
-            hallazgo=porque.hallazgo,
+            destinatario=responsable,
+            hallazgo_relacionado=porque.hallazgo,
             tipo=tipo,
-            contenido=contenido,
-            porque=porque,
+            titulo=titulo,
+            mensaje=mensaje,
         )

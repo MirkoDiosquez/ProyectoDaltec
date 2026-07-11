@@ -528,3 +528,79 @@ This task list implements 8 user stories (P1–P8) extending the hallazgos manag
 **Status**: Ready for implementation  
 **Next Step**: Begin Phase 1 setup tasks (T001–T008)  
 **Questions**: Contact technical lead or refer to specs/003-mejoras-hallazgos/ for clarification
+
+---
+
+## Phase 13: Fix de Bugs — Sistema de Notificaciones
+
+**Source**: Analysis report 2026-07-11 (speckit.analyze) — Issues I1–I12  
+**Purpose**: Corregir los fallos identificados en el sistema de notificaciones: emisión desde señales, entrega por WebSocket, categorización por tipo y navegación desde el panel.
+
+**Dependencies**: Phases 1–12 complete (modelos, señales y consumidores ya existentes)
+
+**Independent Test**: Responsable agrega un porqué → Admin recibe notificación WebSocket con `tipo='aprobacion_porque_pendiente'` y `hallazgo_id` en el payload → Admin hace clic en la notificación → navega a `/hallazgos/{id}`. Empleado asignado como responsable → ve notificación en su panel con `tipo='asignado_responsable'`. Mensaje con `#urgente` en chat → todos los participantes reciben notificación WebSocket con `tipo='mensaje_urgente'` en menos de 3 segundos.
+
+---
+
+### Layer 1 — Corrección de Señales Backend (Issues I1, I12)
+
+- [X] T200 [US8] Corregir campo `usuario` → `destinatario`, `hallazgo` → `hallazgo_relacionado`, dividir `contenido` en `titulo` + `mensaje`, y eliminar el campo inexistente `porque=instance` en `create_approval_pending_notification` en backend/apps/analisis_cinco_porques/signals.py (Issue I1 — actualmente lanza TypeError en cada porqué de responsable)
+- [X] T201 [P] [US8] Consolidar los handlers duplicados de `post_save` en `AnalisisCincoPorques` (T058 + T059 registran dos `@receiver` sobre el mismo evento): fusionar en un único handler que evalúe `created` y el campo `estado` en backend/apps/analisis_cinco_porques/signals.py (Issue I12 — previene notificaciones dobles)
+- [X] T202 [P] [US8] Corregir guard de `notificar_aprobacion_cambio_responsable` en backend/apps/solicitud_cambio_responsable/signals.py: reemplazar la comprobación `if not update_fields or 'estado' not in update_fields` por `if instance.estado != 'aprobada': return` para evitar que la señal se salte cuando `save()` se llama sin `update_fields` (Issue I9)
+
+---
+
+### Layer 2 — Corrección del Servicio de Notificaciones (Issues I2, I3, I4)
+
+- [X] T203 [US8] Agregar parámetro `tipo='cierre_pendiente'` (con default) a la firma de `crear_y_enviar()` en backend/apps/notificaciones/services.py; pasar `tipo=tipo` al `Notificacion.objects.create()`; incluir `"tipo": notificacion.tipo` en el payload del `channel_layer.group_send` (Issues I3 + I4 — sin esto, todas las notificaciones llegan como `cierre_pendiente` y sin `tipo` en el WebSocket)
+- [X] T204 [US8] Corregir nombre de grupo WebSocket en `crear_y_enviar()`: cambiar `notificaciones_admin_{destinatario.id}` → `notificaciones_{destinatario.id}` para coincidir con el grupo al que se suscribe `NotificacionConsumer.connect()` en backend/apps/notificaciones/services.py (Issue I2 — CRÍTICO: sin este fix ningún mensaje WebSocket llega al frontend)
+- [X] T205 [P] [US8] Actualizar todos los llamadores de `crear_y_enviar()` en backend/apps/notificaciones/services.py para pasar el valor correcto de `tipo`: `notificar_responsable_asignado` → `tipo='asignado_responsable'`; `notificar_responsable_removido` → `tipo='asignado_responsable'`; `notificar_hallazgo_aprobado` → `tipo='cierre_pendiente'`; `notificar_hallazgo_rechazado` → `tipo='cierre_pendiente'`; `notificar_accion_cierre_aprobado` → `tipo='cierre_pendiente'`; `notificar_accion_cierre_rechazado` → `tipo='cierre_pendiente'`; `notificar_admins_nuevo_hallazgo` → `tipo='cierre_pendiente'` (Issue I11)
+- [X] T206 [P] [US8] Agregar campo `hallazgo_id` al payload del `channel_layer.group_send` en `crear_y_enviar()` y en todos los payloads inline de las señales (`analisis_cinco_porques/signals.py`, `solicitud_cambio_responsable/signals.py`): `"hallazgo_id": notificacion.hallazgo_relacionado_id` en backend/apps/notificaciones/services.py y señales relacionadas (Issue I5 — el frontend necesita `hallazgo_id` para navegar a la ruta correcta en tiempo real)
+
+---
+
+### Layer 3 — Detección de #urgente en Chat (Issue I8)
+
+- [X] T207 [US8] Implementar detección de `#urgente` en `ChatConsumer._handle_chat_send()` en backend/apps/chat/consumers.py: después de guardar el `Mensaje`, evaluar `re.search(r'#urgente', contenido, re.IGNORECASE)`; si coincide, usar `database_sync_to_async` para obtener todos los participantes del chat y despachar `channel_layer.group_send` a cada `notificaciones_{user_id}` con `tipo='mensaje_urgente'` y `hallazgo_id`; también notificar al Admin si está en la lista de participantes del chat (T122 marcado `[X]` pero nunca implementado)
+
+---
+
+### Layer 4 — Capa API de Notificaciones en Frontend (Issues I6, I7)
+
+- [X] T208 [P] [US8] Crear frontend/src/api/notificaciones.js con funciones `getNotificaciones(params)`, `marcarLeida(id)`, `marcarTodasLeidas()` usando `axios` con header `Authorization: Bearer ${token}`; las funciones deben aceptar token como parámetro o leerlo del contexto de autenticación (Issue I7 — el `fetch()` actual no tiene header de autorización → 401)
+- [X] T209 [US8] Agregar fetch inicial en `useNotificaciones.js`: en el `useEffect` de montaje, llamar a `getNotificaciones({ leida: false })` del módulo `api/notificaciones.js` para cargar las notificaciones no leídas existentes desde la BD; fusionar con las notificaciones recibidas por WebSocket evitando duplicados por `id` en frontend/src/hooks/useNotificaciones.js (Issue I6 — actualmente el panel muestra vacío hasta que llega una notificación nueva)
+- [X] T210 [US8] Reemplazar los `fetch()` de `markAsRead` y `markAllAsRead` en `useNotificaciones.js` por llamadas a `marcarLeida(id, accessToken)` y `marcarTodasLeidas(accessToken)` del módulo `api/notificaciones.js` en frontend/src/hooks/useNotificaciones.js (Issue I7 — fix de autorización)
+
+---
+
+### Layer 5 — Navegación desde el Panel de Notificaciones (Issue I5, I10)
+
+- [X] T211 [US8] Agregar `useNavigate` de `react-router-dom` en `AdminNotificationPanel.jsx`; en cada item de notificación del listado detallado, añadir `onClick={() => navigate(\`/hallazgos/${notif.hallazgo_related?.id}\`)}` y `cursor: 'pointer'` en el estilo; si `hallazgo_related` es null, deshabilitar el `onClick` en frontend/src/components/AdminPanel/AdminNotificationPanel.jsx (Issue I5)
+- [X] T212 [P] [US8] Agregar `useNavigate` en `EmployeeNotificationPanel.jsx`; en cada item de notificación añadir `onClick={() => navigate(\`/hallazgos/${notif.hallazgo_related?.id}\`)}` con guard para `hallazgo_related` nulo en frontend/src/components/NotificationPanel/EmployeeNotificationPanel.jsx (Issue I5)
+- [X] T213 [P] [US8] Definir mapa de navegación por `tipo` en frontend/src/utils/notificationRoutes.js: `aprobacion_porque_pendiente` → `/hallazgos/${id}#porques`; `cambio_responsable_pendiente` → `/hallazgos/${id}#responsables`; `cierre_pendiente` → `/hallazgos/${id}#acciones`; `asignado_responsable` → `/hallazgos/${id}`; `mensaje_urgente` → `/hallazgos/${id}#chat`; usar esta función en T211 y T212 para que cada clic navegue a la sección correcta dentro del detalle del hallazgo (Issue I10 — cierra la brecha de especificación de URL de destino por tipo)
+
+---
+
+### Verificación de integridad
+
+- [X] T214 [P] [US8] Verificar que `analisis_cinco_porques/apps.py` importa el módulo de señales en `ready()` para que las correcciones de T200 y T201 queden registradas al arrancar Django en backend/apps/analisis_cinco_porques/apps.py
+- [X] T215 [US8] Prueba de humo manual end-to-end: (1) responsable agrega porqué → admin recibe notificación WebSocket con `tipo=aprobacion_porque_pendiente` y puede hacer clic para navegar al hallazgo correcto; (2) admin asigna responsable → empleado recibe notificación con `tipo=asignado_responsable`; (3) mensaje con `#urgente` → todos los participantes reciben notificación con `tipo=mensaje_urgente` en menos de 3 segundos → ejecutar contra entorno Docker local con `docker-compose up`
+
+**Checkpoint**: Sistema de notificaciones completamente operativo. Todas las emisiones crean `Notificacion` en BD con `tipo` correcto. WebSocket entrega mensajes al grupo correcto. Panel carga notificaciones existentes al montar. Clic en notificación navega a la sección vinculada del hallazgo.
+
+---
+
+## Summary & Metrics (actualizado 2026-07-11)
+
+### Cambios Phase 13
+
+- **Total tareas nuevas**: 16 (T200–T215)
+- **Críticas resueltas**: I1, I2, I3 (3/3)
+- **Altas resueltas**: I4, I5, I6, I7, I8 (5/5)
+- **Medias resueltas**: I9, I10, I11, I12 (4/4)
+- **Tareas paralelizables**: 8 (T201, T202, T205, T206, T208, T212, T213, T214)
+- **Dependencias internas**: T204 debe completarse antes de T209 (el WS group name debe estar correcto antes de probar el flujo end-to-end); T203 antes de T205; T208 antes de T209–T210
+
+### MVP de corrección
+
+Ejecutar **T200 → T203 → T204** desbloquea las tres capas críticas. El sistema empezará a emitir y entregar notificaciones correctamente. Luego T209–T210 para el panel frontend, y T211–T213 para la navegación.

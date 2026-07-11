@@ -1,14 +1,16 @@
 import { useState, useRef, useCallback } from "react";
 import FileUpload from "./FileUpload.jsx";
+import client from "../api/client.js";
 
 /**
  * ChatMessageComposer component for sending messages with optional file attachments (T085).
  *
  * Features:
  * - Textarea for message content
- * - FileUpload component for attaching files
+ * - FileUpload component in deferred mode (files attach but don't upload until send)
+ * - Files upload when message is sent (like hallazgo creation)
  * - Send button with loading state
- * - Displays uploaded files before sending
+ * - Displays attached files before sending
  *
  * Props:
  * - ws: WebSocket connection (must be open to send)
@@ -23,35 +25,50 @@ export default function ChatMessageComposer({
   disabled = false,
 }) {
   const [content, setContent] = useState("");
-  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [attachedFiles, setAttachedFiles] = useState([]);
   const [sending, setSending] = useState(false);
   const composerRef = useRef(null);
 
-  // Handle file upload completion
-  const handleFileUpload = useCallback((response) => {
-    // response should have response.data with the uploaded archivo
-    if (response?.data?.id) {
-      setUploadedFiles((prev) => [...prev, response.data]);
+  // Handle file selection in deferred mode (file not uploaded yet)
+  const handleFileSelect = useCallback((file) => {
+    if (file) {
+      setAttachedFiles((prev) => [...prev, file]);
     }
   }, []);
 
-  // Handle file upload error
+  // Handle file selection error
   const handleFileError = useCallback((error) => {
-    onError(error?.message || "Error subiendo archivo");
+    onError(error?.message || "Error con archivo");
   }, [onError]);
 
-  // Remove uploaded file before sending
-  const handleRemoveFile = useCallback((fileId) => {
-    setUploadedFiles((prev) => prev.filter((f) => f.id !== fileId));
+  // Remove attached file before sending
+  const handleRemoveFile = useCallback((idx) => {
+    setAttachedFiles((prev) => prev.filter((_, i) => i !== idx));
   }, []);
 
-  // Send message with attachments
+  // Upload a single file to /api/v1/archivos/
+  const uploadFile = async (file) => {
+    const formData = new FormData();
+    formData.append('nombre', file.name);
+    formData.append('ruta', file);
+
+    try {
+      const response = await client.post('/archivos/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response.data.id; // Return just the ID
+    } catch (error) {
+      throw new Error(error.response?.data?.ruta?.[0] || 'Error al subir archivo');
+    }
+  };
+
+  // Send message with attachments (upload files first)
   const handleSendMessage = useCallback(
     async (e) => {
       e.preventDefault();
 
       const trimmedContent = content.trim();
-      if (!trimmedContent && uploadedFiles.length === 0) {
+      if (!trimmedContent && attachedFiles.length === 0) {
         onError("Escribí un mensaje o adjuntá un archivo");
         return;
       }
@@ -63,21 +80,36 @@ export default function ChatMessageComposer({
 
       setSending(true);
       try {
+        // Upload all attached files first
+        const archivoIds = [];
+        for (const file of attachedFiles) {
+          try {
+            const id = await uploadFile(file);
+            archivoIds.push(id);
+          } catch (error) {
+            onError(error.message);
+            setSending(false);
+            return;
+          }
+        }
+
+        // Send message with file IDs
         const payload = {
           type: "chat.send",
           contenido: trimmedContent,
-          archivos_ids: uploadedFiles.map((f) => f.id),
+          archivos_ids: archivoIds,
         };
         ws.send(JSON.stringify(payload));
         setContent("");
-        setUploadedFiles([]);
+        setAttachedFiles([]);
+        onMessageSent?.();
       } catch (error) {
         onError(error.message || "Error enviando mensaje");
       } finally {
         setSending(false);
       }
     },
-    [content, uploadedFiles, ws, onError]
+    [content, attachedFiles, ws, onError, onMessageSent]
   );
 
   return (
@@ -91,17 +123,18 @@ export default function ChatMessageComposer({
         gap: "10px",
       }}
     >
-      {/* File Upload Zone */}
+      {/* File Upload Zone (Deferred Mode) */}
       <div>
         <FileUpload
-          onFileUpload={handleFileUpload}
+          deferred={true}
+          onFileSelect={handleFileSelect}
           onError={handleFileError}
           disabled={disabled || sending}
         />
       </div>
 
-      {/* Display Uploaded Files Before Sending */}
-      {uploadedFiles.length > 0 && (
+      {/* Display Attached Files Before Sending */}
+      {attachedFiles.length > 0 && (
         <div
           style={{
             padding: "10px 12px",
@@ -111,12 +144,12 @@ export default function ChatMessageComposer({
           }}
         >
           <div style={{ fontSize: "11px", fontWeight: "700", color: "#0369a1", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-            Archivos adjuntos ({uploadedFiles.length})
+            Archivos adjuntos ({attachedFiles.length})
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            {uploadedFiles.map((file) => (
+            {attachedFiles.map((file, idx) => (
               <div
-                key={file.id}
+                key={idx}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -129,10 +162,10 @@ export default function ChatMessageComposer({
                   color: "#0c4a6e",
                 }}
               >
-                <span>{file.nombre}</span>
+                <span>{file.name}</span>
                 <button
                   type="button"
-                  onClick={() => handleRemoveFile(file.id)}
+                  onClick={() => handleRemoveFile(idx)}
                   disabled={sending}
                   style={{
                     background: "none",
@@ -177,14 +210,14 @@ export default function ChatMessageComposer({
         />
         <button
           type="submit"
-          disabled={disabled || sending || (!content.trim() && uploadedFiles.length === 0)}
+          disabled={disabled || sending || (!content.trim() && attachedFiles.length === 0)}
           style={{
             padding: "10px 22px",
             borderRadius: "10px",
             fontWeight: 700,
             fontSize: "14px",
             cursor: sending ? "default" : "pointer",
-            opacity: disabled || sending || (!content.trim() && uploadedFiles.length === 0) ? 0.45 : 1,
+            opacity: disabled || sending || (!content.trim() && attachedFiles.length === 0) ? 0.45 : 1,
             whiteSpace: "nowrap",
           }}
         >

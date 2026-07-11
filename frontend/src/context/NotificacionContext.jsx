@@ -1,5 +1,4 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
-
 import { useAuth } from "./AuthContext.jsx";
 
 const NotificacionContext = createContext(null);
@@ -16,9 +15,38 @@ export function NotificacionProvider({ children }) {
   const [notificaciones, setNotificaciones] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Load initial notifications from API
+  useEffect(() => {
+    if (!isAuthenticated || !accessToken) return;
+
+    const fetchInitialNotificaciones = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch("/api/v1/notificaciones/?leida=false&ordering=-fecha", {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const results = Array.isArray(data.results) ? data.results : (Array.isArray(data) ? data : []);
+          setNotificaciones(results);
+          setUnreadCount(results.filter(n => !n.leida).length);
+        }
+      } catch (error) {
+        console.error("Error loading initial notifications:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchInitialNotificaciones();
+  }, [isAuthenticated, accessToken]);
 
   useEffect(() => {
-    const canConnect = isAuthenticated && Boolean(accessToken) && user?.tipo === "ADMIN";
+    const canConnect = isAuthenticated && Boolean(accessToken);
 
     if (!canConnect) {
       if (socketRef.current) {
@@ -39,10 +67,21 @@ export function NotificacionProvider({ children }) {
     ws.onmessage = (event) => {
       try {
         const payload = JSON.parse(event.data);
-        setNotificaciones((prev) => [payload, ...prev]);
-        setUnreadCount((prev) => prev + 1);
-      } catch {
-        // Ignore malformed messages.
+        // Skip connection confirmation messages
+        if (payload.type === "connection_established") return;
+        
+        setNotificaciones((prev) => {
+          // Check if notification already exists
+          const exists = prev.some(n => n.id === payload.id);
+          if (exists) return prev;
+          return [payload, ...prev];
+        });
+        
+        if (!payload.leida) {
+          setUnreadCount((prev) => prev + 1);
+        }
+      } catch (error) {
+        console.error("Error parsing notification:", error);
       }
     };
 
@@ -50,7 +89,8 @@ export function NotificacionProvider({ children }) {
       setIsConnected(false);
     };
 
-    ws.onerror = () => {
+    ws.onerror = (error) => {
+      console.error("WebSocket error:", error);
       setIsConnected(false);
     };
 
@@ -60,10 +100,54 @@ export function NotificacionProvider({ children }) {
         socketRef.current = null;
       }
     };
-  }, [isAuthenticated, accessToken, user?.tipo]);
+  }, [isAuthenticated, accessToken]);
 
-  const markAllAsRead = () => {
-    setUnreadCount(0);
+  const markAsRead = async (notificationId) => {
+    try {
+      const response = await fetch(`/api/v1/notificaciones/${notificationId}/marcar_leida/`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+      
+      if (response.ok) {
+        const updatedNotif = await response.json();
+        setNotificaciones((prev) =>
+          prev.map((n) => (n.id === notificationId ? updatedNotif : n))
+        );
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+        return updatedNotif;
+      }
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      const response = await fetch("/api/v1/notificaciones/marcar_todas_leidas/", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+      
+      if (response.ok) {
+        setNotificaciones((prev) =>
+          prev.map((n) => ({ ...n, leida: true }))
+        );
+        setUnreadCount(0);
+      }
+    } catch (error) {
+      console.error("Error marking all as read:", error);
+    }
+  };
+
+  const removeNotification = (notificationId) => {
+    setNotificaciones((prev) => prev.filter((n) => n.id !== notificationId));
   };
 
   const clearNotificaciones = () => {
@@ -76,10 +160,13 @@ export function NotificacionProvider({ children }) {
       notificaciones,
       unreadCount,
       isConnected,
+      isLoading,
+      markAsRead,
       markAllAsRead,
+      removeNotification,
       clearNotificaciones,
     }),
-    [notificaciones, unreadCount, isConnected]
+    [notificaciones, unreadCount, isConnected, isLoading]
   );
 
   return <NotificacionContext.Provider value={value}>{children}</NotificacionContext.Provider>;

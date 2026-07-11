@@ -70,6 +70,7 @@ def crear_notificacion_cambio_responsable_pendiente(sender, instance, created, *
             "tipo": notif.tipo,
             "fecha": notif.fecha.isoformat(),
             "leida": notif.leida,
+            "hallazgo_id": notif.hallazgo_relacionado_id,
         })
 
 
@@ -83,13 +84,10 @@ def notificar_aprobacion_cambio_responsable(sender, instance, created, update_fi
     """
     if created:
         return
-    
-    if not update_fields or 'estado' not in update_fields:
-        return
-    
+
     if instance.estado != 'aprobada':
         return
-    
+
     # 1. Notify solicitante that request was approved
     notif1 = Notificacion.objects.create(
         titulo=f"Solicitud de cambio aprobada - Hallazgo #{instance.hallazgo_id}",
@@ -105,6 +103,7 @@ def notificar_aprobacion_cambio_responsable(sender, instance, created, update_fi
         "tipo": notif1.tipo,
         "fecha": notif1.fecha.isoformat(),
         "leida": notif1.leida,
+        "hallazgo_id": notif1.hallazgo_relacionado_id,
     })
     
     # 2. Notify usuario_propuesto they're now a responsable
@@ -123,6 +122,7 @@ def notificar_aprobacion_cambio_responsable(sender, instance, created, update_fi
             "tipo": notif2.tipo,
             "fecha": notif2.fecha.isoformat(),
             "leida": notif2.leida,
+            "hallazgo_id": notif2.hallazgo_relacionado_id,
         })
 
 
@@ -135,10 +135,7 @@ def notificar_rechazo_cambio_responsable(sender, instance, created, update_field
     """
     if created:
         return
-    
-    if not update_fields or 'estado' not in update_fields:
-        return
-    
+
     if instance.estado != 'rechazada':
         return
     
@@ -162,6 +159,7 @@ def notificar_rechazo_cambio_responsable(sender, instance, created, update_field
         "tipo": notif.tipo,
         "fecha": notif.fecha.isoformat(),
         "leida": notif.leida,
+        "hallazgo_id": notif.hallazgo_relacionado_id,
     })
 
 

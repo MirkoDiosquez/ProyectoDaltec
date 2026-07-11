@@ -7,17 +7,24 @@ from apps.notificaciones.models import Notificacion
 
 
 @transaction.atomic
-def crear_y_enviar(destinatario, titulo, mensaje, hallazgo=None):
+def crear_y_enviar(destinatario, titulo, mensaje, hallazgo=None, tipo='cierre_pendiente'):
+    """
+    Create a Notificacion in the DB and dispatch it via WebSocket to the
+    recipient's personal channel group (T203, T204, T206).
+
+    Group name matches NotificacionConsumer: notificaciones_{user_id}
+    """
     notificacion = Notificacion.objects.create(
         titulo=titulo,
         mensaje=mensaje,
         destinatario=destinatario,
         hallazgo_relacionado=hallazgo,
+        tipo=tipo,
     )
 
     channel_layer = get_channel_layer()
     if channel_layer is not None:
-        group_name = f"notificaciones_admin_{destinatario.id}"
+        group_name = f"notificaciones_{destinatario.id}"
         async_to_sync(channel_layer.group_send)(
             group_name,
             {
@@ -26,10 +33,10 @@ def crear_y_enviar(destinatario, titulo, mensaje, hallazgo=None):
                     "id": notificacion.id,
                     "titulo": notificacion.titulo,
                     "mensaje": notificacion.mensaje,
+                    "tipo": notificacion.tipo,
                     "fecha": notificacion.fecha.isoformat(),
                     "leida": notificacion.leida,
-                    "destinatario_id": notificacion.destinatario_id,
-                    "hallazgo_relacionado_id": notificacion.hallazgo_relacionado_id,
+                    "hallazgo_id": notificacion.hallazgo_relacionado_id,
                 },
             },
         )
@@ -46,6 +53,7 @@ def notificar_accion_cierre_aprobado(destinatario, accion):
             f"#{accion.hallazgo_id} fue aprobada."
         ),
         hallazgo=accion.hallazgo,
+        tipo='cierre_pendiente',
     )
 
 
@@ -58,6 +66,7 @@ def notificar_accion_cierre_rechazado(destinatario, accion):
             f"#{accion.hallazgo_id} fue rechazada."
         ),
         hallazgo=accion.hallazgo,
+        tipo='cierre_pendiente',
     )
 
 
@@ -71,6 +80,7 @@ def notificar_hallazgo_aprobado(creador, hallazgo):
             f"Tu hallazgo de tipo {hallazgo.tipo} ha sido aprobado por el administrador."
         ),
         hallazgo=hallazgo,
+        tipo='cierre_pendiente',
     )
 
 
@@ -83,6 +93,7 @@ def notificar_hallazgo_rechazado(creador, hallazgo):
             f"Tu hallazgo de tipo {hallazgo.tipo} ha sido rechazado por el administrador."
         ),
         hallazgo=hallazgo,
+        tipo='cierre_pendiente',
     )
 
 
@@ -96,6 +107,7 @@ def notificar_responsable_asignado(responsable, hallazgo):
             f"de tipo {hallazgo.tipo}."
         ),
         hallazgo=hallazgo,
+        tipo='asignado_responsable',
     )
 
 
@@ -108,6 +120,7 @@ def notificar_responsable_removido(responsable, hallazgo):
             f"Has sido removido como responsable del hallazgo #{hallazgo.id}."
         ),
         hallazgo=hallazgo,
+        tipo='asignado_responsable',
     )
 
 
@@ -131,4 +144,5 @@ def notificar_admins_nuevo_hallazgo(hallazgo, exclude_user_id=None):
                 f"con estado {hallazgo.estado}."
             ),
             hallazgo=hallazgo,
+            tipo='cierre_pendiente',
         )

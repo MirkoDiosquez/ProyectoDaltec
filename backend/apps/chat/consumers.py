@@ -157,6 +157,17 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             },
         )
 
+        # T122: Dispatch urgent notifications via WebSocket if #urgente detected
+        if mensaje.get("tiene_urgente"):
+            for ws_notif in mensaje.get("notificaciones_urgentes", []):
+                await self.channel_layer.group_send(
+                    f"notificaciones_{ws_notif['user_id']}",
+                    {
+                        "type": "notificacion.nueva",
+                        "payload": ws_notif["payload"],
+                    },
+                )
+
     async def chat_message(self, event):
         """
         Broadcast handler for chat.message events.
@@ -204,40 +215,44 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         """
         Create and save a Mensaje in the database with optional file attachments (T084, T088).
         Links existing Archivo records to the mensaje.
-        
-        T122: If message contains #urgente, dispatch urgent notifications to all chat participants.
-        
+
+        T122: If message contains #urgente (case-insensitive), creates Notificacion records
+        in the DB for all chat participants AND admin users, and returns WS payload list
+        for the async caller to dispatch via channel_layer.
+
         Returns serialized mensaje data or None on error.
         """
+        import re
+        from django.contrib.auth import get_user_model
+
         Chat = apps.get_model("chat", "Chat")
         Mensaje = apps.get_model("chat", "Mensaje")
         Archivo = apps.get_model("archivos", "Archivo")
         Notificacion = apps.get_model("notificaciones", "Notificacion")
+        User = get_user_model()
 
         try:
-            chat = Chat.objects.get(hallazgo_id=self.hallazgo_id)
-            
-            # Check for #urgente flag (case-insensitive)
-            tiene_urgente = "#urgente" in contenido.lower()
-            
+            chat = Chat.objects.select_related("hallazgo").get(hallazgo_id=self.hallazgo_id)
+
+            # Detect #urgente case-insensitively (T122)
+            tiene_urgente = bool(re.search(r'#urgente', contenido, re.IGNORECASE))
+
             mensaje = Mensaje.objects.create(
                 chat=chat,
                 autor=user,
                 contenido=contenido,
-                tiene_urgente=tiene_urgente,  # T122: Set urgente flag
+                tiene_urgente=tiene_urgente,
             )
-            
+
             # Link archivos to mensaje if provided
             if archivos_ids:
-                # Validate all archivos exist and belong to user
                 archivos = Archivo.objects.filter(
                     id__in=archivos_ids,
                     cargado_por=user,
-                    mensaje__isnull=True,  # Not already attached to a message
+                    mensaje__isnull=True,
                 )
-                # Update archivos to link to this mensaje
                 archivos.update(mensaje=mensaje)
-            
+
             # Serialize archivos for response
             archivos_data = [
                 {
@@ -250,30 +265,58 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                 }
                 for a in mensaje.archivos.all()
             ]
-            
-            # T122: Send urgent notifications to all participants if #urgente
+
+            # T122: Create DB notifications + build WS payload list for urgent messages
+            notificaciones_urgentes = []
             if tiene_urgente:
-                participants = chat.participantes.all()
-                for participant in participants:
-                    if participant.id != user.id:  # Don't notify the sender
-                        Notificacion.objects.create(
-                            titulo="Mensaje urgente en chat",
-                            mensaje=f"Mensaje urgente de {user.nombre} {user.apellido}: {contenido[:100]}",
-                            tipo="mensaje_urgente",
-                            destinatario=participant,
-                            hallazgo_relacionado=chat.hallazgo,
-                        )
-            
+                # Participants of this chat + all active admins (spec US8 AC5 + AC6)
+                participants = list(chat.participantes.select_related().all())
+                admins = list(User.objects.filter(tipo="ADMIN", is_active=True))
+
+                # Deduplicate by user id; sender is excluded
+                recipients = {
+                    u.id: u
+                    for u in participants + admins
+                    if u.id != user.id
+                }
+
+                sender_display = (
+                    user.get_full_name().strip() or getattr(user, 'nombre', str(user))
+                )
+                preview = contenido[:100] + ("..." if len(contenido) > 100 else "")
+
+                for recipient in recipients.values():
+                    notif = Notificacion.objects.create(
+                        titulo="Mensaje urgente en chat",
+                        mensaje=f"{sender_display}: {preview}",
+                        tipo="mensaje_urgente",
+                        destinatario=recipient,
+                        hallazgo_relacionado=chat.hallazgo,
+                    )
+                    notificaciones_urgentes.append({
+                        "user_id": recipient.id,
+                        "payload": {
+                            "id": notif.id,
+                            "titulo": notif.titulo,
+                            "mensaje": notif.mensaje,
+                            "tipo": notif.tipo,
+                            "fecha": notif.fecha.isoformat(),
+                            "leida": notif.leida,
+                            "hallazgo_id": notif.hallazgo_relacionado_id,
+                        },
+                    })
+
             return {
                 "id": mensaje.id,
                 "contenido": mensaje.contenido,
                 "fecha_hora": mensaje.fecha_hora,
                 "autor": {
                     "id": user.id,
-                    "nombre": user.nombre,
+                    "nombre": getattr(user, 'nombre', user.username),
                 },
                 "archivos": archivos_data,
-                "tiene_urgente": tiene_urgente,  # T122: Include in response
+                "tiene_urgente": tiene_urgente,
+                "notificaciones_urgentes": notificaciones_urgentes,
             }
         except Exception as exc:
             logger.exception("Error saving mensaje: %s", exc)

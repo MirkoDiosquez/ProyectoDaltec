@@ -15,16 +15,22 @@
 import { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { useNotificaciones } from "../../context/NotificacionContext.jsx";
 import NotificationBadge from "../NotificationBadge.jsx";
 
-export default function MainNavbar({ notificationCount = 0 }) {
+export default function MainNavbar() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { notificaciones } = useNotificaciones();
 
   const roleLabel = useMemo(() => {
     const labels = { ADMIN: "Admin", EMPLEADO: "Empleado", CLIENTE: "Cliente" };
     return labels[user?.tipo] || "Usuario";
   }, [user?.tipo]);
+
+  const notificationCount = useMemo(() => {
+    return notificaciones.filter(n => !n.leida).length;
+  }, [notificaciones]);
 
   const handleLogout = async () => {
     await logout();

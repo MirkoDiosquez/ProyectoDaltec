@@ -5,12 +5,31 @@ from .models import Archivo
 
 
 class ArchivoUploadSerializer(serializers.ModelSerializer):
-    """Serializer for file uploads with MIME type and size validation (T067)."""
+    """Serializer for file uploads with MIME type and size validation (T067).
+    
+    Includes preview/download URLs for immediate frontend use.
+    """
+    preview_url = serializers.SerializerMethodField()
+    download_url = serializers.SerializerMethodField()
     
     class Meta:
         model = Archivo
-        fields = ['id', 'nombre', 'ruta', 'tipo_mime', 'tamanio', 'fecha_carga']
+        fields = ['id', 'nombre', 'ruta', 'tipo_mime', 'tamanio', 'fecha_carga', 'preview_url', 'download_url']
         read_only_fields = ['id', 'tamanio', 'fecha_carga', 'tipo_mime']
+    
+    def get_preview_url(self, obj):
+        """Generate preview URL for embedded viewing."""
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(f'/api/v1/archivos/{obj.id}/preview/')
+        return f'/api/v1/archivos/{obj.id}/preview/'
+    
+    def get_download_url(self, obj):
+        """Generate download URL for file retrieval."""
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(f'/api/v1/archivos/{obj.id}/download/')
+        return f'/api/v1/archivos/{obj.id}/download/'
     
     def validate_ruta(self, file_obj):
         """Validate MIME type and file size against whitelist (T067)."""
@@ -38,13 +57,17 @@ class ArchivoUploadSerializer(serializers.ModelSerializer):
         return file_obj
     
     def create(self, validated_data):
-        """Create Archivo with MIME type and size from uploaded file."""
+        """Create Archivo with MIME type and size from uploaded file.
+        
+        Returns full archivo data with preview/download URLs for immediate use.
+        """
         file_obj = validated_data['ruta']
         validated_data['tipo_mime'] = getattr(file_obj, 'content_type', 'application/octet-stream')
         validated_data['tamanio'] = file_obj.size
         validated_data['cargado_por'] = self.context['request'].user
         
-        return super().create(validated_data)
+        archivo = super().create(validated_data)
+        return archivo
 
 
 class ArchivoSerializer(serializers.ModelSerializer):

@@ -5,6 +5,11 @@
  */
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
+import {
+  getNotificaciones,
+  marcarLeida,
+  marcarTodasLeidas,
+} from '../api/notificaciones.js';
 
 /**
  * Hook for managing real-time notifications via WebSocket (T124).
@@ -64,8 +69,11 @@ export function useNotificaciones() {
             return;
           }
 
-          // Add new notification
-          setNotifications((prev) => [data, ...prev]);
+          // Add new notification, skip if already loaded from initial fetch
+          setNotifications((prev) => {
+            if (prev.some((n) => n.id === data.id)) return prev;
+            return [data, ...prev];
+          });
         } catch (err) {
           console.error('Error parsing notification:', err);
         }
@@ -108,6 +116,15 @@ export function useNotificaciones() {
   useEffect(() => {
     if (user && accessToken) {
       connect();
+
+      // T209: Load existing unread notifications from DB on mount
+      getNotificaciones({ leida: false })
+        .then((initial) => {
+          setNotifications(initial);
+        })
+        .catch((err) => {
+          console.error('Error loading initial notifications:', err);
+        });
     }
     
     return () => disconnect();
@@ -120,37 +137,25 @@ export function useNotificaciones() {
     return acc;
   }, {});
 
-  // Mark notification as read
+  // Mark notification as read (T210)
   const markAsRead = useCallback(async (notificationId) => {
     try {
-      const response = await fetch(
-        `/api/v1/notificaciones/${notificationId}/marcar-leida/`,
-        { method: 'PATCH' }
+      await marcarLeida(notificationId);
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === notificationId ? { ...n, leida: true } : n
+        )
       );
-      
-      if (response.ok) {
-        setNotifications((prev) =>
-          prev.map((n) =>
-            n.id === notificationId ? { ...n, leida: true } : n
-          )
-        );
-      }
     } catch (err) {
       console.error('Error marking notification as read:', err);
     }
   }, []);
 
-  // Mark all as read
+  // Mark all as read (T210)
   const markAllAsRead = useCallback(async () => {
     try {
-      const response = await fetch(
-        '/api/v1/notificaciones/marcar-todas-leidas/',
-        { method: 'POST' }
-      );
-      
-      if (response.ok) {
-        setNotifications((prev) => prev.map((n) => ({ ...n, leida: true })));
-      }
+      await marcarTodasLeidas();
+      setNotifications((prev) => prev.map((n) => ({ ...n, leida: true })));
     } catch (err) {
       console.error('Error marking all notifications as read:', err);
     }

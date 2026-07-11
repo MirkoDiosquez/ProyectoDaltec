@@ -4,8 +4,8 @@ import { listUsuarios, addResponsable, removeResponsable } from "../api/hallazgo
 /**
  * ResponsableList component for managing hallazgo responsables (T096).
  *
- * Displays all system users with toggles to add/remove them as responsables.
- * Current responsables are indicated visually.
+ * Displays available users to add as responsables (excluding those already assigned).
+ * Shows current responsables with option to remove them.
  * Admin-only component.
  *
  * Props:
@@ -41,18 +41,13 @@ export default function ResponsableList({
     };
 
     loadUsuarios();
-  }, []);
+  }, [hallazgoId]);
 
   // Handle adding responsable (T098)
   const handleAddResponsable = async (userId) => {
     setActionInProgress((prev) => ({ ...prev, [userId]: "adding" }));
     try {
       await addResponsable(hallazgoId, userId);
-      setUsuarios((prev) =>
-        prev.map((u) =>
-          u.id === userId ? { ...u, es_responsable_de_hallazgo: true } : u
-        )
-      );
       if (onResponsableAdded) {
         onResponsableAdded(userId);
       }
@@ -68,11 +63,6 @@ export default function ResponsableList({
     setActionInProgress((prev) => ({ ...prev, [userId]: "removing" }));
     try {
       await removeResponsable(hallazgoId, userId);
-      setUsuarios((prev) =>
-        prev.map((u) =>
-          u.id === userId ? { ...u, es_responsable_de_hallazgo: false } : u
-        )
-      );
       if (onResponsableRemoved) {
         onResponsableRemoved(userId);
       }
@@ -83,96 +73,220 @@ export default function ResponsableList({
     }
   };
 
+  // Separate responsables from available users - use currentResponsables prop for comparison
+  const responsablesActuales = usuarios.filter((u) => currentResponsables.includes(u.id));
+  const usuariosDisponibles = usuarios.filter((u) => !currentResponsables.includes(u.id));
+
   if (loading) {
     return (
-      <div style={{ padding: "15px", backgroundColor: "#f3f4f6", borderRadius: "4px" }}>
-        Cargando usuarios...
+      <div style={{ padding: "1.5rem", background: "#f3f4f6", borderRadius: "8px", textAlign: "center", color: "#666" }}>
+        ⏳ Cargando usuarios...
       </div>
     );
   }
 
   return (
-    <div style={{ padding: "15px", border: "1px solid #d1d5db", borderRadius: "4px" }}>
-      <h3 style={{ marginTop: 0 }}>Gestión de Responsables</h3>
-
+    <div style={{ display: "grid", gap: 16 }}>
       {error && (
         <div
           style={{
-            padding: "10px",
-            marginBottom: "12px",
-            backgroundColor: "#fee2e2",
-            color: "#dc2626",
-            borderRadius: "4px",
-            fontSize: "14px",
+            padding: "1rem",
+            background: "#fee2e2",
+            color: "#991b1b",
+            borderRadius: "8px",
+            fontSize: "0.9rem",
+            border: "1px solid #fca5a5",
           }}
         >
-          {error}
+          ⚠️ {error}
         </div>
       )}
 
-      {usuarios.length === 0 ? (
-        <p style={{ color: "#999" }}>No hay usuarios disponibles.</p>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          {usuarios.map((usuario) => {
-            const isResponsable = usuario.es_responsable_de_hallazgo;
-            const isProcessing = actionInProgress[usuario.id];
+      {/* Current responsables section */}
+      <section style={{ border: "2px solid #10b981", borderRadius: "8px", padding: "1.5rem", background: "#ecfdf5" }}>
+        <h3 style={{ margin: "0 0 1rem 0", color: "#065f46", display: "flex", alignItems: "center", gap: 8 }}>
+          ✓ Responsables Actuales
+          <span style={{ 
+            background: "#10b981", 
+            color: "#fff", 
+            borderRadius: "50%", 
+            width: 28, 
+            height: 28, 
+            display: "flex", 
+            alignItems: "center", 
+            justifyContent: "center",
+            fontSize: "0.85rem",
+            fontWeight: 700,
+          }}>
+            {responsablesActuales.length}
+          </span>
+        </h3>
 
-            return (
-              <div
-                key={usuario.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "10px",
-                  backgroundColor: isResponsable ? "#dbeafe" : "#f9fafb",
-                  border: `1px solid ${isResponsable ? "#0284c7" : "#e5e7eb"}`,
-                  borderRadius: "4px",
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: "500", color: "#1f2937" }}>
-                    {usuario.nombre} {usuario.apellido}
-                  </div>
-                  <div style={{ fontSize: "12px", color: "#6b7280" }}>
-                    {usuario.tipo}
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", gap: "8px" }}>
-                  {isResponsable ? (
-                    <button
-                      onClick={() => handleRemoveResponsable(usuario.id)}
-                      disabled={isProcessing}
+        {responsablesActuales.length === 0 ? (
+          <p style={{ margin: 0, color: "#6b7280" }}>No hay responsables asignados aún.</p>
+        ) : (
+          <div style={{ display: "grid", gap: 10 }}>
+            {responsablesActuales.map((usuario) => {
+              const isProcessing = actionInProgress[usuario.id];
+              return (
+                <div
+                  key={usuario.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "1rem",
+                    background: "#fff",
+                    border: "1px solid #d1fae5",
+                    borderRadius: "6px",
+                    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div
                       style={{
-                        padding: "6px 12px",
-                        background: "#dc2626",
-                        fontSize: "12px",
-                        opacity: isProcessing ? 0.6 : 1,
+                        width: 40,
+                        height: 40,
+                        borderRadius: "50%",
+                        background: "#10b981",
+                        color: "#fff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontWeight: 700,
+                        fontSize: "0.9rem",
                       }}
                     >
-                      {isProcessing ? "Removiendo..." : "Remover"}
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleAddResponsable(usuario.id)}
-                      disabled={isProcessing}
+                      {usuario.nombre.charAt(0)}{usuario.apellido.charAt(0)}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 600, color: "#1f2937", fontSize: "0.95rem" }}>
+                        {usuario.nombre} {usuario.apellido}
+                      </div>
+                      <div style={{ fontSize: "0.8rem", color: "#6b7280" }}>
+                        @{usuario.username} • {usuario.tipo}
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => handleRemoveResponsable(usuario.id)}
+                    disabled={isProcessing}
+                    style={{
+                      padding: "0.5rem 1rem",
+                      background: "#ef4444",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "6px",
+                      cursor: isProcessing ? "not-allowed" : "pointer",
+                      fontWeight: 600,
+                      fontSize: "0.85rem",
+                      opacity: isProcessing ? 0.6 : 1,
+                      transition: "all 0.2s",
+                    }}
+                  >
+                    {isProcessing ? "⏳ Removiendo..." : "✕ Remover"}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* Available users section */}
+      <section style={{ border: "2px solid #3b82f6", borderRadius: "8px", padding: "1.5rem", background: "#eff6ff" }}>
+        <h3 style={{ margin: "0 0 1rem 0", color: "#1e40af", display: "flex", alignItems: "center", gap: 8 }}>
+          ➕ Agregar Responsable
+          {usuariosDisponibles.length > 0 && (
+            <span style={{ 
+              background: "#3b82f6", 
+              color: "#fff", 
+              borderRadius: "50%", 
+              width: 28, 
+              height: 28, 
+              display: "flex", 
+              alignItems: "center", 
+              justifyContent: "center",
+              fontSize: "0.85rem",
+              fontWeight: 700,
+            }}>
+              {usuariosDisponibles.length}
+            </span>
+          )}
+        </h3>
+
+        {usuariosDisponibles.length === 0 ? (
+          <p style={{ margin: 0, color: "#6b7280" }}>Todos los usuarios ya son responsables.</p>
+        ) : (
+          <div style={{ display: "grid", gap: 10 }}>
+            {usuariosDisponibles.map((usuario) => {
+              const isProcessing = actionInProgress[usuario.id];
+              return (
+                <div
+                  key={usuario.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "1rem",
+                    background: "#fff",
+                    border: "1px solid #bfdbfe",
+                    borderRadius: "6px",
+                    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div
                       style={{
-                        padding: "6px 12px",
-                        fontSize: "12px",
-                        opacity: isProcessing ? 0.6 : 1,
+                        width: 40,
+                        height: 40,
+                        borderRadius: "50%",
+                        background: "#e0e7ff",
+                        color: "#3b82f6",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontWeight: 700,
+                        fontSize: "0.9rem",
                       }}
                     >
-                      {isProcessing ? "Agregando..." : "Agregar"}
-                    </button>
-                  )}
+                      {usuario.nombre.charAt(0)}{usuario.apellido.charAt(0)}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 600, color: "#1f2937", fontSize: "0.95rem" }}>
+                        {usuario.nombre} {usuario.apellido}
+                      </div>
+                      <div style={{ fontSize: "0.8rem", color: "#6b7280" }}>
+                        @{usuario.username} • {usuario.tipo}
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => handleAddResponsable(usuario.id)}
+                    disabled={isProcessing}
+                    style={{
+                      padding: "0.5rem 1rem",
+                      background: "#3b82f6",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "6px",
+                      cursor: isProcessing ? "not-allowed" : "pointer",
+                      fontWeight: 600,
+                      fontSize: "0.85rem",
+                      opacity: isProcessing ? 0.6 : 1,
+                      transition: "all 0.2s",
+                    }}
+                  >
+                    {isProcessing ? "⏳ Agregando..." : "+ Agregar"}
+                  </button>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
