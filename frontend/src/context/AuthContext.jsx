@@ -219,6 +219,11 @@ export function AuthProvider({ children }) {
     refreshToken().finally(() => setLoading(false));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const updateStoredUser = useCallback((nextUser) => {
+    setUser(nextUser);
+    localStorage.setItem(USER_KEY, JSON.stringify(nextUser ?? null));
+  }, []);
+
   const value = {
     accessToken,
     refreshTokenValue,
@@ -226,6 +231,7 @@ export function AuthProvider({ children }) {
     loading,
     login,
     logout,
+    updateStoredUser,
     refreshToken,
     refreshTokenRef, // consumed by T014 Axios interceptor
     isAuthenticated: Boolean(accessToken),

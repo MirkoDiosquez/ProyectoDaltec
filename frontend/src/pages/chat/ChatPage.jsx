@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { connectChat, sendMessage, disconnect, isConnected, getChatByHallazgo } from "../../api/chat.js";
 import { getHallazgo } from "../../api/hallazgos.js";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { useNotificaciones } from "../../context/NotificacionContext.jsx";
 import ChatMessage from "../../components/ChatMessage.jsx";
 import ChatMessageComposer from "../../components/ChatMessageComposer.jsx";
 
@@ -19,6 +20,7 @@ export default function ChatPage() {
   const { id: hallazgoId } = useParams();  // route is /hallazgos/:id/chat
   const navigate = useNavigate();
   const { user, accessToken } = useAuth();
+  const { markChatNotificationsAsRead } = useNotificaciones();
 
   // Connection state
   const [ws, setWs] = useState(null);
@@ -49,6 +51,9 @@ export default function ChatPage() {
   // Load chat history via REST on mount
   useEffect(() => {
     if (!hallazgoId) return;
+
+    // Mark all unread notifications linked to this chat as read when opening it.
+    markChatNotificationsAsRead(hallazgoId);
     
     // Load hallazgo to check responsables
     getHallazgo(hallazgoId)
@@ -72,7 +77,7 @@ export default function ChatPage() {
       .finally(() => {
         if (isMountedRef.current) setLoadingHistory(false);
       });
-  }, [hallazgoId]);
+  }, [hallazgoId, markChatNotificationsAsRead]);
 
   // Connect WebSocket with automatic reconnect
   useEffect(() => {

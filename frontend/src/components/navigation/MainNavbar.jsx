@@ -147,7 +147,7 @@ export default function MainNavbar() {
                 Crear Hallazgo
               </Link>
               <Link
-                to="/usuarios/crear"
+                to="/usuarios"
                 style={{
                   color: "#e2e8f0",
                   textDecoration: "none",
@@ -159,10 +159,26 @@ export default function MainNavbar() {
                 onMouseEnter={(e) => (e.target.style.color = "#fff")}
                 onMouseLeave={(e) => (e.target.style.color = "#e2e8f0")}
               >
-                Crear Usuario
+                Gestion Usuarios
               </Link>
             </>
           )}
+
+          <Link
+            to="/perfil"
+            style={{
+              color: "#e2e8f0",
+              textDecoration: "none",
+              fontSize: "0.95rem",
+              fontWeight: 500,
+              transition: "color 0.2s",
+              cursor: "pointer",
+            }}
+            onMouseEnter={(e) => (e.target.style.color = "#fff")}
+            onMouseLeave={(e) => (e.target.style.color = "#e2e8f0")}
+          >
+            Mi Perfil
+          </Link>
 
           {/* Notificaciones Badge (T127, T129) */}
           <Link

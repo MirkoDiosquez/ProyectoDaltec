@@ -6,8 +6,8 @@
  *
  * Endpoints:
  *   GET  /notificaciones/                    — list (filterable by tipo, leida)
- *   PATCH /notificaciones/{id}/marcar-leida/ — mark one as read
- *   POST /notificaciones/marcar-todas-leidas/ — mark all as read
+ *   PATCH /notificaciones/{id}/marcar_leida/ — mark one as read
+ *   POST /notificaciones/marcar_todas_leidas/ — mark all as read
  */
 import client from './client.js';
 
@@ -32,7 +32,7 @@ export async function getNotificaciones(params = {}) {
  * @returns {Promise<Object>} Updated notification object
  */
 export async function marcarLeida(id) {
-  const { data } = await client.patch(`${BASE}${id}/marcar-leida/`);
+  const { data } = await client.patch(`${BASE}${id}/marcar_leida/`);
   return data;
 }
 
@@ -42,6 +42,19 @@ export async function marcarLeida(id) {
  * @returns {Promise<Object>} { updated_count, message }
  */
 export async function marcarTodasLeidas() {
-  const { data } = await client.post(`${BASE}marcar-todas-leidas/`);
+  const { data } = await client.post(`${BASE}marcar_todas_leidas/`);
+  return data;
+}
+
+/**
+ * Mark all unread chat notifications for one hallazgo as read.
+ *
+ * @param {number|string} hallazgoId - Hallazgo ID linked to the chat
+ * @returns {Promise<Object>} { updated_count, hallazgo_id, message }
+ */
+export async function marcarChatLeidas(hallazgoId) {
+  const { data } = await client.post(`${BASE}marcar_chat_leidas/`, {
+    hallazgo_id: Number(hallazgoId),
+  });
   return data;
 }

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "./AuthContext.jsx";
+import { marcarChatLeidas } from "../api/notificaciones.js";
 
 const NotificacionContext = createContext(null);
 
@@ -155,6 +156,32 @@ export function NotificacionProvider({ children }) {
     setUnreadCount(0);
   };
 
+  const markChatNotificationsAsRead = async (hallazgoId) => {
+    if (!hallazgoId) return { updated_count: 0, hallazgo_id: null };
+
+    try {
+      const data = await marcarChatLeidas(hallazgoId);
+      const targetId = Number(hallazgoId);
+
+      setNotificaciones((prev) =>
+        prev.map((n) => {
+          const relatedId = Number(n?.hallazgo_related?.id ?? n?.hallazgo_id ?? n?.hallazgo_relacionado_id);
+          const isChatTipo = n.tipo === "mensaje_sin_leer" || n.tipo === "mensaje_urgente";
+          if (!n.leida && isChatTipo && relatedId === targetId) {
+            return { ...n, leida: true };
+          }
+          return n;
+        })
+      );
+
+      setUnreadCount((prev) => Math.max(0, prev - Number(data?.updated_count || 0)));
+      return data;
+    } catch (error) {
+      console.error("Error marking chat notifications as read:", error);
+      return { updated_count: 0, hallazgo_id: Number(hallazgoId) };
+    }
+  };
+
   const value = useMemo(
     () => ({
       notificaciones,
@@ -165,6 +192,7 @@ export function NotificacionProvider({ children }) {
       markAllAsRead,
       removeNotification,
       clearNotificaciones,
+      markChatNotificationsAsRead,
     }),
     [notificaciones, unreadCount, isConnected, isLoading]
   );

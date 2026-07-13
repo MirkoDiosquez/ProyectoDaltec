@@ -15,13 +15,19 @@ Contract: contracts/rest-api.md — Auth section
 from django.contrib.auth import get_user_model
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from apps.users.serializers import UserCreateSerializer, UserListSerializer
+from apps.users.serializers import (
+    UserCreateSerializer,
+    UserDetailSerializer,
+    UserListSerializer,
+    UserUpdateSerializer,
+)
 
 User = get_user_model()
 
@@ -36,19 +42,41 @@ class IsAdminUserTipo(IsAuthenticated):
 class UserViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
     viewsets.GenericViewSet,
 ):
     queryset = User.objects.all().order_by("apellido", "nombre", "dni")
 
     def get_permissions(self):
-        if self.action in ("me", "list"):
+        if self.action in ("me", "list", "retrieve", "update", "partial_update"):
             return [IsAuthenticated()]
         return [IsAdminUserTipo()]
 
     def get_serializer_class(self):
         if self.action == "create":
             return UserCreateSerializer
+        if self.action in ("update", "partial_update"):
+            return UserUpdateSerializer
+        if self.action in ("retrieve", "me"):
+            return UserDetailSerializer
         return UserListSerializer
+
+    def get_object(self):
+        obj = super().get_object()
+        actor = self.request.user
+
+        if getattr(actor, "is_admin", False):
+            if getattr(obj, "is_admin", False) and obj.pk != actor.pk:
+                raise PermissionDenied(
+                    "Un administrador no puede editar el perfil ni rol de otro administrador."
+                )
+            return obj
+
+        if actor.pk != obj.pk:
+            raise PermissionDenied("No tiene permisos para editar este perfil.")
+
+        return obj
 
     def get_queryset(self):
         queryset = self.queryset
@@ -64,16 +92,22 @@ class UserViewSet(
         output = UserListSerializer(user, context={"request": request})
         return Response(output.data, status=status.HTTP_201_CREATED)
 
-    @action(detail=False, methods=["get"])
+    @action(detail=False, methods=["get", "patch"])
     def me(self, request):
         user = request.user
-        data = UserListSerializer(user, context={"request": request}).data
+        if request.method.lower() == "get":
+            data = UserDetailSerializer(user, context={"request": request}).data
+            return Response(data, status=status.HTTP_200_OK)
 
-        if getattr(user, "is_empleado", False) and hasattr(user, "empleado_profile"):
-            data["sector"] = user.empleado_profile.sector
-        elif getattr(user, "is_cliente", False) and hasattr(user, "cliente_profile"):
-            data["empresa"] = user.cliente_profile.empresa
-
+        serializer = UserUpdateSerializer(
+            user,
+            data=request.data,
+            partial=True,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        updated_user = serializer.save()
+        data = UserDetailSerializer(updated_user, context={"request": request}).data
         return Response(data, status=status.HTTP_200_OK)
 
 

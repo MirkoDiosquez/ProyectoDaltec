@@ -250,3 +250,52 @@ class TestNotificacionContract:
         assert len(results) > 0
         assert "tipo" in results[0]
         assert results[0]["tipo"] == "asignado_responsable"
+
+    def test_marcar_chat_leidas_endpoint(self, api_client, admin_user, hallazgo):
+        """Test: POST /notificaciones/marcar_chat_leidas/ marks chat notifications only."""
+        chat_unread = Notificacion.objects.create(
+            titulo="Mensaje nuevo",
+            mensaje="Hay un nuevo mensaje",
+            tipo="mensaje_sin_leer",
+            destinatario=admin_user,
+            hallazgo_relacionado=hallazgo,
+            leida=False,
+        )
+        urgent_unread = Notificacion.objects.create(
+            titulo="Mensaje urgente",
+            mensaje="#urgente",
+            tipo="mensaje_urgente",
+            destinatario=admin_user,
+            hallazgo_relacionado=hallazgo,
+            leida=False,
+        )
+        # Non-chat notification should remain unread
+        other = Notificacion.objects.create(
+            titulo="Otro tipo",
+            mensaje="No es chat",
+            tipo="cierre_pendiente",
+            destinatario=admin_user,
+            hallazgo_relacionado=hallazgo,
+            leida=False,
+        )
+
+        refresh = RefreshToken.for_user(admin_user)
+        api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
+
+        response = api_client.post(
+            "/api/v1/notificaciones/marcar_chat_leidas/",
+            {"hallazgo_id": hallazgo.id},
+            format="json",
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["updated_count"] == 2
+
+        chat_unread.refresh_from_db()
+        urgent_unread.refresh_from_db()
+        other.refresh_from_db()
+
+        assert chat_unread.leida is True
+        assert urgent_unread.leida is True
+        assert other.leida is False

@@ -2,6 +2,7 @@ from rest_framework import viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
 from django_filters.rest_framework import DjangoFilterBackend
 
 from apps.notificaciones.models import Notificacion
@@ -50,4 +51,29 @@ class NotificacionViewSet(viewsets.ModelViewSet):
             "updated_count": count,
             "message": f"Marked {count} notifications as read"
         })
+
+    @action(detail=False, methods=["post"])
+    def marcar_chat_leidas(self, request):
+        """Mark unread chat-related notifications as read for a hallazgo chat."""
+        hallazgo_id = request.data.get("hallazgo_id")
+        if not hallazgo_id:
+            return Response(
+                {"detail": "hallazgo_id es requerido."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        notificaciones = self.get_queryset().filter(
+            leida=False,
+            hallazgo_relacionado_id=hallazgo_id,
+            tipo__in=["mensaje_sin_leer", "mensaje_urgente"],
+        )
+        count = notificaciones.update(leida=True)
+
+        return Response(
+            {
+                "updated_count": count,
+                "hallazgo_id": int(hallazgo_id),
+                "message": f"Marked {count} chat notifications as read",
+            }
+        )
 
