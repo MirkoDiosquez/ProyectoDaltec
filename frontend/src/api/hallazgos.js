@@ -177,3 +177,36 @@ export async function rejectSolicitudCambio(hallazgoId, solicitudId, observacion
   );
   return data;
 }
+
+/**
+ * Get admin dashboard statistics (admin-only).
+ * GET /hallazgos/estadisticas/
+ * 
+ * Returns:
+ * - hallazgos_por_tipo: array of {tipo, count}
+ * - hallazgos_por_subseccion: array of {subseccion__nombre, count}
+ * - acciones_abiertas: array of {tipo, count}
+ */
+export async function getEstadisticas() {
+  const { data } = await client.get(`${BASE}estadisticas/`);
+  return data;
+}
+
+/**
+ * Get responsable assignment/removal history for a hallazgo.
+ * GET /hallazgos/{id}/historial_responsables/
+ * 
+ * Returns array of history records with:
+ * - id
+ * - responsable_id
+ * - responsable_nombre
+ * - responsable_email
+ * - fecha_asignacion
+ * - fecha_remocion (null if still assigned)
+ * - estado (ACTIVO | REMOVIDO)
+ */
+export async function getHistorialResponsables(hallazgoId) {
+  const { data } = await client.get(`${BASE}${hallazgoId}/historial_responsables/`);
+  return data;
+}
+

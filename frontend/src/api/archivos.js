@@ -41,3 +41,40 @@ export async function downloadArchivo(archivoId, nombre) {
   // Revoke after a short delay to let the download start
   setTimeout(() => URL.revokeObjectURL(url), 15000);
 }
+
+/**
+ * Admin: Get list of all files with metadata.
+ * GET /archivos/admin_files/
+ *
+ * @returns {Promise<{total: number, files: Array}>}
+ */
+export async function getAdminFilesList() {
+  const { data } = await client.get("/archivos/admin_files/");
+  return data;
+}
+
+/**
+ * Admin: Delete a single file.
+ * DELETE /archivos/{id}/admin_delete/
+ *
+ * @param {number} archivoId
+ * @returns {Promise<{detail: string, deleted_id: number}>}
+ */
+export async function deleteArchivoAdmin(archivoId) {
+  const { data } = await client.delete(`/archivos/${archivoId}/admin_delete/`);
+  return data;
+}
+
+/**
+ * Admin: Bulk delete multiple files.
+ * POST /archivos/admin_bulk_delete/
+ *
+ * @param {Array<number>} fileIds
+ * @returns {Promise<{detail: string, deleted_count: number}>}
+ */
+export async function bulkDeleteArchivosAdmin(fileIds) {
+  const { data } = await client.post("/archivos/admin_bulk_delete/", {
+    file_ids: fileIds,
+  });
+  return data;
+}

@@ -50,6 +50,7 @@ LOCAL_APPS = [
     "apps.contacto_externo",
     "apps.analisis_cinco_porques",
     "apps.solicitud_cambio_responsable",
+    "apps.reportes",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -259,6 +260,15 @@ FILE_UPLOAD_WHITELIST = {
     "audio/wav": MAX_FILE_SIZE,
     "audio/x-wav": MAX_FILE_SIZE,
 }
+
+# ---------------------------------------------------------------------------
+# Reportes de hallazgos
+# ---------------------------------------------------------------------------
+REPORTE_HALLAZGOS_TEMPLATE = os.environ.get(
+    "REPORTE_HALLAZGOS_TEMPLATE",
+    "TC-SGC-03_NC-OM_rev.06C.xlsm",
+)
+REPORTE_HALLAZGOS_START_ROW = int(os.environ.get("REPORTE_HALLAZGOS_START_ROW", "2"))
 
 # ---------------------------------------------------------------------------
 # Logging — Structured logging for observability

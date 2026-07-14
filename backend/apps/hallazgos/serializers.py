@@ -245,16 +245,6 @@ class HallazgoCreateSerializer(serializers.ModelSerializer):
 					"contacto_externo_email": "Si proporciona datos de contacto, todos los campos son obligatorios.",
 				})
 
-		# FR-002: Admin creating QUEJA_CLIENTE must specify a CLIENTE user
-		if (
-			getattr(user, "is_admin", False)
-			and tipo == TipoHallazgo.QUEJA_CLIENTE
-			and cliente_asociado is None
-		):
-			raise serializers.ValidationError(
-				{"cliente_asociado": "Este campo es obligatorio cuando el Admin crea una Queja de Cliente."}
-			)
-
 		# FR-008: cliente_asociado must be tipo=CLIENTE (already enforced by queryset, but explicit message)
 		if cliente_asociado is not None and getattr(cliente_asociado, "tipo", None) != "CLIENTE":
 			raise serializers.ValidationError(

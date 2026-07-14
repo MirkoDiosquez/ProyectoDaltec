@@ -230,25 +230,7 @@ export default function CrearHallazgoPage() {
           disabled={loading}
         />
 
-        {isAdmin && form.tipo === "QUEJA_CLIENTE" && (
-          <label style={{ display: "grid", gap: 6 }}>
-            <span style={{ fontWeight: 600 }}>Cliente Asociado</span>
-            <select
-              name="cliente_asociado"
-              value={form.cliente_asociado}
-              onChange={onChange}
-              required
-              style={{ borderRadius: 8, border: "1px solid #cbd5e1", padding: "0.65rem" }}
-            >
-              <option value="">-- Selecciona un cliente --</option>
-              {clientes.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre} {c.apellido} (DNI: {c.dni})
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
+        
 
         {/* Phase 6 (T078): File upload for hallazgo creation */}
         <div style={{ marginTop: "1rem" }}>

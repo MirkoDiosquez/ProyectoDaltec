@@ -65,7 +65,17 @@ class UserListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "dni", "nombre", "apellido", "email", "tipo", "sector", "empresa"]
+        fields = [
+            "id",
+            "dni",
+            "nombre",
+            "apellido",
+            "email",
+            "tipo",
+            "is_active",
+            "sector",
+            "empresa",
+        ]
         read_only_fields = fields
 
     def get_sector(self, obj):
@@ -93,6 +103,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
             "sexo",
             "email",
             "tipo",
+            "is_active",
             "sector",
             "empresa",
         ]

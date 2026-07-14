@@ -1,0 +1,56 @@
+.hallazgo-list-page {
+  width: 100%;
+  max-width: 1100px;
+  box-sizing: border-box;
+  overflow-x: clip;
+}
+
+.hallazgo-list-page,
+.hallazgo-list-page * {
+  box-sizing: border-box;
+}
+
+.hallazgo-list-header {
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.hallazgo-list-card-top {
+  min-width: 0;
+}
+
+.hallazgo-list-card-top strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.hallazgo-list-status {
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .hallazgo-list-page {
+    padding: 1.2rem 0.85rem !important;
+  }
+
+  .hallazgo-list-create-link {
+    width: 100%;
+    text-align: center;
+  }
+
+  .hallazgo-list-card-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .hallazgo-list-status {
+    white-space: normal !important;
+    align-self: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .hallazgo-list-page {
+    padding: 1rem 0.7rem !important;
+  }
+}

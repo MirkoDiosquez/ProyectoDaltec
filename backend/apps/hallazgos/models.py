@@ -179,11 +179,83 @@ class HallazgoResponsable(models.Model):
         return f"{self.responsable} → {self.hallazgo_id}"
 
 
+class HallazgoResponsableHistorial(models.Model):
+    """
+    Historical record of all responsable assignments and removals.
+    
+    Tracks who was responsible for a hallazgo and when.
+    Created automatically via signals when HallazgoResponsable is added/removed.
+    """
+    
+    hallazgo = models.ForeignKey(
+        Hallazgo,
+        on_delete=models.CASCADE,
+        related_name="responsable_historial",
+        verbose_name="Hallazgo",
+    )
+    responsable = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="historial_responsabilidades",
+        verbose_name="Responsable",
+    )
+    fecha_asignacion = models.DateTimeField(
+        verbose_name="Fecha de Asignación",
+    )
+    fecha_remocion = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de Remoción",
+    )
+    
+    class Meta:
+        verbose_name = "Histórico de Responsable"
+        verbose_name_plural = "Histórico de Responsables"
+        ordering = ['-fecha_asignacion']
+        indexes = [
+            models.Index(fields=['hallazgo', 'responsable']),
+            models.Index(fields=['fecha_asignacion']),
+        ]
+    
+    def __str__(self):
+        estado = "Activo" if not self.fecha_remocion else "Removido"
+        return f"{self.responsable} → Hallazgo {self.hallazgo_id} ({estado})"
+
+
+
 # ---------------------------------------------------------------------------
 # Signals
 # ---------------------------------------------------------------------------
 
 _TIPOS_ACCION = ["INMEDIATA", "CORRECTIVA", "VERIFICACION_EFICIENCIA"]
+
+
+@receiver(post_save, sender=HallazgoResponsable)
+def registrar_responsable_historial_asignacion(sender, instance, created, **kwargs):
+    """Register in historical table when a responsable is assigned."""
+    if created:
+        HallazgoResponsableHistorial.objects.create(
+            hallazgo=instance.hallazgo,
+            responsable=instance.responsable,
+            fecha_asignacion=instance.fecha_asignacion,
+        )
+
+
+@receiver(post_delete, sender=HallazgoResponsable)
+def registrar_responsable_historial_remocion(sender, instance, **kwargs):
+    """Mark as removed in historical table when a responsable is removed."""
+    from django.utils import timezone
+    
+    historial = HallazgoResponsableHistorial.objects.filter(
+        hallazgo=instance.hallazgo,
+        responsable=instance.responsable,
+        fecha_remocion__isnull=True,
+    ).first()
+    
+    if historial:
+        historial.fecha_remocion = timezone.now()
+        historial.save()
+
 
 
 @receiver(post_save, sender=Hallazgo)

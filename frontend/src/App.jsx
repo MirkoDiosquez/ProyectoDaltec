@@ -29,6 +29,8 @@ import AccionDetailPage from "./pages/acciones/AccionDetailPage.jsx";
 import ChatPage from "./pages/chat/ChatPage.jsx";
 import GestionUsuariosPage from "./pages/users/GestionUsuariosPage.jsx";
 import PerfilUsuarioPage from "./pages/users/PerfilUsuarioPage.jsx";
+import GestionArchivosPage from "./pages/admin/GestionArchivosPage.jsx";
+import GestionReportesPage from "./pages/admin/GestionReportesPage.jsx";
 import MainNavbar from "./components/navigation/MainNavbar.jsx";
 import AdminNotificationPanel from "./components/AdminPanel/AdminNotificationPanel.jsx";
 import EmployeeNotificationPanel from "./components/NotificationPanel/EmployeeNotificationPanel.jsx";
@@ -222,17 +224,28 @@ function App() {
           }
         />
 
-        {/* T059: Create user — ADMIN only (placeholder for now)
+        {/* Admin: File management */}
         <Route
-          path="/usuarios/crear"
+          path="/admin/archivos"
           element={
             <ProtectedLayout>
               <RoleRoute roles={["ADMIN"]}>
-                <CrearUsuarioPage />
+                <GestionArchivosPage />
               </RoleRoute>
             </ProtectedLayout>
           }
-        /> */}
+        />
+
+        <Route
+          path="/admin/reportes"
+          element={
+            <ProtectedLayout>
+              <RoleRoute roles={["ADMIN"]}>
+                <GestionReportesPage />
+              </RoleRoute>
+            </ProtectedLayout>
+          }
+        />
 
         {/* T055: Chat — authenticated users */}
         <Route

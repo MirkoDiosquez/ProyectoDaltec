@@ -25,6 +25,7 @@ import PropTypes from 'prop-types';
 export default function SolicitudCambioForm({
   hallazgoId,
   usuarios = [],
+  currentResponsables = [],
   onSubmit,
   isLoading = false,
 }) {
@@ -113,7 +114,7 @@ export default function SolicitudCambioForm({
               disabled={isLoading}
               style={{ width: 18, height: 18, cursor: 'pointer' }}
             />
-            <span style={{ fontSize: '0.95rem' }}>➕ Agregar responsable</span>
+            <span style={{ fontSize: '0.95rem' }}> Agregar responsable</span>
           </label>
 
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
@@ -125,7 +126,7 @@ export default function SolicitudCambioForm({
               disabled={isLoading}
               style={{ width: 18, height: 18, cursor: 'pointer' }}
             />
-            <span style={{ fontSize: '0.95rem' }}>🔄 Reemplazarme</span>
+            <span style={{ fontSize: '0.95rem' }}> Reemplazarme</span>
           </label>
         </div>
       </div>
@@ -133,7 +134,7 @@ export default function SolicitudCambioForm({
       {/* Usuario selection */}
       <div style={{ display: 'grid', gap: 8 }}>
         <label htmlFor={`usuario-select-${hallazgoId}`} style={{ fontWeight: 600, color: '#374151' }}>
-          👤 Usuario a {tipo === 'agregar' ? 'agregar' : 'reemplazarme'}:
+           Usuario a {tipo === 'agregar' ? 'agregar' : 'reemplazarme'}:
         </label>
         <select
           id={`usuario-select-${hallazgoId}`}
@@ -154,18 +155,20 @@ export default function SolicitudCambioForm({
         >
           <option value="">-- Selecciona un usuario --</option>
           {Array.isArray(usuarios) &&
-            usuarios.map((usuario) => (
-              <option key={usuario.id} value={usuario.id}>
-                {usuario.nombre} {usuario.apellido} (@{usuario.username})
-              </option>
-            ))}
+            usuarios
+              .filter((usuario) => !currentResponsables.includes(usuario.id))
+              .map((usuario) => (
+                <option key={usuario.id} value={usuario.id}>
+                  {usuario.nombre} {usuario.apellido} (@{usuario.username})
+                </option>
+              ))}
         </select>
       </div>
 
       {/* Observacion textarea */}
       <div style={{ display: 'grid', gap: 8 }}>
         <label htmlFor={`observacion-${hallazgoId}`} style={{ fontWeight: 600, color: '#374151' }}>
-          💬 Observación (opcional):
+           Observación (opcional):
         </label>
         <textarea
           id={`observacion-${hallazgoId}`}
@@ -207,7 +210,7 @@ export default function SolicitudCambioForm({
           gap: 8,
         }}
       >
-        {isLoading ? '⏳ Enviando...' : '✓ Enviar Solicitud'}
+        {isLoading ? ' Enviando...' : '✓ Enviar Solicitud'}
       </button>
     </form>
   );
@@ -223,6 +226,7 @@ SolicitudCambioForm.propTypes = {
       username: PropTypes.string.isRequired,
     })
   ),
+  currentResponsables: PropTypes.arrayOf(PropTypes.number),
   onSubmit: PropTypes.func.isRequired,
   isLoading: PropTypes.bool,
 };

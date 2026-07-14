@@ -15,7 +15,7 @@ Contract: contracts/rest-api.md — Auth section
 from django.contrib.auth import get_user_model
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -44,6 +44,7 @@ class UserViewSet(
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
     mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
     queryset = User.objects.all().order_by("apellido", "nombre", "dni")
@@ -109,6 +110,64 @@ class UserViewSet(
         updated_user = serializer.save()
         data = UserDetailSerializer(updated_user, context={"request": request}).data
         return Response(data, status=status.HTTP_200_OK)
+
+    def _require_admin_password(self, request):
+        password_confirmacion = request.data.get("password_confirmacion")
+        if not password_confirmacion:
+            raise ValidationError(
+                {"password_confirmacion": "La contraseña de confirmación es requerida."}
+            )
+        if not request.user.check_password(password_confirmacion):
+            raise ValidationError(
+                {"password_confirmacion": "La contraseña de confirmación es inválida."}
+            )
+
+    def _validate_manage_target_user(self, actor, target):
+        if actor.pk == target.pk:
+            raise ValidationError("No podés ejecutar esta acción sobre tu propio usuario.")
+        if getattr(target, "is_admin", False):
+            raise ValidationError("No está permitido gestionar cuentas de otros administradores.")
+
+    @action(detail=True, methods=["post"])
+    def activar(self, request, pk=None):
+        user = self.get_object()
+        self._require_admin_password(request)
+        self._validate_manage_target_user(request.user, user)
+
+        if user.is_active:
+            return Response(
+                {"detail": "El usuario ya está habilitado."},
+                status=status.HTTP_200_OK,
+            )
+
+        user.is_active = True
+        user.save(update_fields=["is_active"])
+        data = UserDetailSerializer(user, context={"request": request}).data
+        return Response(data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["post"])
+    def desactivar(self, request, pk=None):
+        user = self.get_object()
+        self._require_admin_password(request)
+        self._validate_manage_target_user(request.user, user)
+
+        if not user.is_active:
+            return Response(
+                {"detail": "El usuario ya está deshabilitado."},
+                status=status.HTTP_200_OK,
+            )
+
+        user.is_active = False
+        user.save(update_fields=["is_active"])
+        data = UserDetailSerializer(user, context={"request": request}).data
+        return Response(data, status=status.HTTP_200_OK)
+
+    def destroy(self, request, *args, **kwargs):
+        user = self.get_object()
+        self._require_admin_password(request)
+        self._validate_manage_target_user(request.user, user)
+        user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class LoginView(APIView):

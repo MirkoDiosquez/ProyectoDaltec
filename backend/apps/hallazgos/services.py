@@ -3,8 +3,15 @@ from channels.layers import get_channel_layer
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
+from django.utils import timezone
 
-from apps.hallazgos.models import EstadoHallazgo, Hallazgo, HallazgoResponsable, TipoHallazgo
+from apps.hallazgos.models import (
+    EstadoHallazgo,
+    Hallazgo,
+    HallazgoResponsable,
+    HallazgoResponsableHistorial,
+    TipoHallazgo,
+)
 from apps.notificaciones import services as notificacion_service
 
 User = get_user_model()
@@ -108,6 +115,14 @@ def asignar_responsable(hallazgo, admin, user):
         responsable=user,
     )
 
+    # Register in history when newly assigned
+    if created:
+        HallazgoResponsableHistorial.objects.create(
+            hallazgo=hallazgo,
+            responsable=user,
+            fecha_asignacion=timezone.now(),
+        )
+
     # FR-012: Add user to Chat.participantes when assigned as responsable
     if created:
         try:
@@ -116,6 +131,7 @@ def asignar_responsable(hallazgo, admin, user):
         except Exception:
             # Chat might not exist yet in edge cases; fail silently to avoid blocking assignment
             pass
+        notificacion_service.notificar_responsable_asignado(user, hallazgo)
 
     return {
         "asignacion": asignacion,
@@ -133,6 +149,13 @@ def remover_responsable(hallazgo, admin, user):
     _require_admin(admin)
     if hallazgo.estado != EstadoHallazgo.APROBADO:
         raise ValidationError("Solo se pueden remover responsables en hallazgos APROBADOS.")
+
+    # Mark removal in history before deleting
+    HallazgoResponsableHistorial.objects.filter(
+        hallazgo=hallazgo,
+        responsable=user,
+        fecha_remocion__isnull=True,
+    ).update(fecha_remocion=timezone.now())
 
     deleted_count, _ = HallazgoResponsable.objects.filter(
         hallazgo=hallazgo,
@@ -159,6 +182,7 @@ def remover_responsable(hallazgo, admin, user):
         except Exception:
             # Chat might not exist; fail silently to avoid blocking removal
             pass
+        notificacion_service.notificar_responsable_removido(user, hallazgo)
 
     return {
         "removed": deleted_count > 0,
@@ -261,12 +285,21 @@ class ResponsableService:
         # Add to M2M relationship
         hallazgo.responsables.add(user_to_add)
         
+        # Register in history when newly assigned
+        HallazgoResponsableHistorial.objects.create(
+            hallazgo=hallazgo,
+            responsable=user_to_add,
+            fecha_asignacion=timezone.now(),
+        )
+        
         # Add to chat participants if chat exists
         try:
             chat = hallazgo.chat
             chat.participantes.add(user_to_add)
         except Exception:
             pass
+        
+        notificacion_service.notificar_responsable_asignado(user_to_add, hallazgo)
         
         return {
             "added": True,
@@ -298,6 +331,13 @@ class ResponsableService:
                 "message": "El usuario no es responsable de este hallazgo."
             }
         
+        # Mark removal in history before deleting
+        HallazgoResponsableHistorial.objects.filter(
+            hallazgo=hallazgo,
+            responsable=user_to_remove,
+            fecha_remocion__isnull=True,
+        ).update(fecha_remocion=timezone.now())
+        
         # Remove from M2M relationship
         hallazgo.responsables.remove(user_to_remove)
         
@@ -319,6 +359,8 @@ class ResponsableService:
                 )
         except Exception:
             pass
+        
+        notificacion_service.notificar_responsable_removido(user_to_remove, hallazgo)
         
         return {
             "removed": True,

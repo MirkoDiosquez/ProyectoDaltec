@@ -54,7 +54,6 @@ export default function SolicitudCierreAdminView({ hallazgoId, onChanged }) {
   return (
     <section style={{ border: "2px solid #f59e0b", borderRadius: 12, padding: "1.5rem", background: "#fffbeb", display: "grid", gap: 16 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ fontSize: "1.3rem" }}>⏳</span>
         <h2 style={{ margin: 0, color: "#92400e" }}>Solicitudes de Cierre</h2>
         {!loading && items.length > 0 && (
           <span style={{
@@ -76,7 +75,7 @@ export default function SolicitudCierreAdminView({ hallazgoId, onChanged }) {
 
       {loading && (
         <div style={{ padding: "1rem", textAlign: "center", color: "#6b7280" }}>
-          ⏳ Cargando solicitudes...
+           Cargando solicitudes...
         </div>
       )}
 
@@ -123,7 +122,7 @@ export default function SolicitudCierreAdminView({ hallazgoId, onChanged }) {
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: "0.5rem" }}>
                     <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#6b7280" }}>#{item.id}</span>
                     <span style={{ fontSize: "0.85rem", fontWeight: 600, background: "#fef3c7", color: "#92400e", padding: "0.25rem 0.5rem", borderRadius: 4 }}>
-                      ⏳ Pendiente
+                       Pendiente
                     </span>
                   </div>
 

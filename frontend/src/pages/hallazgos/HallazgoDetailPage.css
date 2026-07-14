@@ -1,0 +1,80 @@
+.hallazgo-detail-page {
+  width: 100%;
+  max-width: 980px;
+  box-sizing: border-box;
+  overflow-x: clip;
+}
+
+.hallazgo-detail-page,
+.hallazgo-detail-page * {
+  box-sizing: border-box;
+}
+
+.hallazgo-detail-page section,
+.hallazgo-detail-page div,
+.hallazgo-detail-page p,
+.hallazgo-detail-page span,
+.hallazgo-detail-page strong,
+.hallazgo-detail-page a {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.hallazgo-detail-header {
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.hallazgo-detail-acciones-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+}
+
+.hallazgo-detail-accion-card {
+  width: 100%;
+  max-width: 100%;
+}
+
+.hallazgo-detail-responsable-item {
+  flex-wrap: wrap;
+}
+
+.hallazgo-detail-porque-header,
+.hallazgo-detail-porque-footer,
+.hallazgo-detail-porque-actions {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .hallazgo-detail-page {
+    padding: 1.2rem 0.85rem !important;
+    gap: 12px !important;
+  }
+
+  .hallazgo-detail-acciones-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .hallazgo-detail-porque-footer {
+    justify-content: flex-start !important;
+    gap: 8px;
+  }
+
+  .hallazgo-detail-upload-row {
+    justify-content: stretch !important;
+  }
+
+  .hallazgo-detail-upload-row > button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .hallazgo-detail-page {
+    padding: 1rem 0.7rem !important;
+  }
+
+  .hallazgo-detail-page section {
+    padding: 0.85rem !important;
+    border-radius: 10px !important;
+  }
+}

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { createUser, listUsers, updateUser } from "../../api/users.js";
+import { createUser, deleteUser, listUsers, setUserActive, updateUser } from "../../api/users.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useCatalogoContext } from "../../context/CatalogoContext.jsx";
 
@@ -63,6 +63,9 @@ export default function GestionUsuariosPage() {
   const [adminPassword, setAdminPassword] = useState("");
   const [roleDrafts, setRoleDrafts] = useState({});
   const [savingUserId, setSavingUserId] = useState(null);
+  const [statusChangingUserId, setStatusChangingUserId] = useState(null);
+  const [deletingUserId, setDeletingUserId] = useState(null);
+  const [confirmAction, setConfirmAction] = useState(null);
   const [creating, setCreating] = useState(false);
   const [query, setQuery] = useState("");
   const [createForm, setCreateForm] = useState({
@@ -250,6 +253,82 @@ export default function GestionUsuariosPage() {
     }
   };
 
+  const onToggleUserStatus = (targetUser) => {
+    if (!adminPassword.trim()) {
+      setError("Ingresá tu contraseña de administrador para confirmar cambios.");
+      return;
+    }
+
+    setConfirmAction({
+      type: "toggle-status",
+      targetUser,
+      isActivating: !targetUser.is_active,
+    });
+  };
+
+  const onDeleteUser = (targetUser) => {
+    if (!adminPassword.trim()) {
+      setError("Ingresá tu contraseña de administrador para confirmar cambios.");
+      return;
+    }
+
+    setConfirmAction({
+      type: "delete",
+      targetUser,
+    });
+  };
+
+  const onConfirmAction = async () => {
+    if (!confirmAction?.targetUser) return;
+
+    const { targetUser } = confirmAction;
+
+    setError("");
+    setSuccess("");
+
+    if (confirmAction.type === "toggle-status") {
+      setStatusChangingUserId(targetUser.id);
+      try {
+        const updated = await setUserActive(
+          targetUser.id,
+          confirmAction.isActivating,
+          adminPassword
+        );
+        setUsers((prev) =>
+          prev.map((u) => (u.id === targetUser.id ? { ...u, is_active: updated.is_active } : u))
+        );
+        setSuccess(
+          `${updated.nombre} ${updated.apellido} ${updated.is_active ? "habilitado" : "deshabilitado"} correctamente.`
+        );
+      } catch (apiError) {
+        setError(getErrorMessage(apiError));
+      } finally {
+        setStatusChangingUserId(null);
+        setConfirmAction(null);
+      }
+      return;
+    }
+
+    if (confirmAction.type === "delete") {
+      setDeletingUserId(targetUser.id);
+      try {
+        await deleteUser(targetUser.id, adminPassword);
+        setUsers((prev) => prev.filter((u) => u.id !== targetUser.id));
+        setRoleDrafts((prev) => {
+          const copy = { ...prev };
+          delete copy[targetUser.id];
+          return copy;
+        });
+        setSuccess(`${targetUser.nombre} ${targetUser.apellido} fue eliminado.`);
+      } catch (apiError) {
+        setError(getErrorMessage(apiError));
+      } finally {
+        setDeletingUserId(null);
+        setConfirmAction(null);
+      }
+    }
+  };
+
   if (loading) {
     return (
       <main style={{ maxWidth: 1180, margin: "0 auto", padding: "2rem 1rem" }}>
@@ -386,6 +465,7 @@ export default function GestionUsuariosPage() {
               <th style={{ ...tableCell, textAlign: "left", fontWeight: 700 }}>DNI</th>
               <th style={{ ...tableCell, textAlign: "left", fontWeight: 700 }}>Email</th>
               <th style={{ ...tableCell, textAlign: "left", fontWeight: 700 }}>Rol actual</th>
+              <th style={{ ...tableCell, textAlign: "left", fontWeight: 700 }}>Estado</th>
               <th style={{ ...tableCell, textAlign: "left", fontWeight: 700 }}>Nuevo rol</th>
               <th style={{ ...tableCell, textAlign: "left", fontWeight: 700 }}>Acciones</th>
             </tr>
@@ -393,6 +473,8 @@ export default function GestionUsuariosPage() {
           <tbody>
             {filteredUsers.map((u) => {
               const isTargetAnotherAdmin = u.tipo === "ADMIN" && u.id !== loggedUser?.id;
+              const isOwnUser = u.id === loggedUser?.id;
+              const isBlockedForStatusOrDelete = isTargetAnotherAdmin || isOwnUser;
               const draft = roleDrafts[u.id] || { tipo: u.tipo, sector: "", empresa: "EMPRESA_A" };
 
               return (
@@ -403,6 +485,23 @@ export default function GestionUsuariosPage() {
                   <td style={tableCell}>{u.dni}</td>
                   <td style={tableCell}>{u.email}</td>
                   <td style={tableCell}>{u.tipo}</td>
+                  <td style={tableCell}>
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        borderRadius: 999,
+                        padding: "0.2rem 0.65rem",
+                        fontSize: "0.8rem",
+                        fontWeight: 700,
+                        color: u.is_active ? "#166534" : "#991b1b",
+                        background: u.is_active ? "#dcfce7" : "#fee2e2",
+                        border: `1px solid ${u.is_active ? "#86efac" : "#fca5a5"}`,
+                      }}
+                    >
+                      {u.is_active ? "Habilitado" : "Deshabilitado"}
+                    </span>
+                  </td>
                   <td style={{ ...tableCell, minWidth: 250 }}>
                     <div style={{ display: "grid", gap: 6 }}>
                       <select
@@ -503,6 +602,90 @@ export default function GestionUsuariosPage() {
                       >
                         {savingUserId === u.id ? "Guardando..." : "Cambiar Rol"}
                       </button>
+
+                      <button
+                        type="button"
+                        onClick={() => onToggleUserStatus(u)}
+                        disabled={
+                          isBlockedForStatusOrDelete ||
+                          statusChangingUserId === u.id ||
+                          deletingUserId === u.id
+                        }
+                        style={{
+                          padding: "0.4rem 0.7rem",
+                          fontSize: "0.85rem",
+                          background: u.is_active ? "#b45309" : "#166534",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: 6,
+                          opacity:
+                            isBlockedForStatusOrDelete ||
+                            statusChangingUserId === u.id ||
+                            deletingUserId === u.id
+                              ? 0.6
+                              : 1,
+                          cursor:
+                            isBlockedForStatusOrDelete ||
+                            statusChangingUserId === u.id ||
+                            deletingUserId === u.id
+                              ? "not-allowed"
+                              : "pointer",
+                        }}
+                        title={
+                          isOwnUser
+                            ? "No podés cambiar el estado de tu propio usuario"
+                            : isTargetAnotherAdmin
+                              ? "No podés gestionar otro administrador"
+                              : u.is_active
+                                ? "Deshabilitar usuario"
+                                : "Habilitar usuario"
+                        }
+                      >
+                        {statusChangingUserId === u.id
+                          ? "Procesando..."
+                          : u.is_active
+                            ? "Deshabilitar"
+                            : "Habilitar"}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => onDeleteUser(u)}
+                        disabled={
+                          isBlockedForStatusOrDelete ||
+                          deletingUserId === u.id ||
+                          statusChangingUserId === u.id
+                        }
+                        style={{
+                          padding: "0.4rem 0.7rem",
+                          fontSize: "0.85rem",
+                          background: "#dc2626",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: 6,
+                          opacity:
+                            isBlockedForStatusOrDelete ||
+                            deletingUserId === u.id ||
+                            statusChangingUserId === u.id
+                              ? 0.6
+                              : 1,
+                          cursor:
+                            isBlockedForStatusOrDelete ||
+                            deletingUserId === u.id ||
+                            statusChangingUserId === u.id
+                              ? "not-allowed"
+                              : "pointer",
+                        }}
+                        title={
+                          isOwnUser
+                            ? "No podés eliminar tu propio usuario"
+                            : isTargetAnotherAdmin
+                              ? "No podés eliminar otro administrador"
+                              : "Eliminar usuario"
+                        }
+                      >
+                        {deletingUserId === u.id ? "Eliminando..." : "Eliminar"}
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -511,7 +694,7 @@ export default function GestionUsuariosPage() {
 
             {filteredUsers.length === 0 && (
               <tr>
-                <td style={tableCell} colSpan={6}>
+                <td style={tableCell} colSpan={7}>
                   No se encontraron usuarios con ese criterio.
                 </td>
               </tr>
@@ -519,6 +702,89 @@ export default function GestionUsuariosPage() {
           </tbody>
         </table>
       </section>
+
+      {confirmAction && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.55)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "1rem",
+            zIndex: 200,
+          }}
+          onClick={() => setConfirmAction(null)}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 500,
+              borderRadius: 12,
+              border: "1px solid #e2e8f0",
+              background: "#fff",
+              padding: "1rem",
+              boxShadow: "0 20px 40px rgba(15,23,42,0.25)",
+              display: "grid",
+              gap: 10,
+            }}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
+            <h3 style={{ margin: 0, color: "#0f172a" }}>
+              {confirmAction.type === "delete" ? "Confirmar eliminación" : "Confirmar cambio de estado"}
+            </h3>
+            <p style={{ margin: 0, color: "#334155", lineHeight: 1.45 }}>
+              {confirmAction.type === "delete"
+                ? `Vas a eliminar a ${confirmAction.targetUser.nombre} ${confirmAction.targetUser.apellido}. Esta acción no se puede deshacer.`
+                : confirmAction.isActivating
+                  ? `Vas a habilitar a ${confirmAction.targetUser.nombre} ${confirmAction.targetUser.apellido}.`
+                  : `Vas a deshabilitar a ${confirmAction.targetUser.nombre} ${confirmAction.targetUser.apellido}.`}
+            </p>
+            <p style={{ margin: 0, color: "#64748b", fontSize: "0.9rem" }}>
+              Se usará la contraseña de administrador ingresada para confirmar la operación.
+            </p>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
+              <button
+                type="button"
+                onClick={() => setConfirmAction(null)}
+                disabled={statusChangingUserId !== null || deletingUserId !== null}
+                style={{
+                  padding: "0.45rem 0.8rem",
+                  borderRadius: 8,
+                  border: "1px solid #cbd5e1",
+                  background: "#fff",
+                  color: "#334155",
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={onConfirmAction}
+                disabled={statusChangingUserId !== null || deletingUserId !== null}
+                style={{
+                  padding: "0.45rem 0.8rem",
+                  borderRadius: 8,
+                  border: "none",
+                  background: confirmAction.type === "delete" ? "#dc2626" : "#0f766e",
+                  color: "#fff",
+                  fontWeight: 700,
+                  opacity: statusChangingUserId !== null || deletingUserId !== null ? 0.7 : 1,
+                }}
+              >
+                {statusChangingUserId !== null || deletingUserId !== null
+                  ? "Procesando..."
+                  : confirmAction.type === "delete"
+                    ? "Sí, eliminar"
+                    : "Sí, confirmar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

@@ -5,15 +5,16 @@
  * direct browser navigation which cannot send the JWT Authorization header.
  */
 import { useEffect, useRef, useState } from 'react';
-import { getPreviewBlobUrl, downloadArchivo } from '../api/archivos.js';
+import { getPreviewBlobUrl, downloadArchivo, deleteArchivoAdmin } from '../api/archivos.js';
 import PDFViewer from './PDFViewer';
 import ImageViewer from './ImageViewer';
 
-export default function FilePreview({ archivo }) {
+export default function FilePreview({ archivo, isAdmin = false, onDeleted }) {
   const [blobUrl, setBlobUrl] = useState(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [previewError, setPreviewError] = useState('');
   const [downloading, setDownloading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const blobUrlRef = useRef(null);
 
   const isImage = archivo?.tipo_mime?.startsWith('image/');
@@ -67,6 +68,20 @@ export default function FilePreview({ archivo }) {
     }
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm(`¿Eliminar "${archivo.nombre}"?`)) return;
+    
+    setDeleting(true);
+    try {
+      await deleteArchivoAdmin(archivo.id);
+      if (onDeleted) onDeleted(archivo.id);
+    } catch (error) {
+      alert('Error al eliminar archivo: ' + (error.message || 'Error desconocido'));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const sizeMB = archivo.tamanio >= 1024 * 1024
     ? `${(archivo.tamanio / 1024 / 1024).toFixed(2)} MB`
     : `${(archivo.tamanio / 1024).toFixed(1)} KB`;
@@ -88,13 +103,34 @@ export default function FilePreview({ archivo }) {
             {sizeMB} · {archivo.tipo_mime}
           </p>
         </div>
-        <button
-          onClick={handleDownload}
-          disabled={downloading}
-          style={{ padding: '0.35rem 0.85rem', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
-        >
-          {downloading ? 'Descargando…' : '⬇ Descargar'}
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button
+            onClick={handleDownload}
+            disabled={downloading}
+            style={{ padding: '0.35rem 0.85rem', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+          >
+            {downloading ? 'Descargando…' : '⬇ Descargar'}
+          </button>
+          {isAdmin && (
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              style={{ 
+                padding: '0.35rem 0.85rem', 
+                fontSize: '0.8rem', 
+                whiteSpace: 'nowrap',
+                background: '#dc2626',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.375rem',
+                cursor: deleting ? 'not-allowed' : 'pointer',
+                opacity: deleting ? 0.7 : 1,
+              }}
+            >
+              {deleting ? '⏳ Eliminando…' : '🗑️ Eliminar'}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Preview area */}

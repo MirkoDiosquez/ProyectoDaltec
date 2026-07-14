@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import { listHallazgos } from "../../api/hallazgos.js";
 import { useAuth } from "../../context/AuthContext.jsx";
+import "./HallazgoListPage.css";
 
 const tipoLabel = {
   NO_CONFORMIDAD: "No Conformidad",
@@ -62,8 +63,8 @@ export default function HallazgoListPage() {
   const canCreateHallazgo = useMemo(() => user?.tipo === "EMPLEADO", [user?.tipo]);
 
   return (
-    <main style={{ maxWidth: 1100, margin: "0 auto", padding: "2rem 1rem" }}>
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+    <main className="hallazgo-list-page" style={{ maxWidth: 1100, margin: "0 auto", padding: "2rem 1rem" }}>
+      <header className="hallazgo-list-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
         <div>
           <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "#0f172a" }}>Hallazgos</h1>
           <p style={{ marginTop: 4, color: "#64748b", fontSize: "14px" }}>
@@ -73,6 +74,7 @@ export default function HallazgoListPage() {
         {canCreateHallazgo && (
           <Link
             to="/hallazgos/crear"
+            className="hallazgo-list-create-link"
             style={{
               background: "#1e3a8a",
               color: "#fff",
@@ -120,9 +122,10 @@ export default function HallazgoListPage() {
                 transition: "box-shadow 0.15s",
               }}
             >
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+              <div className="hallazgo-list-card-top" style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
                 <strong style={{ fontSize: "14px", color: "#1e293b", fontWeight: 600 }}>{item.descripcion}</strong>
                 <span
+                  className="hallazgo-list-status"
                   style={{
                     borderRadius: 999,
                     padding: "0.2rem 0.75rem",
@@ -156,6 +159,52 @@ export default function HallazgoListPage() {
                   {item.ubicacion}
                 </span>
               </div>
+
+              {/* Mostrar estado de acciones */}
+              {item.acciones && item.acciones.length > 0 && (
+                <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                  {item.acciones.map((accion) => {
+                    const colorMap = {
+                      PENDIENTE: "#fbbf24",
+                      EN_PROGRESO: "#60a5fa",
+                      SOLICITUD_CIERRE: "#f97316",
+                      CERRADA: "#10b981",
+                    };
+                    const tipoShort = {
+                      INMEDIATA: "Inmediata",
+                      CORRECTIVA: "Correctiva",
+                      VERIFICACION_EFICIENCIA: "Verif.",
+                    };
+                    return (
+                      <div
+                        key={accion.id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "0.4rem",
+                          padding: "0.3rem 0.6rem",
+                          background: "#f8fafc",
+                          border: `1.5px solid ${colorMap[accion.estado] || "#cbd5e1"}`,
+                          borderRadius: "6px",
+                          fontSize: "0.75rem",
+                          fontWeight: 600,
+                          color: "#334155",
+                        }}
+                      >
+                        <span style={{ fontSize: "0.65rem" }}>{tipoShort[accion.tipo] || accion.tipo}</span>
+                        <span
+                          style={{
+                            width: "6px",
+                            height: "6px",
+                            borderRadius: "50%",
+                            background: colorMap[accion.estado] || "#cbd5e1",
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </Link>
           ))}
         </section>

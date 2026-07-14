@@ -80,7 +80,7 @@ export default function ResponsableList({
   if (loading) {
     return (
       <div style={{ padding: "1.5rem", background: "#f3f4f6", borderRadius: "8px", textAlign: "center", color: "#666" }}>
-        ⏳ Cargando usuarios...
+         Cargando usuarios...
       </div>
     );
   }
@@ -105,7 +105,7 @@ export default function ResponsableList({
       {/* Current responsables section */}
       <section style={{ border: "2px solid #10b981", borderRadius: "8px", padding: "1.5rem", background: "#ecfdf5" }}>
         <h3 style={{ margin: "0 0 1rem 0", color: "#065f46", display: "flex", alignItems: "center", gap: 8 }}>
-          ✓ Responsables Actuales
+           Responsables Actuales
           <span style={{ 
             background: "#10b981", 
             color: "#fff", 
@@ -185,7 +185,7 @@ export default function ResponsableList({
                       transition: "all 0.2s",
                     }}
                   >
-                    {isProcessing ? "⏳ Removiendo..." : "✕ Remover"}
+                    {isProcessing ? " Removiendo..." : "✕ Remover"}
                   </button>
                 </div>
               );
@@ -197,7 +197,7 @@ export default function ResponsableList({
       {/* Available users section */}
       <section style={{ border: "2px solid #3b82f6", borderRadius: "8px", padding: "1.5rem", background: "#eff6ff" }}>
         <h3 style={{ margin: "0 0 1rem 0", color: "#1e40af", display: "flex", alignItems: "center", gap: 8 }}>
-          ➕ Agregar Responsable
+           Agregar Responsable
           {usuariosDisponibles.length > 0 && (
             <span style={{ 
               background: "#3b82f6", 
@@ -279,7 +279,7 @@ export default function ResponsableList({
                       transition: "all 0.2s",
                     }}
                   >
-                    {isProcessing ? "⏳ Agregando..." : "+ Agregar"}
+                    {isProcessing ? " Agregando..." : "+ Agregar"}
                   </button>
                 </div>
               );

@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "./AuthContext.jsx";
-import { marcarChatLeidas } from "../api/notificaciones.js";
+import { marcarChatLeidas, marcarHallazgoLeidas } from "../api/notificaciones.js";
 
 const NotificacionContext = createContext(null);
 
@@ -156,6 +156,31 @@ export function NotificacionProvider({ children }) {
     setUnreadCount(0);
   };
 
+  const markHallazgoNotificationsAsRead = async (hallazgoId) => {
+    if (!hallazgoId) return { updated_count: 0 };
+
+    try {
+      const data = await marcarHallazgoLeidas(hallazgoId);
+      const targetId = Number(hallazgoId);
+
+      setNotificaciones((prev) =>
+        prev.map((n) => {
+          const relatedId = Number(n?.hallazgo_related?.id ?? n?.hallazgo_id ?? n?.hallazgo_relacionado_id);
+          if (!n.leida && relatedId === targetId) {
+            return { ...n, leida: true };
+          }
+          return n;
+        })
+      );
+
+      setUnreadCount((prev) => Math.max(0, prev - Number(data?.updated_count || 0)));
+      return data;
+    } catch (error) {
+      console.error("Error marking hallazgo notifications as read:", error);
+      return { updated_count: 0 };
+    }
+  };
+
   const markChatNotificationsAsRead = async (hallazgoId) => {
     if (!hallazgoId) return { updated_count: 0, hallazgo_id: null };
 
@@ -193,6 +218,7 @@ export function NotificacionProvider({ children }) {
       removeNotification,
       clearNotificaciones,
       markChatNotificationsAsRead,
+      markHallazgoNotificationsAsRead,
     }),
     [notificaciones, unreadCount, isConnected, isLoading]
   );

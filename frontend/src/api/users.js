@@ -40,3 +40,17 @@ export async function updateUser(userId, payload) {
   const { data } = await client.patch(`/usuarios/${userId}/`, payload);
   return data;
 }
+
+export async function setUserActive(userId, isActive, passwordConfirmacion) {
+  const endpoint = isActive ? "activar" : "desactivar";
+  const { data } = await client.post(`/usuarios/${userId}/${endpoint}/`, {
+    password_confirmacion: passwordConfirmacion,
+  });
+  return data;
+}
+
+export async function deleteUser(userId, passwordConfirmacion) {
+  await client.delete(`/usuarios/${userId}/`, {
+    data: { password_confirmacion: passwordConfirmacion },
+  });
+}

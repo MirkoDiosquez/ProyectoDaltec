@@ -1,6 +1,7 @@
 from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.contrib.auth import get_user_model
+from django.db.models import Case, When, Value, IntegerField, Count
 from rest_framework import status, viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -57,6 +58,15 @@ class HallazgoViewSet(viewsets.ModelViewSet):
 	def get_queryset(self):
 		user = self.request.user
 		base = self.queryset
+
+		# Annotate priority: QUEJA_CLIENTE = 0 (first), everything else = 1
+		base = base.annotate(
+			_tipo_priority=Case(
+				When(tipo=TipoHallazgo.QUEJA_CLIENTE, then=Value(0)),
+				default=Value(1),
+				output_field=IntegerField(),
+			)
+		).order_by('_tipo_priority', '-fecha_creacion')
 
 		if getattr(user, "is_admin", False):
 			qs = base
@@ -216,4 +226,80 @@ class HallazgoViewSet(viewsets.ModelViewSet):
 			self._translate_service_error(exc)
 		
 		return Response(result, status=status.HTTP_200_OK)
+
+	@action(detail=False, methods=["get"])
+	def estadisticas(self, request):
+		"""Admin-only endpoint for dashboard statistics.
+		
+		Returns:
+		- hallazgos_por_tipo: count of hallazgos by tipo
+		- hallazgos_por_subseccion: count of hallazgos by subseccion (internal sector only)
+		- acciones_abiertas: count of open actions by tipo
+		"""
+		# Check admin permission
+		if not getattr(request.user, "is_admin", False):
+			return Response(
+				{"detail": "Solo administradores pueden acceder a estadísticas."},
+				status=status.HTTP_403_FORBIDDEN,
+			)
+		
+		from apps.acciones.models import Accion, EstadoAccion
+		
+		# Hallazgos por tipo
+		hallazgos_por_tipo = (
+			Hallazgo.objects.values('tipo')
+			.annotate(count=Count('id'))
+			.order_by('tipo')
+		)
+		
+		# Hallazgos por subsección (only INTERNO sector)
+		hallazgos_por_subseccion = (
+			Hallazgo.objects.filter(sector__codigo='INTERNO')
+			.values('subseccion__nombre')
+			.annotate(count=Count('id'))
+			.order_by('-count')
+		)
+		
+		# Acciones abiertas (not CERRADA) by tipo
+		acciones_abiertas = (
+			Accion.objects.exclude(estado=EstadoAccion.CERRADA)
+			.values('tipo')
+			.annotate(count=Count('id'))
+			.order_by('tipo')
+		)
+		
+		return Response({
+			'hallazgos_por_tipo': list(hallazgos_por_tipo) if hallazgos_por_tipo else [],
+			'hallazgos_por_subseccion': list(hallazgos_por_subseccion) if hallazgos_por_subseccion else [],
+			'acciones_abiertas': list(acciones_abiertas) if acciones_abiertas else [],
+		})
+
+	@action(detail=True, methods=["get"], url_path="historial_responsables")
+	def historial_responsables(self, request, pk=None):
+		"""Get the assignment/removal history of responsables for this hallazgo.
+		
+		Returns a list of history records with fecha_asignacion and fecha_remocion.
+		"""
+		from apps.hallazgos.models import HallazgoResponsableHistorial
+		
+		hallazgo = self._get_hallazgo()
+		historial = HallazgoResponsableHistorial.objects.filter(
+			hallazgo=hallazgo
+		).select_related('responsable').order_by('-fecha_asignacion')
+		
+		data = [
+			{
+				'id': h.id,
+				'responsable_id': h.responsable.id,
+				'responsable_nombre': h.responsable.get_full_name(),
+				'responsable_email': h.responsable.email,
+				'fecha_asignacion': h.fecha_asignacion,
+				'fecha_remocion': h.fecha_remocion,
+				'estado': 'ACTIVO' if not h.fecha_remocion else 'REMOVIDO',
+			}
+			for h in historial
+		]
+		
+		return Response(data)
+
 

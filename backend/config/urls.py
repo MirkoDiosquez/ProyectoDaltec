@@ -22,6 +22,7 @@ urlpatterns = [
     path("api/v1/", include("apps.users.urls")),
     # T068: Phase 6 file upload routes
     path("api/v1/", include("apps.archivos.urls")),
+    path("api/v1/", include("apps.reportes.urls")),
 ]
 
 if settings.DEBUG:

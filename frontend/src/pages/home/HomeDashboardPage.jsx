@@ -2,19 +2,174 @@
  * HomeDashboardPage.jsx — Authenticated home dashboard with role-aware summary cards.
  *
  * Displays:
- * - ADMIN: Total hallazgos, pending approvals, closed actions, unread notifications
+ * - ADMIN: Total hallazgos, pending approvals, closed actions, unread notifications + dashboard
  * - EMPLEADO: Assigned hallazgos, my actions in progress, pending closure approvals
  * - CLIENTE: My filed complaints, their status summary
  *
  * Task T084 — Home Dashboard with role-aware quick stats and action buttons.
  */
 
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { useNotificaciones } from "../../context/NotificacionContext.jsx";
+import { listHallazgos, getEstadisticas } from "../../api/hallazgos.js";
+
+// Simple pie chart component
+function PieChart({ data = [], labelKey = "label", valueKey = "count" }) {
+  if (!data || data.length === 0) {
+    return <p style={{ color: "#94a3b8" }}>Sin datos</p>;
+  }
+
+  const total = data.reduce((sum, item) => sum + item[valueKey], 0);
+  const colors = ["#1e3a8a", "#2563eb", "#3b82f6", "#60a5fa", "#93c5fd", "#dbeafe"];
+
+  let currentAngle = 0;
+  const slices = data.map((item, index) => {
+    const value = item[valueKey];
+    const percentage = (value / total) * 100;
+    const sliceAngle = (percentage / 100) * 360;
+    const startAngle = currentAngle;
+    const endAngle = currentAngle + sliceAngle;
+    currentAngle = endAngle;
+
+    const startRad = (startAngle * Math.PI) / 180;
+    const endRad = (endAngle * Math.PI) / 180;
+
+    const x1 = 100 + 80 * Math.cos(startRad);
+    const y1 = 100 + 80 * Math.sin(startRad);
+    const x2 = 100 + 80 * Math.cos(endRad);
+    const y2 = 100 + 80 * Math.sin(endRad);
+
+    // Handle full circle (360°) by drawing two 180° arcs
+    let pathData;
+    if (sliceAngle >= 359.9) {
+      // Full circle: draw two semicircles
+      const mid1X = 100 + 80 * Math.cos(startRad);
+      const mid1Y = 100 + 80 * Math.sin(startRad);
+      const mid2X = 100 + 80 * Math.cos((startRad + Math.PI));
+      const mid2Y = 100 + 80 * Math.sin((startRad + Math.PI));
+      
+      pathData = [
+        `M ${mid1X} ${mid1Y}`,
+        `A 80 80 0 0 1 ${mid2X} ${mid2Y}`,
+        `A 80 80 0 0 1 ${mid1X} ${mid1Y}`,
+        `Z`,
+      ].join(" ");
+    } else {
+      const largeArc = sliceAngle > 180 ? 1 : 0;
+      pathData = [
+        `M 100 100`,
+        `L ${x1} ${y1}`,
+        `A 80 80 0 ${largeArc} 1 ${x2} ${y2}`,
+        `Z`,
+      ].join(" ");
+    }
+
+    const labelAngle = startAngle + sliceAngle / 2;
+    const labelRad = (labelAngle * Math.PI) / 180;
+    const labelX = 100 + 55 * Math.cos(labelRad);
+    const labelY = 100 + 55 * Math.sin(labelRad);
+
+    return {
+      path: pathData,
+      color: colors[index % colors.length],
+      label: item[labelKey],
+      value: value,
+      percentage: percentage.toFixed(1),
+      labelX,
+      labelY,
+    };
+  });
+
+  return (
+    <div style={{ display: "flex", gap: "1.5rem", alignItems: "flex-start", flexWrap: "wrap" }}>
+      <svg width="180" height="180" viewBox="0 0 220 220" style={{ flexShrink: 0 }}>
+        {slices.map((slice, idx) => (
+          <g key={idx}>
+            <path d={slice.path} fill={slice.color} stroke="#fff" strokeWidth="2" />
+            <text
+              x={slice.labelX}
+              y={slice.labelY}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              style={{
+                fontSize: "12px",
+                fontWeight: "700",
+                fill: "#fff",
+                pointerEvents: "none",
+              }}
+            >
+              {slice.percentage}%
+            </text>
+          </g>
+        ))}
+      </svg>
+      <div style={{ flex: 1, minWidth: "200px", display: "grid", gap: "0.4rem" }}>
+        {slices.map((slice, idx) => (
+          <div key={idx} style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
+            <div
+              style={{
+                width: 12,
+                height: 12,
+                borderRadius: "2px",
+                background: slice.color,
+              }}
+            />
+            <span style={{ fontWeight: 600, color: "#334155" }}>{slice.label}:</span>
+            <span style={{ color: "#64748b" }}>{slice.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function HomeDashboardPage() {
   const { user } = useAuth();
+  const { unreadCount } = useNotificaciones();
+  const [hallazgosCount, setHallazgosCount] = useState(0);
+  const [estadisticas, setEstadisticas] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadData = async () => {
+      try {
+        // Load hallazgos count
+        const hallazgosData = await listHallazgos({ limit: 1 });
+        if (mounted) {
+          const count = hallazgosData?.count || (Array.isArray(hallazgosData) ? hallazgosData.length : 0);
+          setHallazgosCount(count);
+        }
+
+        // Load admin statistics if user is admin
+        if (user?.tipo === "ADMIN") {
+          console.log("Loading admin statistics...");
+          const stats = await getEstadisticas();
+          console.log("Stats received:", stats);
+          if (mounted) {
+            setEstadisticas(stats);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading dashboard data:", error);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    if (user) {
+      loadData();
+    }
+    
+    return () => {
+      mounted = false;
+    };
+  }, [user?.tipo]);
 
   const roleLabel = useMemo(() => {
     const labels = {
@@ -82,7 +237,7 @@ export default function HomeDashboardPage() {
               color: "#0f172a",
             }}
           >
-            —
+            {hallazgosCount}
           </p>
           <p style={{ margin: "0.5rem 0 0 0", color: "#94a3b8", fontSize: "0.85rem" }}>
             {user?.tipo === "ADMIN"
@@ -155,7 +310,7 @@ export default function HomeDashboardPage() {
               Crear Hallazgo
             </Link>
                 <Link
-                  to="/usuarios/crear"
+                  to="/usuarios"
                   style={{
                     padding: "0.65rem 1rem",
                     border: "1.5px solid #1e3a8a",
@@ -242,10 +397,10 @@ export default function HomeDashboardPage() {
               color: "#0f172a",
             }}
           >
-            —
+            {unreadCount}
           </p>
           <p style={{ margin: "0.5rem 0 0 0", color: "#94a3b8", fontSize: "0.85rem" }}>
-            Sin leer (próximamente)
+            Sin leer
           </p>
           <Link
             to="/notificaciones"
@@ -266,6 +421,91 @@ export default function HomeDashboardPage() {
           </Link>
         </div>
       </section>
+
+      {/* Admin Dashboard: Statistics and Charts */}
+      {user?.tipo === "ADMIN" && estadisticas && (
+        <section
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))",
+            gap: "1.5rem",
+            marginBottom: "2rem",
+            marginTop: "2rem",
+          }}
+        >
+          {/* Hallazgos por Tipo */}
+          <div
+            style={{
+              border: "1px solid #e2e8f0",
+              borderRadius: 12,
+              padding: "1.5rem",
+              background: "#fff",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+            }}
+          >
+            <h2
+              style={{
+                margin: 0,
+                fontSize: "1rem",
+                fontWeight: 700,
+                color: "#0f172a",
+                marginBottom: "1rem",
+              }}
+            >
+              Hallazgos por Tipo
+            </h2>
+            <PieChart data={estadisticas.hallazgos_por_tipo} labelKey="tipo" />
+          </div>
+
+          {/* Hallazgos por Subsección (INTERNO) */}
+          <div
+            style={{
+              border: "1px solid #e2e8f0",
+              borderRadius: 12,
+              padding: "1.5rem",
+              background: "#fff",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+            }}
+          >
+            <h2
+              style={{
+                margin: 0,
+                fontSize: "1rem",
+                fontWeight: 700,
+                color: "#0f172a",
+                marginBottom: "1rem",
+              }}
+            >
+              Hallazgos por Subsección (Interno)
+            </h2>
+            <PieChart data={estadisticas.hallazgos_por_subseccion} labelKey="subseccion__nombre" />
+          </div>
+
+          {/* Acciones Abiertas por Tipo */}
+          <div
+            style={{
+              border: "1px solid #e2e8f0",
+              borderRadius: 12,
+              padding: "1.5rem",
+              background: "#fff",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+            }}
+          >
+            <h2
+              style={{
+                margin: 0,
+                fontSize: "1rem",
+                fontWeight: 700,
+                color: "#0f172a",
+                marginBottom: "1rem",
+              }}
+            >
+              Acciones Abiertas por Tipo
+            </h2>
+            <PieChart data={estadisticas.acciones_abiertas} labelKey="tipo" />
+          </div>
+        </section>
+      )}
 
       {/* Info Box */}
       <div

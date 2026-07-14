@@ -58,3 +58,16 @@ export async function marcarChatLeidas(hallazgoId) {
   });
   return data;
 }
+
+/**
+ * Mark all unread notifications linked to a hallazgo as read.
+ *
+ * @param {number|string} hallazgoId - Hallazgo ID
+ * @returns {Promise<Object>} { updated_count, hallazgo_id, message }
+ */
+export async function marcarHallazgoLeidas(hallazgoId) {
+  const { data } = await client.post(`${BASE}marcar_hallazgo_leidas/`, {
+    hallazgo_id: Number(hallazgoId),
+  });
+  return data;
+}

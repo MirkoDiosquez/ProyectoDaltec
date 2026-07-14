@@ -77,3 +77,27 @@ class NotificacionViewSet(viewsets.ModelViewSet):
             }
         )
 
+    @action(detail=False, methods=["post"])
+    def marcar_hallazgo_leidas(self, request):
+        """Mark all unread notifications related to a specific hallazgo as read."""
+        hallazgo_id = request.data.get("hallazgo_id")
+        if not hallazgo_id:
+            return Response(
+                {"detail": "hallazgo_id es requerido."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        notificaciones = self.get_queryset().filter(
+            leida=False,
+            hallazgo_relacionado_id=hallazgo_id,
+        )
+        count = notificaciones.update(leida=True)
+
+        return Response(
+            {
+                "updated_count": count,
+                "hallazgo_id": int(hallazgo_id),
+                "message": f"Marked {count} notifications as read",
+            }
+        )
+

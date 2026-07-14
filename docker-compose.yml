@@ -34,6 +34,8 @@ services:
     volumes:
       - media_files:/app/media
       - static_files:/app/staticfiles
+      - ./backups:/backups
+      - ./TC-SGC-03_NC-OM_rev.06C.xlsm:/app/TC-SGC-03_NC-OM_rev.06C.xlsm:ro
     depends_on:
       db:
         condition: service_healthy

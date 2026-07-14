@@ -1,0 +1,106 @@
+.solicitud-list {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.solicitud-list__title-row {
+  flex-wrap: wrap;
+}
+
+.solicitud-list__title {
+  min-width: 0;
+  word-break: break-word;
+}
+
+.solicitud-list__counter {
+  flex-shrink: 0;
+}
+
+.solicitud-list__card {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.solicitud-list__meta,
+.solicitud-list__meta-row,
+.solicitud-list__meta-value,
+.solicitud-list__observacion,
+.solicitud-list__reject-form {
+  min-width: 0;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.solicitud-list__meta-row--propuesto {
+  flex-wrap: wrap;
+}
+
+.solicitud-list__textarea {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .solicitud-list {
+    padding: 1rem !important;
+  }
+
+  .solicitud-list__card {
+    padding: 1rem !important;
+  }
+
+  .solicitud-list__title {
+    font-size: 1.05rem;
+    line-height: 1.35;
+  }
+
+  .solicitud-list__actions {
+    flex-direction: column;
+  }
+
+  .solicitud-list__action-btn {
+    width: 100%;
+    min-height: 42px;
+  }
+
+  .solicitud-list__status-badge {
+    max-width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .solicitud-list {
+    padding: 0.85rem !important;
+    border-radius: 10px !important;
+  }
+
+  .solicitud-list__title {
+    font-size: 1rem;
+  }
+
+  .solicitud-list__counter {
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 0.75rem !important;
+  }
+
+  .solicitud-list__card {
+    padding: 0.85rem !important;
+    border-radius: 10px !important;
+  }
+
+  .solicitud-list__status-badge {
+    width: 100%;
+    border-radius: 10px !important;
+    padding: 0.45rem 0.6rem !important;
+    font-size: 0.75rem !important;
+  }
+
+  .solicitud-list__reject-form {
+    padding: 0.8rem !important;
+  }
+}

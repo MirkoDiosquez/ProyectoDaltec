@@ -20,12 +20,15 @@ import {
   rejectSolicitudCambio,
 } from "../../api/hallazgos.js";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { useNotificaciones } from "../../context/NotificacionContext.jsx";
 import SolicitudCierreAdminView from "../acciones/SolicitudCierreAdminView.jsx";
 import FilePreview from "../../components/FilePreview.jsx";
 import FileUpload from "../../components/FileUpload.jsx";
 import ResponsableList from "../../components/ResponsableList.jsx";
+import HistorialResponsablesPanel from "../../components/hallazgos/HistorialResponsablesPanel.jsx";
 import SolicitudCambioForm from "../../components/hallazgos/SolicitudCambioForm.jsx";
 import SolicitudList from "../../components/hallazgos/SolicitudList.jsx";
+import "./HallazgoDetailPage.css";
 
 const tipoLabel = {
   NO_CONFORMIDAD: "No Conformidad",
@@ -56,6 +59,7 @@ const tipoAccionLabel = {
 export default function HallazgoDetailPage() {
   const { id } = useParams();
   const { user } = useAuth();
+  const { markHallazgoNotificationsAsRead } = useNotificaciones();
 
   const [hallazgo, setHallazgo] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -80,6 +84,7 @@ export default function HallazgoDetailPage() {
     try {
       const data = await getHallazgo(id);
       setHallazgo(data);
+      markHallazgoNotificationsAsRead(id);
       const porquesData = await listPorques(id);
       setPorques(Array.isArray(porquesData) ? porquesData : []);
       if (data?.tipo && data.tipo !== "QUEJA_CLIENTE") {
@@ -280,8 +285,8 @@ export default function HallazgoDetailPage() {
   }
 
   return (
-    <main style={{ maxWidth: 980, margin: "0 auto", padding: "2rem 1rem", display: "grid", gap: 16 }}>
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+    <main className="hallazgo-detail-page" style={{ maxWidth: 980, margin: "0 auto", padding: "2rem 1rem", display: "grid", gap: 16 }}>
+      <header className="hallazgo-detail-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <h1 style={{ margin: 0 }}>Detalle de Hallazgo</h1>
           <p style={{ marginTop: 6, color: "#475569" }}>
@@ -358,7 +363,7 @@ export default function HallazgoDetailPage() {
       <section style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: "1.25rem", background: "#fff", display: "grid", gap: 16 }}>
         <h2 style={{ margin: 0 }}>Acciones Correctivas</h2>
         {Array.isArray(hallazgo.acciones) && hallazgo.acciones.length > 0 ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+          <div className="hallazgo-detail-acciones-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
             {hallazgo.acciones.map((accion) => {
               const estadoStyles = {
                 PENDIENTE:          { bg: "#fef9c3", border: "#fde047", text: "#854d0e", dot: "#ca8a04" },
@@ -368,13 +373,14 @@ export default function HallazgoDetailPage() {
               };
               const s = estadoStyles[accion.estado] || { bg: "#f1f5f9", border: "#cbd5e1", text: "#334155", dot: "#64748b" };
               const tipoIcons = {
-                INMEDIATA: "⚡",
-                CORRECTIVA: "🔧",
-                VERIFICACION_EFICIENCIA: "✅",
+                INMEDIATA: "",
+                CORRECTIVA: "",
+                VERIFICACION_EFICIENCIA: "",
               };
               return (
                 <div
                   key={accion.id}
+                  className="hallazgo-detail-accion-card"
                   style={{
                     border: `1.5px solid ${s.border}`,
                     borderRadius: 12,
@@ -386,7 +392,7 @@ export default function HallazgoDetailPage() {
                 >
                   {/* Tipo */}
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: "1.3rem" }}>{tipoIcons[accion.tipo] || "📋"}</span>
+                    <span style={{ fontSize: "1.3rem" }}>{tipoIcons[accion.tipo] || ""}</span>
                     <strong style={{ fontSize: "0.9rem", color: "#0f172a" }}>
                       {tipoAccionLabel[accion.tipo] || accion.tipo}
                     </strong>
@@ -487,7 +493,7 @@ export default function HallazgoDetailPage() {
       {!isAdmin && hallazgo && (
         <section style={{ border: "2px solid #10b981", borderRadius: 8, padding: "1.5rem", background: "#ecfdf5" }}>
           <h3 style={{ margin: "0 0 1rem 0", color: "#065f46", display: "flex", alignItems: "center", gap: 8 }}>
-            ✓ Responsables Actuales
+            Responsables Actuales
             <span style={{ 
               background: "#10b981", 
               color: "#fff", 
@@ -508,6 +514,7 @@ export default function HallazgoDetailPage() {
             <div style={{ display: "grid", gap: 10 }}>
               {hallazgo.responsables.map((r) => (
                 <div
+                  className="hallazgo-detail-responsable-item"
                   key={r.id}
                   style={{
                     display: "flex",
@@ -558,6 +565,7 @@ export default function HallazgoDetailPage() {
         <SolicitudCambioForm
           hallazgoId={hallazgo.id}
           usuarios={usuarios}
+          currentResponsables={hallazgo.responsables?.map((r) => r.id) || []}
           onSubmit={onCreateSolicitud}
           isLoading={actionLoading}
         />
@@ -573,6 +581,11 @@ export default function HallazgoDetailPage() {
           isAdmin={isAdmin}
           isLoading={actionLoading}
         />
+      )}
+
+      {/* Historial de Responsables */}
+      {hallazgo && (
+        <HistorialResponsablesPanel hallazgoId={hallazgo.id} />
       )}
 
       <section style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: "1rem", background: "#fff", display: "grid", gap: 10 }}>
@@ -607,7 +620,6 @@ export default function HallazgoDetailPage() {
                   color: "#f59e0b",
                   bgColor: "#fef3c7",
                   borderColor: "#fcd34d",
-                  icon: "⏳",
                   label: "Pendiente de aprobación",
                   textColor: "#92400e",
                 },
@@ -615,7 +627,7 @@ export default function HallazgoDetailPage() {
                   color: "#10b981",
                   bgColor: "#dcfce7",
                   borderColor: "#86efac",
-                  icon: "✓",
+                  icon: "",
                   label: "Aprobado",
                   textColor: "#14532d",
                 },
@@ -660,6 +672,7 @@ export default function HallazgoDetailPage() {
                   <div style={{ paddingLeft: "12px", display: "grid", gap: 8 }}>
                     {/* Header with number, status badge, and icon */}
                     <div
+                      className="hallazgo-detail-porque-header"
                       style={{
                         display: "flex",
                         alignItems: "center",
@@ -692,7 +705,7 @@ export default function HallazgoDetailPage() {
                               color: config.textColor,
                             }}
                           >
-                            Porqué #{p.id}
+                            Porqué 
                           </div>
                           <div
                             style={{
@@ -760,6 +773,7 @@ export default function HallazgoDetailPage() {
 
                     {/* Metadata footer */}
                     <div
+                      className="hallazgo-detail-porque-footer"
                       style={{
                         display: "flex",
                         alignItems: "center",
@@ -784,6 +798,7 @@ export default function HallazgoDetailPage() {
                     {/* Action buttons for admin */}
                     {isAdmin && p.estado === "pendiente" && (
                       <div
+                        className="hallazgo-detail-porque-actions"
                         style={{
                           display: "flex",
                           gap: 8,
@@ -858,7 +873,7 @@ export default function HallazgoDetailPage() {
           maxSizeMB={1024}
         />
         {archivo && (
-          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <div className="hallazgo-detail-upload-row" style={{ display: "flex", justifyContent: "flex-end" }}>
             <button
               type="button"
               disabled={actionLoading}
@@ -878,7 +893,12 @@ export default function HallazgoDetailPage() {
         <section style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: "1rem", background: "#fff", display: "grid", gap: 10 }}>
           <h2 style={{ margin: 0 }}>Archivos Adjuntos</h2>
           {hallazgo.archivos.map((archivo) => (
-            <FilePreview key={archivo.id} archivo={archivo} />
+            <FilePreview 
+              key={archivo.id} 
+              archivo={archivo} 
+              isAdmin={isAdmin}
+              onDeleted={refreshDetail}
+            />
           ))}
         </section>
       )}
