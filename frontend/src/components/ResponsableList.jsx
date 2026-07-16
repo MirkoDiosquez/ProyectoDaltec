@@ -287,6 +287,7 @@ export default function ResponsableList({
           </div>
         )}
       </section>
+
     </div>
   );
 }

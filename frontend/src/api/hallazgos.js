@@ -18,6 +18,13 @@ export async function getHallazgo(id) {
   return data;
 }
 
+export async function deleteHallazgo(id, passwordConfirmacion) {
+  const { data } = await client.delete(`${BASE}${id}/`, {
+    data: { password_confirmacion: passwordConfirmacion },
+  });
+  return data;
+}
+
 export async function aprobar(id) {
   const { data } = await client.post(`${BASE}${id}/aprobar/`);
   return data;

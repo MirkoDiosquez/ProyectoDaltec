@@ -58,6 +58,60 @@ const tipoAccionLabel = {
   VERIFICACION_EFICACIA: "Verificacion de Eficacia",
 };
 
+function getDetailErrorMessage(context, apiError) {
+  const status = apiError?.response?.status;
+  const data = apiError?.response?.data;
+  const detail = data?.detail
+    || data?.non_field_errors?.[0]
+    || data?.archivo?.[0]
+    || data?.texto_causa?.[0]
+    || data?.tipo?.[0]
+    || data?.observacion?.[0]
+    || data?.observacion_rechazo?.[0];
+
+  if (status === 401) {
+    return "Tu sesión venció. Volvé a iniciar sesión para continuar trabajando sobre este hallazgo.";
+  }
+
+  if (status === 403) {
+    const forbiddenMessages = {
+      load: "No tenés permisos para acceder a este hallazgo.",
+      adminAction: "Esta acción está reservada para administradores.",
+      addResponsable: "No tenés permisos para asignar responsables en este hallazgo.",
+      removeResponsable: "No tenés permisos para remover responsables de este hallazgo.",
+      uploadArchivo: "No tenés permisos para adjuntar archivos a este hallazgo.",
+      createPorque: "Solo admin o responsables asignados pueden agregar porqués.",
+      approvePorque: "Solo admin puede aprobar porqués pendientes.",
+      rejectPorque: "Solo admin puede rechazar porqués pendientes.",
+      createSolicitud: "No tenés permisos para solicitar cambios de responsable.",
+      approveSolicitud: "Solo admin puede aprobar solicitudes de cambio de responsable.",
+      rejectSolicitud: "Solo admin puede rechazar solicitudes de cambio de responsable.",
+    };
+    return forbiddenMessages[context] || "No tenés permisos para realizar esta acción en el hallazgo.";
+  }
+
+  if (status === 404) {
+    if (context === "load") return "El hallazgo no existe o fue eliminado.";
+    return "El recurso que intentás modificar ya no está disponible en este hallazgo.";
+  }
+
+  const fallbackMessages = {
+    load: "No se pudo cargar el detalle del hallazgo. Verificá tu conexión e intentá nuevamente.",
+    adminAction: detail || "No se pudo completar la acción administrativa sobre el hallazgo.",
+    addResponsable: detail || "No se pudo agregar el responsable. Revisá si ya estaba asignado o si el usuario existe.",
+    removeResponsable: detail || "No se pudo remover el responsable. Puede que ya no esté asignado.",
+    uploadArchivo: detail || "No se pudo cargar el archivo. Revisá el formato y el tamaño antes de reintentar.",
+    createPorque: detail || "No se pudo crear el porqué. Asegurate de completar la causa raíz correctamente.",
+    approvePorque: detail || "No se pudo aprobar el porqué seleccionado.",
+    rejectPorque: detail || "No se pudo rechazar el porqué seleccionado.",
+    createSolicitud: detail || "No se pudo enviar la solicitud de cambio de responsable.",
+    approveSolicitud: detail || "No se pudo aprobar la solicitud de cambio de responsable.",
+    rejectSolicitud: detail || "No se pudo rechazar la solicitud de cambio de responsable.",
+  };
+
+  return fallbackMessages[context] || detail || "Ocurrió un error inesperado en este apartado del hallazgo.";
+}
+
 export default function HallazgoDetailPage() {
   const { id } = useParams();
   const { user } = useAuth();
@@ -104,8 +158,8 @@ export default function HallazgoDetailPage() {
 
       const historialData = await getHistorialResponsables(id);
       setHistorialResponsables(Array.isArray(historialData) ? historialData : []);
-    } catch {
-      setError("No se pudo cargar el hallazgo.");
+    } catch (apiError) {
+      setError(getDetailErrorMessage("load", apiError));
     } finally {
       setLoading(false);
     }
@@ -138,7 +192,7 @@ export default function HallazgoDetailPage() {
       }
       await refreshDetail();
     } catch (apiError) {
-      setError(apiError?.response?.data?.detail || "No se pudo ejecutar la accion.");
+      setError(getDetailErrorMessage("adminAction", apiError));
     } finally {
       setActionLoading(false);
     }
@@ -155,7 +209,7 @@ export default function HallazgoDetailPage() {
       setResponsableId("");
       await refreshDetail();
     } catch (apiError) {
-      setError(apiError?.response?.data?.detail || "No se pudo agregar el responsable.");
+      setError(getDetailErrorMessage("addResponsable", apiError));
     } finally {
       setActionLoading(false);
     }
@@ -168,7 +222,7 @@ export default function HallazgoDetailPage() {
       await removeResponsable(id, Number(idResponsable));
       await refreshDetail();
     } catch (apiError) {
-      setError(apiError?.response?.data?.detail || "No se pudo remover el responsable.");
+      setError(getDetailErrorMessage("removeResponsable", apiError));
     } finally {
       setActionLoading(false);
     }
@@ -185,7 +239,7 @@ export default function HallazgoDetailPage() {
       setArchivo(null);
       await refreshDetail();
     } catch (apiError) {
-      setError(apiError?.response?.data?.detail || "No se pudo cargar el archivo.");
+      setError(getDetailErrorMessage("uploadArchivo", apiError));
     } finally {
       setActionLoading(false);
     }
@@ -203,7 +257,7 @@ export default function HallazgoDetailPage() {
       setNuevoPorque("");
       await refreshDetail();
     } catch (apiError) {
-      setError(apiError?.response?.data?.detail || "No se pudo crear el porqué.");
+      setError(getDetailErrorMessage("createPorque", apiError));
     } finally {
       setActionLoading(false);
     }
@@ -216,7 +270,7 @@ export default function HallazgoDetailPage() {
       await approvePorque(id, porqueId);
       await refreshDetail();
     } catch (apiError) {
-      setError(apiError?.response?.data?.detail || "No se pudo aprobar el porqué.");
+      setError(getDetailErrorMessage("approvePorque", apiError));
     } finally {
       setActionLoading(false);
     }
@@ -230,7 +284,7 @@ export default function HallazgoDetailPage() {
       await rejectPorque(id, porqueId, observacion);
       await refreshDetail();
     } catch (apiError) {
-      setError(apiError?.response?.data?.detail || "No se pudo rechazar el porqué.");
+      setError(getDetailErrorMessage("rejectPorque", apiError));
     } finally {
       setActionLoading(false);
     }
@@ -244,9 +298,7 @@ export default function HallazgoDetailPage() {
       await createSolicitudCambio(id, payload);
       await refreshDetail();
     } catch (apiError) {
-      const message = apiError?.response?.data?.detail || 
-                      apiError?.response?.data?.observacion_rechazo?.[0] ||
-                      "No se pudo enviar la solicitud.";
+      const message = getDetailErrorMessage("createSolicitud", apiError);
       throw new Error(message);
     } finally {
       setActionLoading(false);
@@ -261,7 +313,7 @@ export default function HallazgoDetailPage() {
       await approveSolicitudCambio(id, solicitudId);
       await refreshDetail();
     } catch (apiError) {
-      setError(apiError?.response?.data?.detail || "No se pudo aprobar la solicitud.");
+      setError(getDetailErrorMessage("approveSolicitud", apiError));
       throw apiError;
     } finally {
       setActionLoading(false);
@@ -276,7 +328,7 @@ export default function HallazgoDetailPage() {
       await rejectSolicitudCambio(id, solicitudId, observacion);
       await refreshDetail();
     } catch (apiError) {
-      setError(apiError?.response?.data?.detail || "No se pudo rechazar la solicitud.");
+      setError(getDetailErrorMessage("rejectSolicitud", apiError));
       throw apiError;
     } finally {
       setActionLoading(false);

@@ -47,6 +47,7 @@ MYSQL_PWD="${MYSQL_PASSWORD}" mysqldump \
     --host="${MYSQL_HOST}" \
     --port="${MYSQL_PORT}" \
     --user="${MYSQL_USER}" \
+    --default-character-set=utf8mb4 \
     --single-transaction \
     --routines \
     --triggers \
@@ -69,9 +70,9 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Prune old backups (keep last 7)
+# Prune old backups (keep latest and previous by default)
 # ---------------------------------------------------------------------------
-KEEP=7
+KEEP="${BACKUP_KEEP:-2}"
 echo ""
 echo "Pruning old backups (keeping last ${KEEP})..."
 ls -1t "${OUTPUT_DIR}"/backup_*.sql.gz 2>/dev/null | tail -n +"$((KEEP + 1))" | xargs -r rm -v

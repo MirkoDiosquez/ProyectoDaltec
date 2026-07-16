@@ -183,3 +183,68 @@ class TestHallazgoSectorClassification:
         data = response.json()
         # Verify filtering works (may be paginated)
         assert "results" in data or isinstance(data, list)
+
+
+@pytest.mark.django_db
+class TestHallazgoDeletionContract:
+    def test_admin_can_delete_hallazgo_with_password_confirmation(self, api_client, admin_user):
+        hallazgo = Hallazgo.objects.create(
+            titulo="Hallazgo a eliminar",
+            descripcion="Eliminar con confirmacion",
+            estado="PENDIENTE",
+            creado_por=admin_user,
+        )
+
+        refresh = RefreshToken.for_user(admin_user)
+        api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
+
+        response = api_client.delete(
+            f"/api/v1/hallazgos/{hallazgo.id}/",
+            {"password_confirmacion": "testpass123"},
+            format="json",
+        )
+
+        assert response.status_code == 204
+        assert not Hallazgo.objects.filter(id=hallazgo.id).exists()
+
+    def test_admin_cannot_delete_hallazgo_with_invalid_password(self, api_client, admin_user):
+        hallazgo = Hallazgo.objects.create(
+            titulo="Hallazgo protegido",
+            descripcion="Password invalida",
+            estado="PENDIENTE",
+            creado_por=admin_user,
+        )
+
+        refresh = RefreshToken.for_user(admin_user)
+        api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
+
+        response = api_client.delete(
+            f"/api/v1/hallazgos/{hallazgo.id}/",
+            {"password_confirmacion": "incorrecta"},
+            format="json",
+        )
+
+        assert response.status_code == 400
+        assert "password_confirmacion" in response.json()
+        assert Hallazgo.objects.filter(id=hallazgo.id).exists()
+
+    def test_non_admin_cannot_delete_hallazgo_even_with_password(self, api_client, empleado_user, admin_user):
+        hallazgo = Hallazgo.objects.create(
+            titulo="Hallazgo asignado",
+            descripcion="Solo admin puede eliminar",
+            estado="PENDIENTE",
+            creado_por=admin_user,
+        )
+        hallazgo.responsables.add(empleado_user)
+
+        refresh = RefreshToken.for_user(empleado_user)
+        api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
+
+        response = api_client.delete(
+            f"/api/v1/hallazgos/{hallazgo.id}/",
+            {"password_confirmacion": "testpass123"},
+            format="json",
+        )
+
+        assert response.status_code == 403
+        assert Hallazgo.objects.filter(id=hallazgo.id).exists()

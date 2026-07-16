@@ -98,6 +98,24 @@ class HallazgoViewSet(viewsets.ModelViewSet):
 			raise PermissionDenied(str(exc))
 		raise exc
 
+	def _require_admin_password(self, request):
+		if not getattr(request.user, "is_admin", False):
+			raise PermissionDenied("Solo administradores pueden eliminar hallazgos.")
+
+		password_confirmacion = request.data.get("password_confirmacion")
+		if not password_confirmacion:
+			raise ValidationError(
+				{"password_confirmacion": "La contraseña de confirmación es requerida."}
+			)
+		if not request.user.check_password(password_confirmacion):
+			raise ValidationError(
+				{"password_confirmacion": "La contraseña de confirmación es inválida."}
+			)
+
+	def destroy(self, request, *args, **kwargs):
+		self._require_admin_password(request)
+		return super().destroy(request, *args, **kwargs)
+
 	@action(detail=True, methods=["post"])
 	def aprobar(self, request, pk=None):
 		hallazgo = self._get_hallazgo()

@@ -7,6 +7,28 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+$OutputEncoding = $utf8NoBom
+[Console]::InputEncoding = $utf8NoBom
+[Console]::OutputEncoding = $utf8NoBom
+
+function Get-EnvValue {
+    param(
+        [string]$EnvFilePath,
+        [string]$Key
+    )
+
+    if (-not (Test-Path $EnvFilePath)) {
+        throw "No existe el archivo .env en: $EnvFilePath"
+    }
+
+    $line = Select-String -Path $EnvFilePath -Pattern ("^{0}=(.*)$" -f [regex]::Escape($Key)) | Select-Object -First 1
+    if (-not $line) {
+        throw "No se encontro la variable $Key en $EnvFilePath"
+    }
+
+    return $line.Matches[0].Groups[1].Value.Trim()
+}
 
 function Invoke-Checked {
     param(
@@ -20,10 +42,34 @@ function Invoke-Checked {
     }
 }
 
+function Invoke-BackupRetention {
+    param(
+        [string]$TargetDir,
+        [string]$Pattern,
+        [int]$Keep = 2
+    )
+
+    $files = Get-ChildItem -Path $TargetDir -Filter $Pattern -File |
+        Sort-Object LastWriteTime -Descending
+
+    if ($files.Count -le $Keep) {
+        return
+    }
+
+    $files | Select-Object -Skip $Keep | ForEach-Object {
+        Remove-Item -Path $_.FullName -Force
+        Write-Host "Eliminado por retencion: $($_.Name)"
+    }
+}
+
 try {
     if (-not $BackupsDir) {
         $BackupsDir = Join-Path $ProjectRoot "backups"
     }
+
+    $envFilePath = Join-Path $ProjectRoot ".env"
+    $dbRootPassword = Get-EnvValue -EnvFilePath $envFilePath -Key "DB_ROOT_PASSWORD"
+    $dbName = Get-EnvValue -EnvFilePath $envFilePath -Key "DB_NAME"
 
     Set-Location $ProjectRoot
 
@@ -60,21 +106,26 @@ try {
         Write-Host "Creando backup de seguridad en: $preRestoreFile"
 
         Invoke-Checked -Action {
-            docker compose exec -T db sh -c 'mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"' |
-                Out-File -FilePath $preRestoreFile -Encoding utf8
+            docker compose exec -T db mysqldump --default-character-set=utf8mb4 -uroot -p"$dbRootPassword" "$dbName" |
+                Set-Content -Path $preRestoreFile -Encoding utf8
         } -ErrorMessage "No se pudo crear el backup de seguridad previo"
     }
 
     Write-Host "Recreando base de datos objetivo..."
     Invoke-Checked -Action {
-        docker compose exec -T db sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "DROP DATABASE IF EXISTS \`$MYSQL_DATABASE\`; CREATE DATABASE \`$MYSQL_DATABASE\`;"'
+        docker compose exec -T db mysql --default-character-set=utf8mb4 -uroot -p"$dbRootPassword" -e "DROP DATABASE IF EXISTS ``$dbName``; CREATE DATABASE ``$dbName`` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
     } -ErrorMessage "No se pudo resetear la base de datos"
 
     Write-Host "Importando backup..."
     Invoke-Checked -Action {
-        Get-Content -Path $latestBackup.FullName -Raw |
-            docker compose exec -T db sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"'
+        Get-Content -Path $latestBackup.FullName -Encoding utf8 -Raw |
+            docker compose exec -T db mysql --default-character-set=utf8mb4 -uroot -p"$dbRootPassword" "$dbName"
     } -ErrorMessage "Fallo la importacion del backup"
+
+    Write-Host "Normalizando catalogos base..."
+    Invoke-Checked -Action {
+        docker compose exec -T backend python manage.py load_catalogs | Out-Null
+    } -ErrorMessage "La restauracion se completo, pero fallo la normalizacion de catalogos"
 
     if (-not $NoRestart) {
         Write-Host "Reiniciando backend y nginx..."
@@ -82,6 +133,10 @@ try {
             docker compose restart backend nginx | Out-Null
         } -ErrorMessage "La restauracion se completo, pero fallo el reinicio de backend/nginx"
     }
+
+    # Keep only latest and previous backups for both regular and safety backups.
+    Invoke-BackupRetention -TargetDir $BackupsDir -Pattern "backup_*.sql" -Keep 2
+    Invoke-BackupRetention -TargetDir $BackupsDir -Pattern "pre_restore_*.sql" -Keep 2
 
     Write-Host "Restauracion completada correctamente." -ForegroundColor Green
     exit 0
