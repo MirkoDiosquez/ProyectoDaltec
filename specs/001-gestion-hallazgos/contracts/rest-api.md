@@ -185,7 +185,7 @@ Detalle de hallazgo.
   "acciones": [
     { "id": 1, "tipo": "INMEDIATA", "estado": "EN_PROGRESO" },
     { "id": 2, "tipo": "CORRECTIVA", "estado": "PENDIENTE" },
-    { "id": 3, "tipo": "VERIFICACION_EFICIENCIA", "estado": "PENDIENTE" }
+    { "id": 3, "tipo": "VERIFICACION_EFICACIA", "estado": "PENDIENTE" }
   ]
 }
 ```

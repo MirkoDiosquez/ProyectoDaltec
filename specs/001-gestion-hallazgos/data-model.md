@@ -85,7 +85,7 @@ APROBADO   → CERRADO    (automático por signal)
 - `responsables`: ManyToMany → CustomUser (through `HallazgoResponsable`)
 - `archivos`: ManyToMany → Archivo
 - `chat`: OneToOne → Chat (auto-creado al crear Hallazgo)
-- `acciones`: OneToMany → Accion (exactamente 3: INMEDIATA, CORRECTIVA, VERIFICACION_EFICIENCIA)
+- `acciones`: OneToMany → Accion (exactamente 3: INMEDIATA, CORRECTIVA, VERIFICACION_EFICACIA)
 - `notificaciones`: OneToMany → Notificacion
 
 ---
@@ -111,7 +111,7 @@ Tabla intermedia explícita para registrar asignación de responsables.
 |-----------------|---------------|------------------------------------------------------------|
 | `id`            | BigAutoField  | PK                                                         |
 | `hallazgo`      | ForeignKey → Hallazgo | NOT NULL, on_delete CASCADE                      |
-| `tipo`          | CharField(30) | choices: INMEDIATA / CORRECTIVA / VERIFICACION_EFICIENCIA; NOT NULL |
+| `tipo`          | CharField(30) | choices: INMEDIATA / CORRECTIVA / VERIFICACION_EFICACIA; NOT NULL |
 | `descripcion`   | TextField     | nullable                                                   |
 | `fecha_inicio`  | DateField     | nullable                                                   |
 | `fecha_fin`     | DateField     | nullable                                                   |

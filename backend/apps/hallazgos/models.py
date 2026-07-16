@@ -5,7 +5,7 @@ Hallazgo represents a finding (Non-Conformity, Improvement Opportunity, or Custo
 HallazgoResponsable is the explicit through-table for the responsables M2M relationship.
 
 A post_save signal auto-creates 3 Accion instances (INMEDIATA, CORRECTIVA,
-VERIFICACION_EFICIENCIA) in state PENDIENTE each time a new Hallazgo is created.
+VERIFICACION_EFICACIA) in state PENDIENTE each time a new Hallazgo is created.
 
 Refs: FR-004–010, FR-022, FR-027, data-model.md
 """
@@ -227,7 +227,7 @@ class HallazgoResponsableHistorial(models.Model):
 # Signals
 # ---------------------------------------------------------------------------
 
-_TIPOS_ACCION = ["INMEDIATA", "CORRECTIVA", "VERIFICACION_EFICIENCIA"]
+_TIPOS_ACCION = ["INMEDIATA", "CORRECTIVA", "VERIFICACION_EFICACIA"]
 
 
 @receiver(post_save, sender=HallazgoResponsable)
@@ -264,7 +264,7 @@ def crear_acciones_iniciales(sender, instance, created, **kwargs):
     Auto-creates the 3 required Accion instances and Chat for a new Hallazgo.
 
     FR-014: Each Hallazgo must have exactly 3 actions — INMEDIATA, CORRECTIVA,
-    VERIFICACION_EFICIENCIA — created automatically in state PENDIENTE at the
+    VERIFICACION_EFICACIA — created automatically in state PENDIENTE at the
     moment the Hallazgo is created.
 
     FR-012/T048: Auto-creates Chat for communication about the Hallazgo.

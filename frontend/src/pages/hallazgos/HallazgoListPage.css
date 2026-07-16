@@ -28,9 +28,54 @@
   flex-shrink: 0;
 }
 
+.hallazgo-list-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.hallazgo-list-filter-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.hallazgo-list-filter-wide {
+  grid-column: span 2;
+}
+
+.hallazgo-list-filter-field label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.hallazgo-list-filter-field input,
+.hallazgo-list-filter-field select {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 14px;
+  padding: 0.55rem 0.7rem;
+}
+
 @media (max-width: 768px) {
   .hallazgo-list-page {
     padding: 1.2rem 0.85rem !important;
+  }
+
+  .hallazgo-list-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .hallazgo-list-filter-wide {
+    grid-column: span 1;
   }
 
   .hallazgo-list-create-link {

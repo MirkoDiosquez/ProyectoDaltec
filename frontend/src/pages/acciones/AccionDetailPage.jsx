@@ -20,7 +20,7 @@ const estadoLabel = {
 const tipoLabel = {
   INMEDIATA: "Inmediata",
   CORRECTIVA: "Correctiva",
-  VERIFICACION_EFICIENCIA: "Verificacion de Eficiencia",
+  VERIFICACION_EFICACIA: "Verificacion de Eficacia",
 };
 
 export default function AccionDetailPage() {

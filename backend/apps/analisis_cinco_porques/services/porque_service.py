@@ -15,6 +15,17 @@ class AnalisisCincoPorquesService:
     - reject(user, porque, observacion): Admin only; transition pending → rechazado
     """
 
+    MAX_APROBADOS_POR_HALLAZGO = 5
+
+    @staticmethod
+    def _has_reached_approved_limit(hallazgo):
+        """Return True when hallazgo already has the max allowed approved porqués."""
+        approved_count = AnalisisCincoPorques.objects.filter(
+            hallazgo=hallazgo,
+            estado='aprobado',
+        ).count()
+        return approved_count >= AnalisisCincoPorquesService.MAX_APROBADOS_POR_HALLAZGO
+
     @staticmethod
     def create(user, hallazgo, texto_causa):
         """Create a new porqué for a hallazgo.
@@ -33,6 +44,11 @@ class AnalisisCincoPorquesService:
         """
         if not texto_causa or not texto_causa.strip():
             raise ValidationError("texto_causa is required and cannot be empty.")
+
+        if AnalisisCincoPorquesService._has_reached_approved_limit(hallazgo):
+            raise ValidationError(
+                "El hallazgo ya tiene 5 porqués aprobados. No se pueden agregar más."
+            )
         
         # Determine autor_tipo and initial estado
         if getattr(user, 'is_admin', False):
@@ -91,6 +107,11 @@ class AnalisisCincoPorquesService:
             raise ValidationError(
                 f"Only pending porqués can be approved. "
                 f"This porqué is already {porque.estado}."
+            )
+
+        if AnalisisCincoPorquesService._has_reached_approved_limit(porque.hallazgo):
+            raise ValidationError(
+                "El hallazgo ya tiene 5 porqués aprobados. No se puede aprobar otro más."
             )
         
         porque.estado = 'aprobado'

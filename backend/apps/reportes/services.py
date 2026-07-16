@@ -84,7 +84,7 @@ class ReporteHallazgosService:
 
             accion_inmediata = next((a for a in acciones if a.tipo == "INMEDIATA"), None)
             accion_correctiva = next((a for a in acciones if a.tipo == "CORRECTIVA"), None)
-            accion_verificacion = next((a for a in acciones if a.tipo == "VERIFICACION_EFICIENCIA"), None)
+            accion_verificacion = next((a for a in acciones if a.tipo == "VERIFICACION_EFICACIA"), None)
 
             porques = list(hallazgo.porques.all().order_by("-created_at")) if hasattr(hallazgo, "porques") else []
             analisis = "\n".join(p.texto_causa for p in porques[:5] if p.texto_causa)
@@ -142,13 +142,13 @@ class ReporteHallazgosService:
 
         # Estado NC (gráfico chart3)
         ws["B6"] = '=COUNTIFS(\'NO CONFORMIDADES\'!A4:A1048576,"NC",\'NO CONFORMIDADES\'!Q4:Q1048576,"CERRADA")'
-        ws["B7"] = '=COUNTIFS(\'NO CONFORMIDADES\'!A4:A1048576,"NC",\'NO CONFORMIDADES\'!Q4:Q1048576,"VERIFICACIÓN DE EFICACIA")'
+        ws["B7"] = '=COUNTIFS(\'NO CONFORMIDADES\'!A4:A1048576,"NC",\'NO CONFORMIDADES\'!Q4:Q1048576,"VERIFICACIÓN DE Eficacia")'
         ws["B8"] = '=COUNTIFS(\'NO CONFORMIDADES\'!A4:A1048576,"NC",\'NO CONFORMIDADES\'!Q4:Q1048576,"EN TRATAMIENTO")'
         ws["B9"] = '=COUNTIFS(\'NO CONFORMIDADES\'!A4:A1048576,"NC",\'NO CONFORMIDADES\'!Q4:Q1048576,"SIN TRATAR")'
 
         # Estado OM/QC (gráfico chart4)
         ws["E6"] = '=COUNTIFS(\'NO CONFORMIDADES\'!A4:A1048576,"OM",\'NO CONFORMIDADES\'!Q4:Q1048576,"CERRADA")+COUNTIFS(\'NO CONFORMIDADES\'!A4:A1048576,"QC",\'NO CONFORMIDADES\'!Q4:Q1048576,"CERRADA")'
-        ws["E7"] = '=COUNTIFS(\'NO CONFORMIDADES\'!A4:A1048576,"OM",\'NO CONFORMIDADES\'!Q4:Q1048576,"VERIFICACIÓN DE EFICACIA")+COUNTIFS(\'NO CONFORMIDADES\'!A4:A1048576,"QC",\'NO CONFORMIDADES\'!Q4:Q1048576,"VERIFICACIÓN DE EFICACIA")'
+        ws["E7"] = '=COUNTIFS(\'NO CONFORMIDADES\'!A4:A1048576,"OM",\'NO CONFORMIDADES\'!Q4:Q1048576,"VERIFICACIÓN DE Eficacia")+COUNTIFS(\'NO CONFORMIDADES\'!A4:A1048576,"QC",\'NO CONFORMIDADES\'!Q4:Q1048576,"VERIFICACIÓN DE Eficacia")'
         ws["E8"] = '=COUNTIFS(\'NO CONFORMIDADES\'!A4:A1048576,"OM",\'NO CONFORMIDADES\'!Q4:Q1048576,"EN TRATAMIENTO")+COUNTIFS(\'NO CONFORMIDADES\'!A4:A1048576,"QC",\'NO CONFORMIDADES\'!Q4:Q1048576,"EN TRATAMIENTO")'
         ws["E9"] = '=COUNTIFS(\'NO CONFORMIDADES\'!A4:A1048576,"OM",\'NO CONFORMIDADES\'!Q4:Q1048576,"SIN TRATAR")+COUNTIFS(\'NO CONFORMIDADES\'!A4:A1048576,"QC",\'NO CONFORMIDADES\'!Q4:Q1048576,"SIN TRATAR")'
 

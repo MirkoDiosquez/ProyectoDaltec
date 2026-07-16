@@ -213,7 +213,7 @@ curl -X PATCH http://localhost/api/v1/solicitudes-cierre/1/aprobar/ \
 
 **Expected**: `200 OK`; acción en `CERRADA`.
 
-Repetir VS-05 para las otras 2 acciones (Correctiva y Verificación de Eficiencia).
+Repetir VS-05 para las otras 2 acciones (Correctiva y Verificación de Eficacia).
 
 ```bash
 # Verificar cierre automático de Hallazgo (FR-022, SC-002)

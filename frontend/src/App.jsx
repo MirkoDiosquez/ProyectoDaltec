@@ -30,7 +30,6 @@ import ChatPage from "./pages/chat/ChatPage.jsx";
 import GestionUsuariosPage from "./pages/users/GestionUsuariosPage.jsx";
 import PerfilUsuarioPage from "./pages/users/PerfilUsuarioPage.jsx";
 import GestionArchivosPage from "./pages/admin/GestionArchivosPage.jsx";
-import GestionReportesPage from "./pages/admin/GestionReportesPage.jsx";
 import MainNavbar from "./components/navigation/MainNavbar.jsx";
 import AdminNotificationPanel from "./components/AdminPanel/AdminNotificationPanel.jsx";
 import EmployeeNotificationPanel from "./components/NotificationPanel/EmployeeNotificationPanel.jsx";
@@ -231,17 +230,6 @@ function App() {
             <ProtectedLayout>
               <RoleRoute roles={["ADMIN"]}>
                 <GestionArchivosPage />
-              </RoleRoute>
-            </ProtectedLayout>
-          }
-        />
-
-        <Route
-          path="/admin/reportes"
-          element={
-            <ProtectedLayout>
-              <RoleRoute roles={["ADMIN"]}>
-                <GestionReportesPage />
               </RoleRoute>
             </ProtectedLayout>
           }

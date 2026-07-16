@@ -84,7 +84,7 @@ export default function HistorialResponsablesPanel({ hallazgoId }) {
       borderRadius: '0.5rem',
     }}>
       <h3 style={{ marginBottom: '1rem', color: '#0f172a', fontSize: '1rem', fontWeight: 600 }}>
-        📋 Historial de Responsables
+         Historial de Responsables
       </h3>
 
       {loading && (

@@ -110,9 +110,6 @@ export default function MainNavbar() {
                 <Link to="/hallazgos/crear" className={navLinkClass("/hallazgos/crear")} onClick={handleNavClick}>
                   Crear Hallazgo
                 </Link>
-                <Link to="/admin/reportes" className={navLinkClass("/admin/reportes")} onClick={handleNavClick}>
-                  Reportes
-                </Link>
                 <Link to="/usuarios" className={navLinkClass("/usuarios")} onClick={handleNavClick}>
                   Gestion Usuarios
                 </Link>

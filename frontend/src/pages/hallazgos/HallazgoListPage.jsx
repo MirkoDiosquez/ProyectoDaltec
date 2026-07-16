@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import { listHallazgos } from "../../api/hallazgos.js";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { useCatalogoContext } from "../../context/CatalogoContext.jsx";
 import "./HallazgoListPage.css";
 
 const tipoLabel = {
@@ -27,18 +28,60 @@ const estadoColor = {
 
 export default function HallazgoListPage() {
   const { user } = useAuth();
+  const { sectors, getSubseccionesBySetor } = useCatalogoContext();
   const [hallazgos, setHallazgos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [searchDescripcion, setSearchDescripcion] = useState("");
+  const [tipoFiltro, setTipoFiltro] = useState("");
+  const [estadoFiltro, setEstadoFiltro] = useState("");
+  const [sectorFiltroId, setSectorFiltroId] = useState("");
+  const [subsectorFiltroId, setSubsectorFiltroId] = useState("");
+
+  const selectedSector = useMemo(
+    () => sectors.find((sector) => String(sector.id) === String(sectorFiltroId)),
+    [sectors, sectorFiltroId]
+  );
+
+  const subseccionesInternas = useMemo(
+    () => getSubseccionesBySetor("INTERNO"),
+    [getSubseccionesBySetor]
+  );
+
+  const showSubsectorFilter = selectedSector?.codigo === "INTERNO";
+
+  useEffect(() => {
+    if (!showSubsectorFilter && subsectorFiltroId) {
+      setSubsectorFiltroId("");
+    }
+  }, [showSubsectorFilter, subsectorFiltroId]);
 
   useEffect(() => {
     let mounted = true;
+    const timeoutId = setTimeout(fetchHallazgos, 300);
 
     async function fetchHallazgos() {
       setLoading(true);
       setError("");
       try {
-        const response = await listHallazgos();
+        const params = {};
+        if (searchDescripcion.trim()) {
+          params.search = searchDescripcion.trim();
+        }
+        if (tipoFiltro) {
+          params.tipo = tipoFiltro;
+        }
+        if (estadoFiltro) {
+          params.estado = estadoFiltro;
+        }
+        if (sectorFiltroId) {
+          params.sector = sectorFiltroId;
+        }
+        if (showSubsectorFilter && subsectorFiltroId) {
+          params.subseccion = subsectorFiltroId;
+        }
+
+        const response = await listHallazgos(params);
         const items = Array.isArray(response) ? response : response?.results || [];
         if (mounted) {
           setHallazgos(items);
@@ -54,11 +97,11 @@ export default function HallazgoListPage() {
       }
     }
 
-    fetchHallazgos();
     return () => {
       mounted = false;
+      clearTimeout(timeoutId);
     };
-  }, []);
+  }, [searchDescripcion, tipoFiltro, estadoFiltro, sectorFiltroId, subsectorFiltroId, showSubsectorFilter]);
 
   const canCreateHallazgo = useMemo(() => user?.tipo === "EMPLEADO", [user?.tipo]);
 
@@ -90,6 +133,85 @@ export default function HallazgoListPage() {
           </Link>
         )}
       </header>
+
+      <section className="hallazgo-list-filters" aria-label="Filtros de hallazgos">
+        <div className="hallazgo-list-filter-field hallazgo-list-filter-wide">
+          <label htmlFor="hallazgo-filter-search">Buscar por descripcion</label>
+          <input
+            id="hallazgo-filter-search"
+            type="text"
+            placeholder="Ej: problema de calidad en linea 2"
+            value={searchDescripcion}
+            onChange={(e) => setSearchDescripcion(e.target.value)}
+          />
+        </div>
+
+        <div className="hallazgo-list-filter-field">
+          <label htmlFor="hallazgo-filter-tipo">Tipo</label>
+          <select
+            id="hallazgo-filter-tipo"
+            value={tipoFiltro}
+            onChange={(e) => setTipoFiltro(e.target.value)}
+          >
+            <option value="">Todos</option>
+            {Object.entries(tipoLabel).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="hallazgo-list-filter-field">
+          <label htmlFor="hallazgo-filter-estado">Estado del hallazgo</label>
+          <select
+            id="hallazgo-filter-estado"
+            value={estadoFiltro}
+            onChange={(e) => setEstadoFiltro(e.target.value)}
+          >
+            <option value="">Todos</option>
+            {Object.entries(estadoLabel).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="hallazgo-list-filter-field">
+          <label htmlFor="hallazgo-filter-sector">Sector</label>
+          <select
+            id="hallazgo-filter-sector"
+            value={sectorFiltroId}
+            onChange={(e) => setSectorFiltroId(e.target.value)}
+          >
+            <option value="">Todos</option>
+            {sectors.map((sector) => (
+              <option key={sector.id} value={sector.id}>
+                {sector.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {showSubsectorFilter && (
+          <div className="hallazgo-list-filter-field">
+            <label htmlFor="hallazgo-filter-subsector">Subsector</label>
+            <select
+              id="hallazgo-filter-subsector"
+              value={subsectorFiltroId}
+              onChange={(e) => setSubsectorFiltroId(e.target.value)}
+            >
+              <option value="">Todos</option>
+              {subseccionesInternas.map((subseccion) => (
+                <option key={subseccion.id} value={subseccion.id}>
+                  {subseccion.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+      </section>
 
       {loading && (
         <p style={{ color: "#64748b", fontSize: "14px" }}>Cargando hallazgos...</p>
@@ -173,7 +295,7 @@ export default function HallazgoListPage() {
                     const tipoShort = {
                       INMEDIATA: "Inmediata",
                       CORRECTIVA: "Correctiva",
-                      VERIFICACION_EFICIENCIA: "Verif.",
+                      VERIFICACION_EFICACIA: "Verif.",
                     };
                     return (
                       <div

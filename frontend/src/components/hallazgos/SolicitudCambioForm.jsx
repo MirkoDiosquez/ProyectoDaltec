@@ -72,7 +72,6 @@ export default function SolicitudCambioForm({
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ fontSize: '1.3rem' }}>📝</span>
         <h3 style={{ margin: 0, color: '#92400e' }}>Solicitud de Cambio de Responsable</h3>
       </div>
 

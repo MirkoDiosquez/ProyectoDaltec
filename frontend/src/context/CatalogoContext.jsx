@@ -4,10 +4,12 @@
  */
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import client from '../api/client';
+import { useAuth } from './AuthContext.jsx';
 
 const CatalogoContext = createContext(null);
 
 export const CatalogoProvider = ({ children }) => {
+  const { loading: authLoading, isAuthenticated, accessToken } = useAuth();
   const [catalogs, setCatalogs] = useState({
     sectors: [],
     subsecciones: [],
@@ -18,13 +20,36 @@ export const CatalogoProvider = ({ children }) => {
 
   // Fetch catalog data
   useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+
+    if (!isAuthenticated) {
+      setCatalogs({
+        sectors: [],
+        subsecciones: [],
+        tipos: [],
+        loading: false,
+        error: null,
+      });
+      return;
+    }
+
+    let isMounted = true;
+
     const fetchCatalogs = async () => {
+      setCatalogs((prev) => ({ ...prev, loading: true, error: null }));
+
       try {
         const [sectoresRes, subseccionesRes, tiposRes] = await Promise.all([
           client.get('/catalogos/sectores/'),
           client.get('/catalogos/subsecciones/'),
           client.get('/catalogos/tipos/'),
         ]);
+
+        if (!isMounted) {
+          return;
+        }
 
         setCatalogs({
           sectors: sectoresRes.data?.results || sectoresRes.data || [],
@@ -34,6 +59,10 @@ export const CatalogoProvider = ({ children }) => {
           error: null,
         });
       } catch (err) {
+        if (!isMounted) {
+          return;
+        }
+
         setCatalogs((prev) => ({
           ...prev,
           loading: false,
@@ -43,7 +72,11 @@ export const CatalogoProvider = ({ children }) => {
     };
 
     fetchCatalogs();
-  }, []);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [authLoading, isAuthenticated, accessToken]);
 
   // Get subsecciones for a specific sector
   const getSubseccionesBySetor = useCallback(

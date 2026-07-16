@@ -87,7 +87,7 @@ Un Cliente externo detecta un problema con el servicio y lo registra como Queja 
 
 ### User Story 3 - Gestión de Acciones y Cierre (Priority: P3)
 
-Un Empleado responsable de un hallazgo aprobado completa la información de las acciones asignadas (Acción Inmediata, Acción Correctiva, Verificación de Eficiencia), adjunta evidencias y solicita el cierre de cada acción al finalizarla.
+Un Empleado responsable de un hallazgo aprobado completa la información de las acciones asignadas (Acción Inmediata, Acción Correctiva, Verificación de Eficacia), adjunta evidencias y solicita el cierre de cada acción al finalizarla.
 
 **Why this priority**: Sin el ciclo de acciones, el sistema no puede cerrar hallazgos. Es el flujo operativo post-aprobación.
 
@@ -181,14 +181,14 @@ El Administrador crea nuevos usuarios en el sistema, asignándoles tipo (Emplead
 
 **Gestión de Acciones**
 
-- **FR-014**: Cada hallazgo DEBE contener exactamente una Acción Inmediata, una Acción Correctiva y una Verificación de Eficiencia. Las tres acciones DEBEN crearse automáticamente en estado PENDIENTE en el mismo instante en que se crea el Hallazgo, sin intervención manual de ningún usuario.
+- **FR-014**: Cada hallazgo DEBE contener exactamente una Acción Inmediata, una Acción Correctiva y una Verificación de Eficacia. Las tres acciones DEBEN crearse automáticamente en estado PENDIENTE en el mismo instante en que se crea el Hallazgo, sin intervención manual de ningún usuario.
 - **FR-015**: Cualquier responsable asignado al hallazgo DEBE poder actualizar descripción, fechas y adjuntar archivos en cualquiera de las 3 acciones del hallazgo. No existe asignación individual por acción; el acceso de edición es compartido entre todos los responsables vigentes del hallazgo.
 - **FR-037**: Un Empleado responsable DEBE poder transicionar una Acción de estado PENDIENTE a EN_PROGRESO mediante una acción explícita ("Iniciar Acción"). La edición de descripción y fechas de una Acción solo está disponible cuando esta se encuentra en estado EN_PROGRESO o superior. No se puede editar una Acción en estado PENDIENTE.
 - **FR-016**: Un Empleado responsable DEBE poder solicitar el cierre de cualquier acción que esté a su cargo, siempre que dicha acción se encuentre en estado EN_PROGRESO. No se puede solicitar el cierre de una acción en estado PENDIENTE.
 - **FR-017**: El Administrador DEBE poder aprobar o rechazar solicitudes de cierre de acciones.
 - **FR-018**: Ninguna acción PUEDE quedar en estado CERRADA sin aprobación explícita del Administrador.
 - **FR-019**: El rechazo de una solicitud de cierre DEBE mantener la acción activa para futuras correcciones.
-- **FR-022**: El sistema DEBE transicionar automáticamente un Hallazgo al estado CERRADO cuando sus tres acciones (Acción Inmediata, Acción Correctiva y Verificación de Eficiencia) estén en estado CERRADA.
+- **FR-022**: El sistema DEBE transicionar automáticamente un Hallazgo al estado CERRADO cuando sus tres acciones (Acción Inmediata, Acción Correctiva y Verificación de Eficacia) estén en estado CERRADA.
 - **FR-038**: Cuando un Hallazgo transiciona al estado CERRADO o RECHAZADO, su Chat asociado (si existe) DEBE pasar automáticamente a modo solo lectura. Los mensajes históricos se conservan como evidencia de auditoría. Ningún usuario puede enviar mensajes nuevos en un chat de hallazgo CERRADO o RECHAZADO. El Admin mantiene acceso de lectura.
 - **FR-026**: El estado RECHAZADO de un Hallazgo es terminal; no puede ser reabierto ni modificado. Si el Empleado desea reintentar, debe crear un nuevo hallazgo.
 - **FR-034**: Al transicionar un Hallazgo al estado RECHAZADO, el sistema DEBE eliminar en cascada las tres Acciones asociadas. El Hallazgo permanece como registro de solo lectura para auditoría.
@@ -207,7 +207,7 @@ El Administrador crea nuevos usuarios en el sistema, asignándoles tipo (Emplead
 
 - **Usuario**: Representa a cualquier persona del sistema. Tiene DNI, nombre, apellido, sexo, email, contraseña y tipo (Admin, Empleado, Cliente). Los Clientes tienen empresa asociada.
 - **Hallazgo**: Registro central del sistema. Tiene descripción, fecha de creación, ubicación, tipo (No Conformidad, Oportunidad de Mejora, Queja de Cliente) y estado (Pendiente, Aprobado, Rechazado, Cerrado). Tiene una lista de responsables, un chat asociado, tres acciones y archivos adjuntos. El estado CERRADO se alcanza automáticamente cuando sus tres acciones están en estado CERRADA. El estado RECHAZADO es terminal e irreversible.
-- **Acción**: Representa una tarea de mejora asociada a un hallazgo. Tiene descripción, fecha de inicio, fecha de fin, estado y archivos adjuntos. Estados: PENDIENTE (recién creada) → EN_PROGRESO (iniciada explícitamente por el responsable via "Iniciar Acción") → SOLICITUD_CIERRE → CERRADA. La edición de campos solo está disponible en estado EN_PROGRESO. Existen tres subtipos: Acción Inmediata, Acción Correctiva, Verificación de Eficiencia.
+- **Acción**: Representa una tarea de mejora asociada a un hallazgo. Tiene descripción, fecha de inicio, fecha de fin, estado y archivos adjuntos. Estados: PENDIENTE (recién creada) → EN_PROGRESO (iniciada explícitamente por el responsable via "Iniciar Acción") → SOLICITUD_CIERRE → CERRADA. La edición de campos solo está disponible en estado EN_PROGRESO. Existen tres subtipos: Acción Inmediata, Acción Correctiva, Verificación de Eficacia.
 - **SolicitudCierreAccion**: Representa el flujo de aprobación del cierre de una acción. Tiene fecha de solicitud, observación, empleado solicitante y administrador resolvente.
 - **Chat**: Canal de comunicación asociado a un hallazgo. Contiene mensajes y una lista de participantes (los responsables vigentes del hallazgo). El chat existe solo para hallazgos en estado APROBADO. Cuando el hallazgo pasa a CERRADO o RECHAZADO, el chat pasa a modo solo lectura: los mensajes históricos se conservan pero no se pueden enviar mensajes nuevos.
 - **Mensaje**: Texto enviado en un chat. Tiene contenido, fecha/hora y usuario emisor.

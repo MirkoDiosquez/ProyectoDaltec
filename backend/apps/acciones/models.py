@@ -6,7 +6,7 @@ from django.db.models import Q
 class TipoAccion(models.TextChoices):
 	INMEDIATA = "INMEDIATA", "Inmediata"
 	CORRECTIVA = "CORRECTIVA", "Correctiva"
-	VERIFICACION_EFICIENCIA = "VERIFICACION_EFICIENCIA", "Verificacion de Eficiencia"
+	VERIFICACION_EFICACIA = "VERIFICACION_EFICACIA", "Verificacion de Eficacia"
 
 
 class EstadoAccion(models.TextChoices):

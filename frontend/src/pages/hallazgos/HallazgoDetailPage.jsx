@@ -18,6 +18,7 @@ import {
   listSolicitudesCambio,
   approveSolicitudCambio,
   rejectSolicitudCambio,
+  getHistorialResponsables,
 } from "../../api/hallazgos.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useNotificaciones } from "../../context/NotificacionContext.jsx";
@@ -28,6 +29,7 @@ import ResponsableList from "../../components/ResponsableList.jsx";
 import HistorialResponsablesPanel from "../../components/hallazgos/HistorialResponsablesPanel.jsx";
 import SolicitudCambioForm from "../../components/hallazgos/SolicitudCambioForm.jsx";
 import SolicitudList from "../../components/hallazgos/SolicitudList.jsx";
+import { exportHallazgoCompletoPdf } from "../../utils/hallazgoPdf.js";
 import "./HallazgoDetailPage.css";
 
 const tipoLabel = {
@@ -53,7 +55,7 @@ const estadoAccionLabel = {
 const tipoAccionLabel = {
   INMEDIATA: "Inmediata",
   CORRECTIVA: "Correctiva",
-  VERIFICACION_EFICIENCIA: "Verificacion de Eficiencia",
+  VERIFICACION_EFICACIA: "Verificacion de Eficacia",
 };
 
 export default function HallazgoDetailPage() {
@@ -75,6 +77,8 @@ export default function HallazgoDetailPage() {
   // T111, T113: State for solicitudes de cambio de responsable
   const [usuarios, setUsuarios] = useState([]);
   const [solicitudes, setSolicitudes] = useState([]);
+  const [historialResponsables, setHistorialResponsables] = useState([]);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   const isAdmin = user?.tipo === "ADMIN";
 
@@ -97,6 +101,9 @@ export default function HallazgoDetailPage() {
       
       const solicitudesData = await listSolicitudesCambio(id);
       setSolicitudes(Array.isArray(solicitudesData) ? solicitudesData : solicitudesData.results || []);
+
+      const historialData = await getHistorialResponsables(id);
+      setHistorialResponsables(Array.isArray(historialData) ? historialData : []);
     } catch {
       setError("No se pudo cargar el hallazgo.");
     } finally {
@@ -276,6 +283,23 @@ export default function HallazgoDetailPage() {
     }
   };
 
+  const onExportPdf = async () => {
+    setPdfLoading(true);
+    setError("");
+    try {
+      exportHallazgoCompletoPdf({
+        hallazgo,
+        porques,
+        solicitudes,
+        historial: historialResponsables,
+      });
+    } catch (pdfError) {
+      setError(pdfError?.message || "No se pudo generar el PDF del hallazgo.");
+    } finally {
+      setPdfLoading(false);
+    }
+  };
+
   if (loading) {
     return <main style={{ padding: "2rem" }}>Cargando hallazgo...</main>;
   }
@@ -318,6 +342,33 @@ export default function HallazgoDetailPage() {
         >
           💬 Chat del Hallazgo
         </Link>
+      </section>
+
+      <section style={{ border: "1px solid #bfdbfe", borderRadius: 12, padding: "1rem", background: "#eff6ff", display: "grid", gap: 10 }}>
+        <h2 style={{ margin: 0, color: "#1e3a8a", fontSize: "1rem" }}>Informe PDF del Hallazgo</h2>
+        <p style={{ margin: 0, color: "#334155", fontSize: "0.92rem" }}>
+          Genera un PDF con datos del hallazgo, acciones, analisis de 5 porques y demas apartados.
+          Este informe excluye completamente archivos adjuntos y su contenido.
+        </p>
+        <div>
+          <button
+            type="button"
+            disabled={pdfLoading}
+            onClick={onExportPdf}
+            style={{
+              padding: "0.62rem 1rem",
+              borderRadius: 8,
+              border: "none",
+              background: pdfLoading ? "#2563eb" : "#1d4ed8",
+              color: "#fff",
+              fontWeight: 700,
+              cursor: pdfLoading ? "not-allowed" : "pointer",
+              opacity: pdfLoading ? 0.7 : 1,
+            }}
+          >
+            {pdfLoading ? "Generando PDF..." : "Generar PDF completo"}
+          </button>
+        </div>
       </section>
 
       <section style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: "1rem", background: "#fff" }}>
@@ -375,7 +426,7 @@ export default function HallazgoDetailPage() {
               const tipoIcons = {
                 INMEDIATA: "",
                 CORRECTIVA: "",
-                VERIFICACION_EFICIENCIA: "",
+                VERIFICACION_EFICACIA: "",
               };
               return (
                 <div

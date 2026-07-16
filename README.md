@@ -92,7 +92,7 @@ El sistema permite a organizaciones gestionar de forma integral sus hallazgos in
               ┌─────────────────────────────┐
               │ Acción Inmediata            │
               │ Acción Correctiva           │ ── Responsables completan y solicitan cierre
-              │ Verificación de Eficiencia  │       │
+              │ Verificación de Eficacia    │       │
               └─────────────────────────────┘       ▼
                                              Admin aprueba cierre
                                                     │

@@ -159,7 +159,7 @@ class TipoAccion {
 
     INMEDIATA
     CORRECTIVA
-    VERIFICACION_EFICIENCIA
+    VERIFICACION_EFICACIA
 }
 
 class EstadoAccion {

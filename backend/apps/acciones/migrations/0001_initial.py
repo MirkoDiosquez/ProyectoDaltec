@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
                         choices=[
                             ("INMEDIATA", "Inmediata"),
                             ("CORRECTIVA", "Correctiva"),
-                            ("VERIFICACION_EFICIENCIA", "Verificacion de Eficiencia"),
+                            ("VERIFICACION_EFICACIA", "Verificacion de Eficacia"),
                         ],
                         max_length=25,
                         verbose_name="Tipo",
