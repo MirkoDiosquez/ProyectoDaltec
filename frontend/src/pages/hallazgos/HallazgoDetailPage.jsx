@@ -352,6 +352,242 @@ export default function HallazgoDetailPage() {
     }
   };
 
+  const porquesAprobados = Array.isArray(porques)
+    ? porques.filter((p) => p.estado === "aprobado")
+    : [];
+  const porquesNoAprobados = Array.isArray(porques)
+    ? porques.filter((p) => p.estado !== "aprobado")
+    : [];
+
+  const estadoConfig = {
+    pendiente: {
+      color: "#f59e0b",
+      bgColor: "#fef3c7",
+      borderColor: "#fcd34d",
+      label: "Pendiente de aprobación",
+      textColor: "#92400e",
+    },
+    aprobado: {
+      color: "#10b981",
+      bgColor: "#dcfce7",
+      borderColor: "#86efac",
+      icon: "",
+      label: "Aprobado",
+      textColor: "#14532d",
+    },
+    rechazado: {
+      color: "#ef4444",
+      bgColor: "#fee2e2",
+      borderColor: "#fca5a5",
+      icon: "✕",
+      label: "Rechazado",
+      textColor: "#7f1d1d",
+    },
+  };
+
+  const renderPorqueCard = (p, displayIndex = null) => {
+    const config = estadoConfig[p.estado] || estadoConfig.pendiente;
+    const badgeValue = displayIndex == null ? "•" : String(displayIndex);
+
+    return (
+      <div
+        key={p.id}
+        style={{
+          border: `2px solid ${config.borderColor}`,
+          borderRadius: 8,
+          padding: "1.25rem",
+          background: config.bgColor,
+          display: "grid",
+          gap: 10,
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: "4px",
+            background: config.color,
+          }}
+        />
+
+        <div style={{ paddingLeft: "12px", display: "grid", gap: 8 }}>
+          <div
+            className="hallazgo-detail-porque-header"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div
+                style={{
+                  background: config.color,
+                  color: "#fff",
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: 700,
+                  fontSize: "0.9rem",
+                }}
+              >
+                {badgeValue}
+              </div>
+              <div style={{ display: "grid", gap: 2 }}>
+                <div
+                  style={{
+                    fontWeight: 600,
+                    fontSize: "0.9rem",
+                    color: config.textColor,
+                  }}
+                >
+                  Porqué
+                </div>
+                <div
+                  style={{
+                    fontSize: "0.75rem",
+                    color: config.textColor,
+                    opacity: 0.7,
+                  }}
+                >
+                  por {p.autor_nombre || "Admin"}
+                </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                background: "rgba(255,255,255,0.6)",
+                padding: "0.4rem 0.8rem",
+                borderRadius: 6,
+                fontWeight: 600,
+                fontSize: "0.85rem",
+                color: config.textColor,
+              }}
+            >
+              <span style={{ fontSize: "1rem" }}>{config.icon}</span>
+              {config.label}
+            </div>
+          </div>
+
+          <div
+            style={{
+              fontSize: "0.95rem",
+              color: config.textColor,
+              lineHeight: 1.5,
+              padding: "0.75rem",
+              background: "rgba(255,255,255,0.5)",
+              borderRadius: 6,
+              borderLeft: `3px solid ${config.color}`,
+            }}
+          >
+            {p.texto_causa}
+          </div>
+
+          {p.observacion_rechazo && (
+            <div
+              style={{
+                fontSize: "0.85rem",
+                color: "#7f1d1d",
+                padding: "0.75rem",
+                background: "#fee2e2",
+                borderRadius: 6,
+                borderLeft: "3px solid #ef4444",
+              }}
+            >
+              <div style={{ fontWeight: 600, marginBottom: 4 }}>
+                Motivo del rechazo:
+              </div>
+              {p.observacion_rechazo}
+            </div>
+          )}
+
+          <div
+            className="hallazgo-detail-porque-footer"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              fontSize: "0.75rem",
+              color: config.textColor,
+              opacity: 0.7,
+              paddingTop: "0.5rem",
+              borderTop: `1px solid ${config.borderColor}`,
+            }}
+          >
+            <span>
+              {new Date(p.fecha_creacion || p.created_at).toLocaleDateString("es-AR")}
+            </span>
+            <span>
+              {p.fecha_aprobacion
+                ? `Aprobado: ${new Date(p.fecha_aprobacion).toLocaleDateString("es-AR")}`
+                : "Aún no aprobado"}
+            </span>
+          </div>
+
+          {isAdmin && p.estado === "pendiente" && (
+            <div
+              className="hallazgo-detail-porque-actions"
+              style={{
+                display: "flex",
+                gap: 8,
+                marginTop: "0.5rem",
+                paddingTop: "0.5rem",
+                borderTop: `1px solid ${config.borderColor}`,
+              }}
+            >
+              <button
+                type="button"
+                disabled={actionLoading}
+                onClick={() => onApprovePorque(p.id)}
+                style={{
+                  padding: "0.5rem 0.85rem",
+                  background: "#10b981",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  fontWeight: 600,
+                  fontSize: "0.8rem",
+                }}
+              >
+                ✓ Aprobar
+              </button>
+              <button
+                type="button"
+                disabled={actionLoading}
+                onClick={() => onRejectPorque(p.id)}
+                style={{
+                  padding: "0.5rem 0.85rem",
+                  background: "#ef4444",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  fontWeight: 600,
+                  fontSize: "0.8rem",
+                }}
+              >
+                ✕ Rechazar
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return <main style={{ padding: "2rem" }}>Cargando hallazgo...</main>;
   }
@@ -716,240 +952,31 @@ export default function HallazgoDetailPage() {
 
         {Array.isArray(porques) && porques.length > 0 ? (
           <div style={{ display: "grid", gap: 12, marginTop: "1rem" }}>
-            {porques.map((p, index) => {
-              // Estado styles with visual indicators
-              const estadoConfig = {
-                pendiente: {
-                  color: "#f59e0b",
-                  bgColor: "#fef3c7",
-                  borderColor: "#fcd34d",
-                  label: "Pendiente de aprobación",
-                  textColor: "#92400e",
-                },
-                aprobado: {
-                  color: "#10b981",
-                  bgColor: "#dcfce7",
-                  borderColor: "#86efac",
-                  icon: "",
-                  label: "Aprobado",
-                  textColor: "#14532d",
-                },
-                rechazado: {
-                  color: "#ef4444",
-                  bgColor: "#fee2e2",
-                  borderColor: "#fca5a5",
-                  icon: "✕",
-                  label: "Rechazado",
-                  textColor: "#7f1d1d",
-                },
-              };
-              
-              const config = estadoConfig[p.estado] || estadoConfig.pendiente;
-              
-              return (
-                <div
-                  key={p.id}
-                  style={{
-                    border: `2px solid ${config.borderColor}`,
-                    borderRadius: 8,
-                    padding: "1.25rem",
-                    background: config.bgColor,
-                    display: "grid",
-                    gap: 10,
-                    position: "relative",
-                    overflow: "hidden",
-                  }}
-                >
-                  {/* Visual timeline indicator */}
-                  <div
-                    style={{
-                      position: "absolute",
-                      left: 0,
-                      top: 0,
-                      bottom: 0,
-                      width: "4px",
-                      background: config.color,
-                    }}
-                  />
-                  
-                  <div style={{ paddingLeft: "12px", display: "grid", gap: 8 }}>
-                    {/* Header with number, status badge, and icon */}
-                    <div
-                      className="hallazgo-detail-porque-header"
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: 12,
-                      }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <div
-                          style={{
-                            background: config.color,
-                            color: "#fff",
-                            width: 32,
-                            height: 32,
-                            borderRadius: "50%",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontWeight: 700,
-                            fontSize: "0.9rem",
-                          }}
-                        >
-                          {index + 1}
-                        </div>
-                        <div style={{ display: "grid", gap: 2 }}>
-                          <div
-                            style={{
-                              fontWeight: 600,
-                              fontSize: "0.9rem",
-                              color: config.textColor,
-                            }}
-                          >
-                            Porqué 
-                          </div>
-                          <div
-                            style={{
-                              fontSize: "0.75rem",
-                              color: config.textColor,
-                              opacity: 0.7,
-                            }}
-                          >
-                            por {p.autor_nombre || "Admin"}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          background: "rgba(255,255,255,0.6)",
-                          padding: "0.4rem 0.8rem",
-                          borderRadius: 6,
-                          fontWeight: 600,
-                          fontSize: "0.85rem",
-                          color: config.textColor,
-                        }}
-                      >
-                        <span style={{ fontSize: "1rem" }}>{config.icon}</span>
-                        {config.label}
-                      </div>
-                    </div>
+            {porquesAprobados.length > 0 ? (
+              <div style={{ display: "grid", gap: 12 }}>
+                {porquesAprobados.map((p, index) => renderPorqueCard(p, index + 1))}
+              </div>
+            ) : (
+              <p style={{ margin: 0, color: "#64748b" }}>Todavía no hay porqués aprobados.</p>
+            )}
 
-                    {/* Causa text */}
-                    <div
-                      style={{
-                        fontSize: "0.95rem",
-                        color: config.textColor,
-                        lineHeight: 1.5,
-                        padding: "0.75rem",
-                        background: "rgba(255,255,255,0.5)",
-                        borderRadius: 6,
-                        borderLeft: `3px solid ${config.color}`,
-                      }}
-                    >
-                      {p.texto_causa}
-                    </div>
-
-                    {/* Rejection observation if exists */}
-                    {p.observacion_rechazo && (
-                      <div
-                        style={{
-                          fontSize: "0.85rem",
-                          color: "#7f1d1d",
-                          padding: "0.75rem",
-                          background: "#fee2e2",
-                          borderRadius: 6,
-                          borderLeft: "3px solid #ef4444",
-                        }}
-                      >
-                        <div style={{ fontWeight: 600, marginBottom: 4 }}>
-                          Motivo del rechazo:
-                        </div>
-                        {p.observacion_rechazo}
-                      </div>
-                    )}
-
-                    {/* Metadata footer */}
-                    <div
-                      className="hallazgo-detail-porque-footer"
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        fontSize: "0.75rem",
-                        color: config.textColor,
-                        opacity: 0.7,
-                        paddingTop: "0.5rem",
-                        borderTop: `1px solid ${config.borderColor}`,
-                      }}
-                    >
-                      <span>
-                        {new Date(p.fecha_creacion || p.created_at).toLocaleDateString("es-AR")}
-                      </span>
-                      <span>
-                        {p.fecha_aprobacion
-                          ? `Aprobado: ${new Date(p.fecha_aprobacion).toLocaleDateString("es-AR")}`
-                          : "Aún no aprobado"}
-                      </span>
-                    </div>
-
-                    {/* Action buttons for admin */}
-                    {isAdmin && p.estado === "pendiente" && (
-                      <div
-                        className="hallazgo-detail-porque-actions"
-                        style={{
-                          display: "flex",
-                          gap: 8,
-                          marginTop: "0.5rem",
-                          paddingTop: "0.5rem",
-                          borderTop: `1px solid ${config.borderColor}`,
-                        }}
-                      >
-                        <button
-                          type="button"
-                          disabled={actionLoading}
-                          onClick={() => onApprovePorque(p.id)}
-                          style={{
-                            padding: "0.5rem 0.85rem",
-                            background: "#10b981",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: 6,
-                            cursor: "pointer",
-                            fontWeight: 600,
-                            fontSize: "0.8rem",
-                          }}
-                        >
-                          ✓ Aprobar
-                        </button>
-                        <button
-                          type="button"
-                          disabled={actionLoading}
-                          onClick={() => onRejectPorque(p.id)}
-                          style={{
-                            padding: "0.5rem 0.85rem",
-                            background: "#ef4444",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: 6,
-                            cursor: "pointer",
-                            fontWeight: 600,
-                            fontSize: "0.8rem",
-                          }}
-                        >
-                          ✕ Rechazar
-                        </button>
-                      </div>
-                    )}
-                  </div>
+            {porquesNoAprobados.length > 0 && (
+              <details
+                style={{
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 8,
+                  background: "#f8fafc",
+                  padding: "0.5rem 0.75rem",
+                }}
+              >
+                <summary style={{ cursor: "pointer", fontWeight: 600, color: "#334155" }}>
+                  Ver porqués pendientes/rechazados ({porquesNoAprobados.length})
+                </summary>
+                <div style={{ display: "grid", gap: 12, marginTop: "0.75rem" }}>
+                  {porquesNoAprobados.map((p) => renderPorqueCard(p))}
                 </div>
-              );
-            })}
+              </details>
+            )}
           </div>
         ) : (
           <div
@@ -971,6 +998,7 @@ export default function HallazgoDetailPage() {
         <h2 style={{ margin: 0 }}>Archivos</h2>
         <FileUpload
           deferred
+          value={archivo}
           onFileSelect={(file) => setArchivo(file)}
           onError={(msg) => setError(msg)}
           maxSizeMB={1024}
@@ -995,14 +1023,20 @@ export default function HallazgoDetailPage() {
       {Array.isArray(hallazgo.archivos) && hallazgo.archivos.length > 0 && (
         <section style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: "1rem", background: "#fff", display: "grid", gap: 10 }}>
           <h2 style={{ margin: 0 }}>Archivos Adjuntos</h2>
-          {hallazgo.archivos.map((archivo) => (
-            <FilePreview 
-              key={archivo.id} 
-              archivo={archivo} 
-              isAdmin={isAdmin}
-              onDeleted={refreshDetail}
-            />
-          ))}
+          {hallazgo.archivos.map((archivoItem) => {
+            const isOwner = archivoItem.cargado_por === user?.id;
+            const hallazgoAbierto = hallazgo.estado !== "CERRADO";
+            const canDelete = isAdmin || (isOwner && hallazgoAbierto);
+            return (
+              <FilePreview
+                key={archivoItem.id}
+                archivo={archivoItem}
+                isAdmin={isAdmin}
+                canDelete={canDelete}
+                onDeleted={refreshDetail}
+              />
+            );
+          })}
         </section>
       )}
     </main>

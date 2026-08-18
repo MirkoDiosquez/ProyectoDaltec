@@ -1,9 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
-import { getMe, getUserById, updateMe, updateUser } from "../../api/users.js";
+import { getMe, getUserById, setAvatar, updateMe, updateUser } from "../../api/users.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useCatalogoContext } from "../../context/CatalogoContext.jsx";
+
+const AVATARS = [
+  { key: "pato",         label: "Pato" },
+  { key: "rinoceronte",  label: "Rinoceronte" },
+  { key: "flamenco",     label: "Flamenco" },
+  { key: "tiburon",      label: "Tiburón" },
+  { key: "mapache",      label: "Mapache" },
+  { key: "oso",          label: "Oso" },
+  { key: "cebra",        label: "Cebra" },
+  { key: "elefante",     label: "Elefante" },
+  { key: "tucan",        label: "Tucán" },
+];
 
 const inputStyle = {
   borderRadius: 8,
@@ -59,6 +71,7 @@ const INITIAL_FORM = {
   empresa: "EMPRESA_A",
   password_confirmacion: "",
   new_password: "",
+  avatar: "",
 };
 
 export default function PerfilUsuarioPage() {
@@ -67,6 +80,7 @@ export default function PerfilUsuarioPage() {
   const { getSubseccionesBySetor } = useCatalogoContext();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [avatarSaving, setAvatarSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [profile, setProfile] = useState(null);
@@ -102,6 +116,7 @@ export default function PerfilUsuarioPage() {
           empresa: data.empresa ?? "EMPRESA_A",
           password_confirmacion: "",
           new_password: "",
+          avatar: data.avatar ?? "",
         });
       } catch (apiError) {
         if (mounted) setError(getErrorMessage(apiError));
@@ -119,6 +134,26 @@ export default function PerfilUsuarioPage() {
   const onChange = (event) => {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const onAvatarSelect = async (avatarKey) => {
+    setAvatarSaving(true);
+    setError("");
+    setSuccess("");
+    try {
+      const updated = isSelfProfile
+        ? await setAvatar(avatarKey)
+        : await setAvatar(avatarKey); // solo self puede cambiar su avatar
+      setForm((prev) => ({ ...prev, avatar: updated.avatar ?? "" }));
+      if (isSelfProfile) {
+        updateStoredUser({ ...(loggedUser || {}), avatar: updated.avatar ?? "" });
+      }
+      setSuccess("Avatar actualizado.");
+    } catch {
+      setError("No se pudo guardar el avatar.");
+    } finally {
+      setAvatarSaving(false);
+    }
   };
 
   const onSubmit = async (event) => {
@@ -162,6 +197,7 @@ export default function PerfilUsuarioPage() {
         tipo: updated.tipo,
         sector: updated.sector ?? "",
         empresa: updated.empresa ?? "EMPRESA_A",
+        avatar: updated.avatar ?? "",
       }));
 
       if (isSelfProfile) {
@@ -171,6 +207,7 @@ export default function PerfilUsuarioPage() {
           nombre: updated.nombre,
           apellido: updated.apellido,
           tipo: updated.tipo,
+          avatar: updated.avatar ?? "",
         });
       }
       setSuccess("Perfil actualizado correctamente.");
@@ -183,7 +220,7 @@ export default function PerfilUsuarioPage() {
 
   if (loading) {
     return (
-      <main style={{ maxWidth: 820, margin: "0 auto", padding: "2rem 1rem" }}>
+      <main style={{ maxWidth: 680, margin: "0 auto", padding: "2rem 1rem" }}>
         <p style={{ margin: 0, color: "#475569" }}>Cargando perfil...</p>
       </main>
     );
@@ -191,35 +228,208 @@ export default function PerfilUsuarioPage() {
 
   const currentTipo = canChangeRole ? form.tipo : profile?.tipo;
 
-  return (
-    <main style={{ maxWidth: 820, margin: "0 auto", padding: "2rem 1rem" }}>
-      <header style={{ marginBottom: "1.25rem" }}>
-        <h1 style={{ margin: 0 }}>{isSelfProfile ? "Mi Perfil" : "Perfil de Usuario"}</h1>
-        <p style={{ marginTop: 8, color: "#475569" }}>
-          Toda modificación requiere contraseña de confirmación.
-        </p>
-      </header>
+  const initials = [form.nombre, form.apellido]
+    .filter(Boolean)
+    .map((s) => s.charAt(0).toUpperCase())
+    .join("") || "?";
 
-      <form
-        onSubmit={onSubmit}
+  const roleLabel = { ADMIN: "Administrador", EMPLEADO: "Empleado", CLIENTE: "Cliente" }[currentTipo] || currentTipo;
+
+  const avatarSrc = form.avatar ? `/avatars/avatar_${form.avatar}.png` : null;
+
+  const sectionTitle = (text) => (
+    <h2
+      style={{
+        margin: "0 0 1rem",
+        fontSize: "0.78rem",
+        fontWeight: 700,
+        color: "#64748b",
+        textTransform: "uppercase",
+        letterSpacing: "0.09em",
+      }}
+    >
+      {text}
+    </h2>
+  );
+
+  const divider = (
+    <hr style={{ border: "none", borderTop: "1px solid #f1f5f9", margin: "1.5rem 0" }} />
+  );
+
+  return (
+    <main style={{ maxWidth: 680, margin: "0 auto", padding: "2rem 1rem" }}>
+      {/* Profile header card */}
+      <div
         style={{
-          border: "1px solid #e2e8f0",
-          borderRadius: 12,
-          padding: "1rem",
-          background: "#fff",
-          display: "grid",
-          gap: "1rem",
+          background: "linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%)",
+          borderRadius: "16px 16px 0 0",
+          padding: "2.5rem 2rem 2rem",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "0.85rem",
         }}
       >
         <div
           style={{
+            width: 84,
+            height: 84,
+            borderRadius: "50%",
+            background: avatarSrc ? "transparent" : "rgba(255,255,255,0.2)",
+            border: "3px solid rgba(255,255,255,0.55)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "2rem",
+            fontWeight: 700,
+            color: "#fff",
+            letterSpacing: "0.05em",
+            userSelect: "none",
+            overflow: "hidden",
+          }}
+        >
+          {avatarSrc ? (
+            <img src={avatarSrc} alt={form.avatar} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : (
+            initials
+          )}
+        </div>
+        <div style={{ textAlign: "center" }}>
+          <h1 style={{ margin: 0, color: "#fff", fontSize: "1.4rem", fontWeight: 700 }}>
+            {form.nombre} {form.apellido}
+          </h1>
+          <span
+            style={{
+              display: "inline-block",
+              marginTop: 8,
+              padding: "0.22rem 0.85rem",
+              borderRadius: 20,
+              background: "rgba(255,255,255,0.18)",
+              color: "#e2e8f0",
+              fontSize: "0.8rem",
+              fontWeight: 600,
+              letterSpacing: "0.03em",
+            }}
+          >
+            {roleLabel}
+          </span>
+        </div>
+        <p style={{ margin: 0, color: "rgba(255,255,255,0.65)", fontSize: "0.82rem" }}>
+          Toda modificación requiere contraseña de confirmación
+        </p>
+      </div>
+
+      {/* Form card */}
+      <form
+        onSubmit={onSubmit}
+        style={{
+          background: "#fff",
+          borderRadius: "0 0 16px 16px",
+          border: "1px solid #e2e8f0",
+          borderTop: "none",
+          padding: "2rem 1.75rem 1.75rem",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.07)",
+        }}
+      >
+        {/* Avatar selector */}
+        {sectionTitle("Elegir Avatar")}
+        <div
+          style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: "1rem",
+            gridTemplateColumns: "repeat(auto-fill, minmax(72px, 1fr))",
+            gap: "0.65rem",
+            marginBottom: "0.25rem",
+          }}
+        >
+          {AVATARS.map(({ key, label }) => {
+            const selected = form.avatar === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                title={label}
+                onClick={() => onAvatarSelect(key)}
+                disabled={avatarSaving}
+                style={{
+                  padding: 4,
+                  borderRadius: 12,
+                  border: selected ? "2.5px solid #1d4ed8" : "2.5px solid transparent",
+                  background: selected ? "#eff6ff" : "#f8fafc",
+                  cursor: avatarSaving ? "not-allowed" : "pointer",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 4,
+                  transition: "border-color 0.15s, background 0.15s",
+                  outline: "none",
+                  opacity: avatarSaving ? 0.6 : 1,
+                }}
+              >
+                <img
+                  src={`/avatars/avatar_${key}.png`}
+                  alt={label}
+                  style={{ width: 56, height: 56, borderRadius: 8, objectFit: "cover" }}
+                  onError={(e) => { e.currentTarget.style.display = "none"; }}
+                />
+                <span style={{ fontSize: "0.7rem", color: selected ? "#1d4ed8" : "#64748b", fontWeight: selected ? 700 : 400 }}>
+                  {label}
+                </span>
+              </button>
+            );
+          })}
+          {/* Opción sin avatar */}
+          <button
+            type="button"
+            title="Sin avatar"
+            onClick={() => onAvatarSelect("")}
+            disabled={avatarSaving}
+            style={{
+              padding: 4,
+              borderRadius: 12,
+              border: form.avatar === "" ? "2.5px solid #1d4ed8" : "2.5px solid transparent",
+              background: form.avatar === "" ? "#eff6ff" : "#f8fafc",
+              cursor: avatarSaving ? "not-allowed" : "pointer",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 4,
+              opacity: avatarSaving ? 0.6 : 1,
+            }}
+          >
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 8,
+                background: "#e2e8f0",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "1.5rem",
+                color: "#94a3b8",
+              }}
+            >
+              —
+            </div>
+            <span style={{ fontSize: "0.7rem", color: form.avatar === "" ? "#1d4ed8" : "#64748b", fontWeight: form.avatar === "" ? 700 : 400 }}>
+              Ninguno
+            </span>
+          </button>
+        </div>
+
+        {divider}
+
+        {/* Información Personal */}
+        {sectionTitle("Información Personal")}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: "1.1rem",
           }}
         >
           <label style={labelStyle}>
-            <span style={{ fontWeight: 600 }}>DNI</span>
+            <span style={{ fontWeight: 600, fontSize: "0.875rem", color: "#374151" }}>DNI</span>
             <input
               type="number"
               name="dni"
@@ -232,7 +442,7 @@ export default function PerfilUsuarioPage() {
           </label>
 
           <label style={labelStyle}>
-            <span style={{ fontWeight: 600 }}>Nombre</span>
+            <span style={{ fontWeight: 600, fontSize: "0.875rem", color: "#374151" }}>Nombre</span>
             <input
               type="text"
               name="nombre"
@@ -244,7 +454,7 @@ export default function PerfilUsuarioPage() {
           </label>
 
           <label style={labelStyle}>
-            <span style={{ fontWeight: 600 }}>Apellido</span>
+            <span style={{ fontWeight: 600, fontSize: "0.875rem", color: "#374151" }}>Apellido</span>
             <input
               type="text"
               name="apellido"
@@ -256,7 +466,7 @@ export default function PerfilUsuarioPage() {
           </label>
 
           <label style={labelStyle}>
-            <span style={{ fontWeight: 600 }}>Sexo</span>
+            <span style={{ fontWeight: 600, fontSize: "0.875rem", color: "#374151" }}>Sexo</span>
             <select name="sexo" value={form.sexo} onChange={onChange} style={inputStyle}>
               <option value="M">Masculino</option>
               <option value="F">Femenino</option>
@@ -264,8 +474,8 @@ export default function PerfilUsuarioPage() {
             </select>
           </label>
 
-          <label style={labelStyle}>
-            <span style={{ fontWeight: 600 }}>Email</span>
+          <label style={{ ...labelStyle, gridColumn: "1 / -1" }}>
+            <span style={{ fontWeight: 600, fontSize: "0.875rem", color: "#374151" }}>Email</span>
             <input
               type="email"
               name="email"
@@ -275,9 +485,21 @@ export default function PerfilUsuarioPage() {
               style={inputStyle}
             />
           </label>
+        </div>
 
+        {divider}
+
+        {/* Cuenta */}
+        {sectionTitle("Cuenta")}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: "1.1rem",
+          }}
+        >
           <label style={labelStyle}>
-            <span style={{ fontWeight: 600 }}>Rol</span>
+            <span style={{ fontWeight: 600, fontSize: "0.875rem", color: "#374151" }}>Rol</span>
             <select
               name="tipo"
               value={form.tipo}
@@ -293,7 +515,7 @@ export default function PerfilUsuarioPage() {
 
           {currentTipo === "EMPLEADO" && (
             <label style={labelStyle}>
-              <span style={{ fontWeight: 600 }}>Sector</span>
+              <span style={{ fontWeight: 600, fontSize: "0.875rem", color: "#374151" }}>Sector</span>
               <select
                 name="sector"
                 value={form.sector}
@@ -316,7 +538,7 @@ export default function PerfilUsuarioPage() {
 
           {currentTipo === "CLIENTE" && (
             <label style={labelStyle}>
-              <span style={{ fontWeight: 600 }}>Empresa</span>
+              <span style={{ fontWeight: 600, fontSize: "0.875rem", color: "#374151" }}>Empresa</span>
               <select
                 name="empresa"
                 value={form.empresa}
@@ -330,9 +552,24 @@ export default function PerfilUsuarioPage() {
               </select>
             </label>
           )}
+        </div>
 
+        {divider}
+
+        {/* Seguridad */}
+        {sectionTitle("Seguridad")}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: "1.1rem",
+          }}
+        >
           <label style={labelStyle}>
-            <span style={{ fontWeight: 600 }}>Nueva contraseña (opcional)</span>
+            <span style={{ fontWeight: 600, fontSize: "0.875rem", color: "#374151" }}>
+              Nueva contraseña{" "}
+              <span style={{ fontWeight: 400, color: "#94a3b8" }}>(opcional)</span>
+            </span>
             <input
               type="password"
               name="new_password"
@@ -344,7 +581,9 @@ export default function PerfilUsuarioPage() {
           </label>
 
           <label style={labelStyle}>
-            <span style={{ fontWeight: 600 }}>Contraseña de confirmación</span>
+            <span style={{ fontWeight: 600, fontSize: "0.875rem", color: "#374151" }}>
+              Contraseña de confirmación
+            </span>
             <input
               type="password"
               name="password_confirmacion"
@@ -356,20 +595,53 @@ export default function PerfilUsuarioPage() {
           </label>
         </div>
 
-        {error && <p style={{ color: "#b91c1c", margin: 0 }}>{error}</p>}
-        {success && <p style={{ color: "#166534", margin: 0 }}>{success}</p>}
+        {/* Messages */}
+        {error && (
+          <p
+            style={{
+              marginTop: "1.25rem",
+              marginBottom: 0,
+              padding: "0.75rem 1rem",
+              borderRadius: 8,
+              background: "#fef2f2",
+              border: "1px solid #fecaca",
+              color: "#b91c1c",
+              fontSize: "0.875rem",
+            }}
+          >
+            {error}
+          </p>
+        )}
+        {success && (
+          <p
+            style={{
+              marginTop: "1.25rem",
+              marginBottom: 0,
+              padding: "0.75rem 1rem",
+              borderRadius: 8,
+              background: "#f0fdf4",
+              border: "1px solid #bbf7d0",
+              color: "#166534",
+              fontSize: "0.875rem",
+            }}
+          >
+            {success}
+          </p>
+        )}
 
-        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+        {/* Actions */}
+        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: "1.75rem" }}>
           <Link
             to={isAdmin ? "/usuarios" : "/"}
             style={{
               border: "1.5px solid #1e3a8a",
               borderRadius: 8,
-              padding: "0.55rem 0.95rem",
+              padding: "0.6rem 1.1rem",
               textDecoration: "none",
               color: "#1e3a8a",
               fontWeight: 600,
               fontSize: "0.9rem",
+              transition: "background 0.15s ease",
             }}
           >
             Volver
@@ -377,7 +649,17 @@ export default function PerfilUsuarioPage() {
           <button
             type="submit"
             disabled={saving}
-            style={{ padding: "0.55rem 0.95rem", opacity: saving ? 0.6 : 1 }}
+            style={{
+              padding: "0.6rem 1.4rem",
+              borderRadius: 8,
+              border: "none",
+              background: saving ? "#93c5fd" : "#1d4ed8",
+              color: "#fff",
+              fontWeight: 600,
+              fontSize: "0.9rem",
+              cursor: saving ? "not-allowed" : "pointer",
+              transition: "background 0.15s ease",
+            }}
           >
             {saving ? "Guardando..." : "Guardar Cambios"}
           </button>

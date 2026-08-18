@@ -20,7 +20,7 @@ def api_client():
 def admin_user(db):
     return User.objects.create_user(
         username="admin", email="admin@test.com", password="pass123",
-        tipo="ADMIN", is_admin=True
+        tipo="ADMIN"
     )
 
 
@@ -28,14 +28,14 @@ def admin_user(db):
 def responsable_user(db):
     user = User.objects.create_user(
         username="resp", email="resp@test.com", password="pass123",
-        tipo="EMPLEADO", is_empleado=True
+        tipo="EMPLEADO"
     )
     return user
 
 
 @pytest.fixture
 def hallazgo(db, admin_user):
-    sector = SectorCatalog.objects.create(codigo="INTERNO", nombre="Interno")
+    sector, _ = SectorCatalog.objects.get_or_create(codigo="INTERNO", defaults={"nombre": "Interno"})
     h = Hallazgo.objects.create(
         descripcion="Test hallazgo",
         ubicacion="Test",

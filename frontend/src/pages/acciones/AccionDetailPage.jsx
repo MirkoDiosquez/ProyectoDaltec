@@ -7,6 +7,7 @@ import {
   updateAccion,
   uploadArchivoAccion,
 } from "../../api/acciones.js";
+import { useAuth } from "../../context/AuthContext.jsx";
 import FileUpload from "../../components/FileUpload.jsx";
 import FilePreview from "../../components/FilePreview.jsx";
 
@@ -27,6 +28,8 @@ export default function AccionDetailPage() {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const hallazgoId = searchParams.get("hallazgo");
+  const { user } = useAuth();
+  const isAdmin = user?.tipo === "ADMIN";
 
   const [accion, setAccion] = useState(null);
   const [form, setForm] = useState({ descripcion: "", fecha_inicio: "", fecha_fin: "" });
@@ -280,6 +283,7 @@ export default function AccionDetailPage() {
         <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 700, color: "#0f172a" }}>Evidencia</h2>
         <FileUpload
           deferred
+          value={archivo}
           onFileSelect={(file) => setArchivo(file)}
           onError={(msg) => setError(msg)}
           maxSizeMB={1024}
@@ -298,9 +302,20 @@ export default function AccionDetailPage() {
         )}
         {Array.isArray(accion.archivos) && accion.archivos.length > 0 && (
           <div style={{ display: "grid", gap: 8, marginTop: 4 }}>
-            {accion.archivos.map((a) => (
-              <FilePreview key={a.id} archivo={a} />
-            ))}
+            {accion.archivos.map((a) => {
+              const isOwner = a.cargado_por === user?.id;
+              const accionAbierta = accion.estado !== "CERRADA";
+              const canDelete = isAdmin || (isOwner && accionAbierta);
+              return (
+                <FilePreview
+                  key={a.id}
+                  archivo={a}
+                  isAdmin={isAdmin}
+                  canDelete={canDelete}
+                  onDeleted={refresh}
+                />
+              );
+            })}
           </div>
         )}
       </section>

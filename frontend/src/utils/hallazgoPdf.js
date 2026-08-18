@@ -101,10 +101,12 @@ function buildHtml({ hallazgo, porques, solicitudes, historial }) {
     <html lang="es">
       <head>
         <meta charset="utf-8" />
+        <meta name="viewport" content="width=794" />
         <title>Informe Hallazgo #${safeHtml(hallazgo?.id)}</title>
         <style>
-          @page { size: A4; margin: 14mm; }
-          body { font-family: Arial, sans-serif; color: #0f172a; font-size: 12px; line-height: 1.45; }
+          @page { size: A4 portrait; margin: 14mm; }
+          html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          body { font-family: Arial, sans-serif; color: #0f172a; font-size: 12px; line-height: 1.45; width: 794px; min-width: 794px; margin: 0 auto; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
           h1 { margin: 0 0 8px; font-size: 20px; }
           h2 { margin: 22px 0 8px; font-size: 15px; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; }
           h4 { margin: 0 0 7px; font-size: 13px; color: #1e3a8a; }
@@ -154,43 +156,20 @@ function buildHtml({ hallazgo, porques, solicitudes, historial }) {
 export function exportHallazgoCompletoPdf({ hallazgo, porques = [], solicitudes = [], historial = [] }) {
   const html = buildHtml({ hallazgo, porques, solicitudes, historial });
 
-  const frame = document.createElement("iframe");
-  frame.setAttribute("aria-hidden", "true");
-  frame.style.position = "fixed";
-  frame.style.right = "0";
-  frame.style.bottom = "0";
-  frame.style.width = "0";
-  frame.style.height = "0";
-  frame.style.border = "0";
-  document.body.appendChild(frame);
-
-  const cleanup = () => {
-    window.setTimeout(() => {
-      if (frame.parentNode) {
-        frame.parentNode.removeChild(frame);
-      }
-    }, 300);
-  };
-
-  frame.onload = () => {
-    const frameWindow = frame.contentWindow;
-    if (!frameWindow) {
-      cleanup();
-      throw new Error("No se pudo inicializar el visor para imprimir el PDF.");
-    }
-
-    frameWindow.onafterprint = cleanup;
-    frameWindow.focus();
-    frameWindow.print();
-  };
-
-  const doc = frame.contentDocument || frame.contentWindow?.document;
-  if (!doc) {
-    cleanup();
-    throw new Error("No se pudo generar el documento para exportar PDF.");
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) {
+    alert("El navegador bloqueó la ventana emergente. Habilitala para generar el PDF.");
+    return;
   }
 
-  doc.open();
-  doc.write(html);
-  doc.close();
+  printWindow.document.open();
+  printWindow.document.write(html);
+  printWindow.document.close();
+
+  // print() debe ejecutarse en la ventana que contiene el HTML, no en el padre
+  printWindow.onload = () => {
+    printWindow.focus();
+    printWindow.print();
+    printWindow.onafterprint = () => printWindow.close();
+  };
 }

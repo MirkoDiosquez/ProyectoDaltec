@@ -34,6 +34,9 @@ const styles = {
     background: "#ffffff",
     boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
     border: "1px solid #e8edf2",
+    minWidth: 0,
+    overflowX: "hidden",
+    flexShrink: 0,
   },
   header: {
     display: "flex",
@@ -55,6 +58,7 @@ const styles = {
     color: "#334155",
     lineHeight: "1.55",
     wordBreak: "break-word",
+    overflowWrap: "anywhere",
   },
   attachmentsLabel: {
     fontSize: "11px",

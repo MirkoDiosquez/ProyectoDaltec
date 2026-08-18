@@ -24,8 +24,7 @@ def admin_user(db):
         email="admin@test.com",
         password="testpass123",
         tipo="ADMIN",
-        is_admin=True,
-    )
+        )
     return user
 
 
@@ -37,8 +36,7 @@ def empleado_user(db):
         email="empleado@test.com",
         password="testpass123",
         tipo="EMPLEADO",
-        is_empleado=True,
-    )
+        )
     return user
 
 
@@ -52,31 +50,29 @@ def auth_token(admin_user):
 @pytest.fixture
 def catalog_data(db):
     """Create catalog data: sectors, subsecciones, tipos."""
-    sector_interno = SectorCatalog.objects.create(
+    sector_interno, _ = SectorCatalog.objects.get_or_create(
         codigo="INTERNO",
-        nombre="Interno",
-        descripcion="Hallazgos internos de la organización",
+        defaults={"nombre": "Interno", "descripcion": "Hallazgos internos de la organización"},
     )
-    sector_proveedor = SectorCatalog.objects.create(
+    sector_proveedor, _ = SectorCatalog.objects.get_or_create(
         codigo="PROVEEDOR",
-        nombre="Proveedor",
-        descripcion="Hallazgos relacionados con proveedores",
+        defaults={"nombre": "Proveedor", "descripcion": "Hallazgos relacionados con proveedores"},
     )
 
-    SubsectionCatalog.objects.create(
+    SubsectionCatalog.objects.get_or_create(
         sector=sector_interno,
         codigo="ADMIN",
-        nombre="Administración",
+        defaults={"nombre": "Administración"},
     )
-    SubsectionCatalog.objects.create(
+    SubsectionCatalog.objects.get_or_create(
         sector=sector_interno,
         codigo="OPERACIONES",
-        nombre="Operaciones",
+        defaults={"nombre": "Operaciones"},
     )
 
-    TipoCatalog.objects.create(
+    TipoCatalog.objects.get_or_create(
         codigo="NO_CONFORMIDAD",
-        nombre="No Conformidad",
+        defaults={"nombre": "No Conformidad"},
     )
 
     return {

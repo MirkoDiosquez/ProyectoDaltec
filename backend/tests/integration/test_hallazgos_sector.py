@@ -24,8 +24,7 @@ def admin_user(db):
         email="admin@test.com",
         password="testpass123",
         tipo="ADMIN",
-        is_admin=True,
-    )
+        )
 
 
 @pytest.fixture
@@ -36,39 +35,35 @@ def empleado_user(db):
         email="empleado@test.com",
         password="testpass123",
         tipo="EMPLEADO",
-        is_empleado=True,
-    )
+        )
 
 
 @pytest.fixture
 def setup_catalogs(db):
     """Setup all catalog data."""
-    # Create sectors
-    sector_interno = SectorCatalog.objects.create(
+    sector_interno, _ = SectorCatalog.objects.get_or_create(
         codigo="INTERNO",
-        nombre="Interno",
+        defaults={"nombre": "Interno"},
     )
-    sector_proveedor = SectorCatalog.objects.create(
+    sector_proveedor, _ = SectorCatalog.objects.get_or_create(
         codigo="PROVEEDOR",
-        nombre="Proveedor",
+        defaults={"nombre": "Proveedor"},
     )
 
-    # Create subsecciones for INTERNO
-    sub_admin = SubsectionCatalog.objects.create(
+    sub_admin, _ = SubsectionCatalog.objects.get_or_create(
         sector=sector_interno,
         codigo="ADMIN",
-        nombre="Administración",
+        defaults={"nombre": "Administración"},
     )
-    sub_ops = SubsectionCatalog.objects.create(
+    sub_ops, _ = SubsectionCatalog.objects.get_or_create(
         sector=sector_interno,
         codigo="OPERACIONES",
-        nombre="Operaciones",
+        defaults={"nombre": "Operaciones"},
     )
 
-    # Create tipo
-    tipo = TipoCatalog.objects.create(
+    tipo, _ = TipoCatalog.objects.get_or_create(
         codigo="NO_CONFORMIDAD",
-        nombre="No Conformidad",
+        defaults={"nombre": "No Conformidad"},
     )
 
     return {

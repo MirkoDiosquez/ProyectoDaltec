@@ -224,14 +224,17 @@ export default function ChatPage() {
         style={{
           border: "1px solid #e2e8f0",
           borderRadius: "14px",
-          height: "480px",
+          height: "clamp(220px, 55vh, 480px)",
           overflowY: "auto",
+          overflowX: "hidden",
+          WebkitOverflowScrolling: "touch",
           padding: "16px",
           display: "flex",
           flexDirection: "column",
           gap: "10px",
           backgroundColor: "#f8fafc",
           boxShadow: "inset 0 2px 6px rgba(0,0,0,0.04)",
+          minWidth: 0,
         }}
       >
         {messages.length === 0 ? (

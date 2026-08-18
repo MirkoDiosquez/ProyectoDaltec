@@ -1,5 +1,5 @@
-/**
- * LoginPage — DNI + password authentication form.
+﻿/**
+ * LoginPage â€” DNI + password authentication form.
  *
  * - Calls useAuth().login(dni, password)
  * - On success redirects to the page the user was trying to reach
@@ -13,8 +13,32 @@
  * Refs: T016, spec FR-002, contracts/rest-api.md POST /api/v1/auth/login/
  */
 import { useState } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
+import "./LoginPage.css";
+
+const employeeTutorialSteps = [
+  {
+    title: "Crear un hallazgo",
+    description:
+      "Entrá a Hallazgos y seleccioná Crear hallazgo. Cargá sector, subsección, detalle y evidencia para registrarlo correctamente.",
+  },
+  {
+    title: "Entrar al chat del hallazgo",
+    description:
+      "Desde el detalle del hallazgo abrí Chat para coordinar con responsables, dejar actualizaciones y adjuntar información relevante.",
+  },
+  {
+    title: "Gestionar acciones y seguimiento",
+    description:
+      "Revisá estados, fechas y responsables asignados para avanzar acciones correctivas y mantener trazabilidad completa.",
+  },
+  {
+    title: "Revisar notificaciones",
+    description:
+      "Consultá el panel de notificaciones para detectar mensajes urgentes, cambios pendientes y tareas nuevas del sistema.",
+  },
+];
 
 export default function LoginPage() {
   const { login, isAuthenticated } = useAuth();
@@ -23,6 +47,7 @@ export default function LoginPage() {
 
   const [dni, setDni] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -58,148 +83,159 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
-        <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
-          <img
-            src="https://daltectools.com/wp-content/uploads/2024/09/Daltec-logo-azul-y-blanco-200px-02.png"
-            alt="Daltec"
-            style={{ height: 48, width: "auto" }}
-          />
+    <div className="login-page">
+
+      {/* â”€â”€ Brand panel (desktop only) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      <aside className="login-brand">
+        <img
+          src="https://daltectools.com/wp-content/uploads/2024/09/Daltec-logo-azul-y-blanco-200px-02.png"
+          alt="Daltec"
+          className="login-brand__logo"
+        />
+        <h1 className="login-brand__heading">
+          Sistema de Gestión de hallazgos<br />de Calidad
+        </h1>
+        <p className="login-brand__sub">
+          Gestioná hallazgos, acciones correctivas y comunicaciones con clientes desde un solo lugar.
+        </p>
+        <div className="login-brand__badges">
+          <span className="login-brand__badge">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            Gestión de Hallazgos
+          </span>
+          <span className="login-brand__badge">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            Acciones Correctivas
+          </span>
+          <span className="login-brand__badge">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            Reportes y Trazabilidad
+          </span>
         </div>
-        <h2 style={styles.subtitle}>Iniciar sesión</h2>
 
-        <form onSubmit={handleSubmit} noValidate style={styles.form}>
-          <div style={styles.field}>
-            <label htmlFor="dni" style={styles.label}>
-              DNI
-            </label>
-            <input
-              id="dni"
-              type="number"
-              inputMode="numeric"
-              autoComplete="username"
-              value={dni}
-              onChange={(e) => setDni(e.target.value)}
-              disabled={loading}
-              placeholder="Ej: 12345678"
-              style={styles.input}
-              required
-            />
+        <section className="login-tutorial" aria-label="Tutorial para empleados">
+          <header className="login-tutorial__header">
+            <h3>Guía rápida para empleados</h3>
+            <p>Pasos esenciales para usar el sistema desde tu primer ingreso.</p>
+          </header>
+          <ol className="login-tutorial__list">
+            {employeeTutorialSteps.map((step, index) => (
+              <li key={step.title} className="login-tutorial__item">
+                <span className="login-tutorial__index">{String(index + 1).padStart(2, "0")}</span>
+                <div>
+                  <h4>{step.title}</h4>
+                  <p>{step.description}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+      </aside>
+
+      {/* â”€â”€ Form panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      <section className="login-form-panel">
+        <div className="login-form-inner">
+
+          <div className="login-form__header">
+            <h2 className="login-form__title">Iniciar sesión</h2>
+            <p className="login-form__desc">Ingresá tu DNI y contraseña para continuar.</p>
           </div>
 
-          <div style={styles.field}>
-            <label htmlFor="password" style={styles.label}>
-              Contraseña
-            </label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+          <form onSubmit={handleSubmit} noValidate>
+
+            <div className="login-field">
+              <label htmlFor="dni">DNI</label>
+              <input
+                id="dni"
+                type="number"
+                inputMode="numeric"
+                autoComplete="username"
+                value={dni}
+                onChange={(e) => setDni(e.target.value)}
+                disabled={loading}
+                placeholder="Ej: 12345678"
+                required
+              />
+            </div>
+
+            <div className="login-field">
+              <label htmlFor="password">Contraseña</label>
+              <div className="login-field__password-wrap">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
+                  placeholder="••••••••"
+                  required
+                />
+                <button
+                  type="button"
+                  className="login-field__eye"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                      <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {error && (
+              <div role="alert" className="login-error">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0, marginTop: 1 }}>
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                </svg>
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
               disabled={loading}
-              placeholder="Contraseña"
-              style={styles.input}
-              required
-            />
+              className="login-submit"
+            >
+              {loading && <span className="login-submit__spinner" />}
+              {loading ? "Ingresando… " : "Ingresar"}
+            </button>
+          </form>
+
+          <div className="login-footer">
+            Daltec Tools &copy; {new Date().getFullYear()} — Sistema de Gestión de Calidad
           </div>
 
-          {error && (
-            <p role="alert" style={styles.error}>
-              {error}
-            </p>
-          )}
+          <section className="login-tutorial-mobile" aria-label="Tutorial para empleados en móvil">
+            <h3>Guía rápida</h3>
+            <p className="login-tutorial-mobile__lead">Accesos y funcionalidades para empleados.</p>
+            <ol className="login-tutorial-mobile__list">
+              {employeeTutorialSteps.map((step, index) => (
+                <li key={`${step.title}-mobile`}>
+                  <span>{index + 1}</span>
+                  <div>
+                    <h4>{step.title}</h4>
+                    <p>{step.description}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              ...styles.button,
-              ...(loading ? styles.buttonDisabled : {}),
-            }}
-          >
-            {loading ? "Ingresando…" : "Ingresar"}
-          </button>
-        </form>
-      </div>
+        </div>
+      </section>
     </div>
   );
 }
 
-// ---------------------------------------------------------------------------
-// Inline styles — replaced with CSS modules / design system in polish phase
-// ---------------------------------------------------------------------------
-const styles = {
-  page: {
-    minHeight: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#f3f4f6",
-    padding: "1rem",
-  },
-  card: {
-    backgroundColor: "#ffffff",
-    borderRadius: "8px",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-    padding: "2rem",
-    width: "100%",
-    maxWidth: "400px",
-  },
-  title: {
-    margin: "0 0 0.25rem",
-    fontSize: "1.5rem",
-    fontWeight: 700,
-    textAlign: "center",
-    color: "#111827",
-  },
-  subtitle: {
-    margin: "0 0 1.5rem",
-    fontSize: "1rem",
-    fontWeight: 400,
-    textAlign: "center",
-    color: "#6b7280",
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "1rem",
-  },
-  field: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.25rem",
-  },
-  label: {
-    fontSize: "0.875rem",
-    fontWeight: 500,
-    color: "#374151",
-  },
-  input: {
-    padding: "0.5rem 0.75rem",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
-    fontSize: "1rem",
-    outline: "none",
-    width: "100%",
-    boxSizing: "border-box",
-  },
-  error: {
-    margin: 0,
-    padding: "0.5rem 0.75rem",
-    backgroundColor: "#fee2e2",
-    color: "#b91c1c",
-    borderRadius: "6px",
-    fontSize: "0.875rem",
-  },
-  button: {
-    padding: "0.625rem",
-    fontSize: "1rem",
-    width: "100%",
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-    cursor: "not-allowed",
-  },
-};

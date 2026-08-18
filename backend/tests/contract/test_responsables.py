@@ -20,7 +20,6 @@ def admin_user(db):
         email="admin@test.com",
         password="pass123",
         tipo="ADMIN",
-        is_admin=True,
         nombre="Admin",
         apellido="User",
         dni=111111,

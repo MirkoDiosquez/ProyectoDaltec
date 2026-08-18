@@ -126,6 +126,51 @@ class ArchivoViewSet(viewsets.ModelViewSet):
         })
     
     @action(detail=True, methods=['delete'])
+    def owner_delete(self, request, pk=None):
+        """DELETE /api/v1/archivos/{id}/owner_delete/ — Elimina un archivo propio.
+
+        Permitido si:
+        - El usuario es el dueño del archivo (cargado_por == request.user), O
+        - El usuario es administrador.
+        Bloqueado si el hallazgo padre está en estado CERRADO.
+        """
+        archivo = self.get_object()
+        actor = request.user
+        is_admin = getattr(actor, 'is_admin', False)
+
+        if not is_admin and archivo.cargado_por_id != actor.pk:
+            return Response(
+                {'detail': 'Solo podés eliminar archivos que vos mismo cargaste.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Bloquear si el hallazgo padre está cerrado
+        if archivo.hallazgo_id is not None:
+            from apps.hallazgos.models import Hallazgo
+            try:
+                hallazgo = Hallazgo.objects.get(pk=archivo.hallazgo_id)
+                if hallazgo.estado == 'CERRADO':
+                    return Response(
+                        {'detail': 'No se pueden eliminar archivos de un hallazgo cerrado.'},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+            except Hallazgo.DoesNotExist:
+                pass
+
+        nombre = archivo.nombre
+        archivo_id = archivo.id
+        if archivo.ruta:
+            try:
+                archivo.ruta.delete(save=False)
+            except Exception:
+                pass
+        archivo.delete()
+        return Response(
+            {'detail': f'Archivo "{nombre}" eliminado correctamente.', 'deleted_id': archivo_id},
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=True, methods=['delete'])
     def admin_delete(self, request, pk=None):
         """DELETE /api/v1/archivos/{id}/admin_delete/ - Delete file as admin.
         

@@ -18,7 +18,7 @@ class TestFileUploadValidation:
     def admin_user(self, db):
         return User.objects.create_user(
             username="admin", email="admin@test.com", password="pass123",
-            tipo="ADMIN", is_admin=True, nombre="Admin", apellido="User"
+            tipo="ADMIN", nombre="Admin", apellido="User"
         )
     
     def test_mime_type_whitelist_allows_jpeg(self, admin_user):

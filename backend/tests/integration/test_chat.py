@@ -27,7 +27,6 @@ def admin_user(db):
         email="admin@test.com",
         password="pass123",
         tipo="ADMIN",
-        is_admin=True,
         nombre="Admin",
         apellido="User",
     )
@@ -59,7 +58,7 @@ def hallazgo_with_chat(db, admin_user, empleado_user):
 
 
 @pytest.mark.asyncio
-@pytest.mark.django_db(allow_async_unsafe=True)
+@pytest.mark.django_db(transaction=True)
 async def test_websocket_message_with_archivos(admin_user, empleado_user, hallazgo_with_chat):
     """
     Test: WebSocket chat.send with archivos_ids broadcasts message with archivos (T090, T084, T088).
@@ -136,7 +135,7 @@ async def test_websocket_message_with_archivos(admin_user, empleado_user, hallaz
 
 
 @pytest.mark.asyncio
-@pytest.mark.django_db(allow_async_unsafe=True)
+@pytest.mark.django_db(transaction=True)
 async def test_websocket_message_with_multiple_archivos(admin_user, empleado_user, hallazgo_with_chat):
     """Test: WebSocket message with multiple archivos linked correctly (T090)."""
     api_client = APIClient()

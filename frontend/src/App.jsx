@@ -34,6 +34,7 @@ import MainNavbar from "./components/navigation/MainNavbar.jsx";
 import AdminNotificationPanel from "./components/AdminPanel/AdminNotificationPanel.jsx";
 import EmployeeNotificationPanel from "./components/NotificationPanel/EmployeeNotificationPanel.jsx";
 import NotificacionesPage from "./pages/hallazgos/NotificacionesPage.jsx";
+import TutorialPage from "./pages/tutorial/TutorialPage.jsx";
 
 // ---------------------------------------------------------------------------
 // Route guards
@@ -152,6 +153,11 @@ function App() {
         <Route
           path="/hallazgos"
           element={<ProtectedLayout><HallazgoListPage /></ProtectedLayout>}
+        />
+
+        <Route
+          path="/tutorial"
+          element={<ProtectedLayout><TutorialPage /></ProtectedLayout>}
         />
 
         <Route

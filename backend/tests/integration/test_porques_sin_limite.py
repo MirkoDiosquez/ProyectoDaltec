@@ -25,7 +25,6 @@ def admin_user(db):
         username="admin_porques",
         email="admin_porques@test.com",
         password="testpass123",
-        is_admin=True,
         is_staff=True,
         is_superuser=True,
     )
@@ -37,7 +36,6 @@ def responsable_user(db):
         username="responsable_porques",
         email="responsable_porques@test.com",
         password="testpass123",
-        is_empleado=True,
         is_staff=False,
         is_superuser=False,
     )

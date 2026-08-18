@@ -92,6 +92,10 @@ export default function MainNavbar() {
               Hallazgos
             </Link>
 
+            <Link to="/tutorial" className={navLinkClass("/tutorial")} onClick={handleNavClick}>
+              Tutorial
+            </Link>
+
             {/* Role-Specific Links */}
             {user?.tipo === "EMPLEADO" && (
               <Link to="/hallazgos/crear" className={navLinkClass("/hallazgos/crear")} onClick={handleNavClick}>
@@ -116,14 +120,6 @@ export default function MainNavbar() {
               </>
             )}
 
-            <Link
-              to="/perfil"
-              className={navLinkClass("/perfil")}
-              onClick={handleNavClick}
-            >
-              Mi Perfil
-            </Link>
-
           <Link
             to="/notificaciones"
             className="main-navbar__notification"
@@ -136,6 +132,24 @@ export default function MainNavbar() {
 
           {/* User Menu */}
           <div className="main-navbar__user-menu">
+            <Link
+              to="/perfil"
+              className={`main-navbar__profile-avatar${isActive("/perfil") ? " main-navbar__profile-avatar--active" : ""}`}
+              onClick={handleNavClick}
+              title="Mi Perfil"
+            >
+              {user?.avatar ? (
+                <img
+                  src={`/avatars/avatar_${user.avatar}.png`}
+                  alt="avatar"
+                  style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
+                />
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20" aria-hidden="true">
+                  <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+                </svg>
+              )}
+            </Link>
             <span className="main-navbar__user-label">
               {user?.nombre} ({roleLabel})
             </span>

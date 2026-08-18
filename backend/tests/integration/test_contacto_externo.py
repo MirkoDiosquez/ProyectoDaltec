@@ -25,8 +25,7 @@ def admin_user(db):
         email="admin@test.com",
         password="testpass123",
         tipo="ADMIN",
-        is_admin=True,
-    )
+        )
 
 
 @pytest.fixture
@@ -37,16 +36,15 @@ def empleado_user(db):
         email="empleado@test.com",
         password="testpass123",
         tipo="EMPLEADO",
-        is_empleado=True,
-    )
+        )
 
 
 @pytest.fixture
 def setup_sectors(db):
     """Create sectors."""
-    SectorCatalog.objects.create(
+    SectorCatalog.objects.get_or_create(
         codigo="RECLAMO_CLIENTE",
-        nombre="Reclamo de Cliente",
+        defaults={"nombre": "Reclamo de Cliente"},
     )
 
 

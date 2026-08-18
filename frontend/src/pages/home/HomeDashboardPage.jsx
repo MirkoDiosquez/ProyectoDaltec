@@ -22,7 +22,7 @@ function PieChart({ data = [], labelKey = "label", valueKey = "count" }) {
   }
 
   const total = data.reduce((sum, item) => sum + item[valueKey], 0);
-  const colors = ["#1e3a8a", "#2563eb", "#3b82f6", "#60a5fa", "#93c5fd", "#dbeafe"];
+  const colors = ["#2563eb", "#16a34a", "#ea580c", "#9333ea", "#0891b2", "#dc2626", "#ca8a04", "#0d9488"];
 
   let currentAngle = 0;
   const slices = data.map((item, index) => {
@@ -68,15 +68,16 @@ function PieChart({ data = [], labelKey = "label", valueKey = "count" }) {
 
     const labelAngle = startAngle + sliceAngle / 2;
     const labelRad = (labelAngle * Math.PI) / 180;
-    const labelX = 100 + 55 * Math.cos(labelRad);
-    const labelY = 100 + 55 * Math.sin(labelRad);
+    const labelX = 100 + 32 * Math.cos(labelRad);
+    const labelY = 100 + 32 * Math.sin(labelRad);
 
     return {
       path: pathData,
       color: colors[index % colors.length],
       label: item[labelKey],
       value: value,
-      percentage: percentage.toFixed(1),
+      percentage: Math.round(percentage),
+      showLabel: percentage >= 6,
       labelX,
       labelY,
     };
@@ -88,36 +89,30 @@ function PieChart({ data = [], labelKey = "label", valueKey = "count" }) {
         {slices.map((slice, idx) => (
           <g key={idx}>
             <path d={slice.path} fill={slice.color} stroke="#fff" strokeWidth="2" />
-            <text
-              x={slice.labelX}
-              y={slice.labelY}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              style={{
-                fontSize: "12px",
-                fontWeight: "700",
-                fill: "#fff",
-                pointerEvents: "none",
-              }}
-            >
-              {slice.percentage}%
-            </text>
+            {slice.showLabel && (
+              <text
+                x={slice.labelX}
+                y={slice.labelY}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                style={{ fontSize: "13px", fontWeight: "800", fill: "#fff", pointerEvents: "none" }}
+                stroke="rgba(0,0,0,0.35)"
+                strokeWidth="3"
+                paintOrder="stroke"
+              >
+                {slice.percentage}%
+              </text>
+            )}
           </g>
         ))}
       </svg>
       <div style={{ flex: 1, minWidth: "200px", display: "grid", gap: "0.4rem" }}>
         {slices.map((slice, idx) => (
           <div key={idx} style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem" }}>
-            <div
-              style={{
-                width: 12,
-                height: 12,
-                borderRadius: "2px",
-                background: slice.color,
-              }}
-            />
+            <div style={{ width: 12, height: 12, borderRadius: "2px", background: slice.color, flexShrink: 0 }} />
             <span style={{ fontWeight: 600, color: "#334155" }}>{slice.label}:</span>
             <span style={{ color: "#64748b" }}>{slice.value}</span>
+            <span style={{ color: "#94a3b8", fontSize: "0.78rem" }}>({slice.percentage}%)</span>
           </div>
         ))}
       </div>

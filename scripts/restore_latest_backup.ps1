@@ -1,6 +1,7 @@
 param(
     [string]$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
     [string]$BackupsDir = "",
+    [string]$BackupFile = "",
     [switch]$Force,
     [switch]$SkipSafetyBackup,
     [switch]$NoRestart
@@ -81,12 +82,19 @@ try {
         throw "No existe el directorio de backups: $BackupsDir"
     }
 
-    $latestBackup = Get-ChildItem -Path $BackupsDir -Filter "backup_*.sql" |
-        Sort-Object LastWriteTime -Descending |
-        Select-Object -First 1
+    if ($BackupFile) {
+        if (-not (Test-Path $BackupFile)) {
+            throw "No existe el archivo de backup especificado: $BackupFile"
+        }
+        $latestBackup = Get-Item $BackupFile
+    } else {
+        $latestBackup = Get-ChildItem -Path $BackupsDir -Filter "backup_*.sql" |
+            Sort-Object LastWriteTime -Descending |
+            Select-Object -First 1
 
-    if (-not $latestBackup) {
-        throw "No se encontro ningun backup con patron backup_*.sql en $BackupsDir"
+        if (-not $latestBackup) {
+            throw "No se encontro ningun backup con patron backup_*.sql en $BackupsDir"
+        }
     }
 
     Write-Host "Backup seleccionado: $($latestBackup.FullName)"

@@ -3,7 +3,7 @@
  *
  * Fixed: drag-and-drop events are now on the visible container div, not a hidden input.
  */
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import client from '../api/client';
 
 const ACCEPTED_TYPES = [
@@ -16,17 +16,28 @@ const ACCEPTED_TYPES = [
  * Props:
  *   deferred  — when true, calls onFileSelect(rawFile) instead of uploading.
  *               The caller is responsible for uploading the file later.
+ *   value          — controlled File object from the parent. When null/undefined the
+ *                    drop zone resets to its empty state (use after upload completes).
  *   onFileSelect(file) — called in deferred mode with the raw File object.
  *   onFileUpload(data) — called in immediate mode with the server response.
  *   onError(msg)       — called on validation or upload errors.
  *   maxSizeMB          — client-side size limit (default 1 GB).
  */
-export default function FileUpload({ onFileUpload, onFileSelect, onError, maxSizeMB = 1024, deferred = false }) {
+export default function FileUpload({ onFileUpload, onFileSelect, onError, maxSizeMB = 1024, deferred = false, value }) {
   const inputId = useId();
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [selectedName, setSelectedName] = useState(null);
   const [dragging, setDragging] = useState(false);
+
+  // Sync display with parent-controlled value: reset when parent clears the file
+  useEffect(() => {
+    if (!value) {
+      setSelectedName(null);
+    } else {
+      setSelectedName(value.name);
+    }
+  }, [value]);
 
   const handleFileSelect = async (file) => {
     if (!file) return;
@@ -38,12 +49,10 @@ export default function FileUpload({ onFileUpload, onFileSelect, onError, maxSiz
       return;
     }
 
-    // Deferred mode: hand the raw file back to the caller and reset
+    // Deferred mode: hand the raw file back to the caller — name persists until parent clears value
     if (deferred) {
       setSelectedName(file.name);
       onFileSelect?.(file);
-      // Reset after a short delay so user can see the file name briefly
-      setTimeout(() => setSelectedName(null), 1000);
       return;
     }
 

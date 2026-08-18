@@ -55,6 +55,13 @@ class CustomUser(AbstractUser):
         verbose_name="Sexo",
     )
     email = models.EmailField(verbose_name="Correo electrónico")
+    avatar = models.CharField(
+        max_length=50,
+        blank=True,
+        default="",
+        verbose_name="Avatar",
+        help_text="Nombre del avatar preestablecido seleccionado por el usuario.",
+    )
     tipo = models.CharField(
         max_length=10,
         choices=UserTipo.choices,

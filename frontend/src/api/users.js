@@ -54,3 +54,8 @@ export async function deleteUser(userId, passwordConfirmacion) {
     data: { password_confirmacion: passwordConfirmacion },
   });
 }
+
+export async function setAvatar(avatarName) {
+  const { data } = await client.patch("/usuarios/me/avatar/", { avatar: avatarName });
+  return data;
+}

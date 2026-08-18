@@ -23,6 +23,7 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.users.serializers import (
+    AvatarSerializer,
     UserCreateSerializer,
     UserDetailSerializer,
     UserListSerializer,
@@ -50,7 +51,7 @@ class UserViewSet(
     queryset = User.objects.all().order_by("apellido", "nombre", "dni")
 
     def get_permissions(self):
-        if self.action in ("me", "list", "retrieve", "update", "partial_update"):
+        if self.action in ("me", "set_avatar", "list", "retrieve", "update", "partial_update"):
             return [IsAuthenticated()]
         return [IsAdminUserTipo()]
 
@@ -109,6 +110,19 @@ class UserViewSet(
         serializer.is_valid(raise_exception=True)
         updated_user = serializer.save()
         data = UserDetailSerializer(updated_user, context={"request": request}).data
+        return Response(data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["patch"], url_path="me/avatar")
+    def set_avatar(self, request):
+        """PATCH /api/v1/usuarios/me/avatar/ — cambia el avatar sin requerir contraseña."""
+        serializer = AvatarSerializer(
+            request.user,
+            data=request.data,
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        data = UserDetailSerializer(request.user, context={"request": request}).data
         return Response(data, status=status.HTTP_200_OK)
 
     def _require_admin_password(self, request):

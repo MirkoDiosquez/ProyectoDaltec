@@ -1,4 +1,4 @@
--- MySQL dump 10.13  Distrib 8.0.46, for Linux (x86_64)
+﻿-- MySQL dump 10.13  Distrib 8.0.46, for Linux (x86_64)
 --
 -- Host: localhost    Database: proyectodaltec
 -- ------------------------------------------------------
@@ -42,7 +42,7 @@ CREATE TABLE `acciones_accion` (
 
 LOCK TABLES `acciones_accion` WRITE;
 /*!40000 ALTER TABLE `acciones_accion` DISABLE KEYS */;
-INSERT INTO `acciones_accion` VALUES (1,'INMEDIATA','CERRADA','hellow','2026-07-09','2026-07-25',1),(2,'CORRECTIVA','CERRADA','dasdasdasd','2026-07-22','2026-07-31',1),(3,'VERIFICACION_EFICACIA','CERRADA','dasdasd','2026-09-18','2026-11-21',1),(4,'INMEDIATA','PENDIENTE','',NULL,NULL,2),(5,'CORRECTIVA','CERRADA','das','2026-07-12','2026-07-26',2),(6,'VERIFICACION_EFICACIA','PENDIENTE','',NULL,NULL,2),(7,'INMEDIATA','PENDIENTE','',NULL,NULL,3),(8,'CORRECTIVA','PENDIENTE','',NULL,NULL,3),(9,'VERIFICACION_EFICACIA','PENDIENTE','',NULL,NULL,3),(13,'INMEDIATA','PENDIENTE','',NULL,NULL,5),(14,'CORRECTIVA','PENDIENTE','',NULL,NULL,5),(15,'VERIFICACION_EFICACIA','PENDIENTE','',NULL,NULL,5),(16,'INMEDIATA','PENDIENTE','',NULL,NULL,6),(17,'CORRECTIVA','PENDIENTE','',NULL,NULL,6),(18,'VERIFICACION_EFICACIA','PENDIENTE','',NULL,NULL,6),(19,'INMEDIATA','PENDIENTE','',NULL,NULL,7),(20,'CORRECTIVA','PENDIENTE','',NULL,NULL,7),(21,'VERIFICACION_EFICACIA','PENDIENTE','',NULL,NULL,7);
+INSERT INTO `acciones_accion` VALUES (16,'INMEDIATA','PENDIENTE','',NULL,NULL,6),(17,'CORRECTIVA','PENDIENTE','',NULL,NULL,6),(18,'VERIFICACION_EFICACIA','PENDIENTE','',NULL,NULL,6);
 /*!40000 ALTER TABLE `acciones_accion` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -106,7 +106,6 @@ CREATE TABLE `acciones_solicitudcierreaccion` (
 
 LOCK TABLES `acciones_solicitudcierreaccion` WRITE;
 /*!40000 ALTER TABLE `acciones_solicitudcierreaccion` DISABLE KEYS */;
-INSERT INTO `acciones_solicitudcierreaccion` VALUES (1,'2026-07-08 19:18:27.564316','2026-07-08 19:19:01.517312','sas','APROBADA',1,1,2),(2,'2026-07-14 19:54:03.551459','2026-07-14 19:54:27.932506','}','APROBADA',5,1,1),(3,'2026-07-16 16:59:40.633623','2026-07-16 17:00:31.499400','dsad','APROBADA',2,1,1),(4,'2026-07-16 17:00:13.309539','2026-07-16 17:00:27.659721','','APROBADA',3,1,1);
 /*!40000 ALTER TABLE `acciones_solicitudcierreaccion` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -146,7 +145,6 @@ CREATE TABLE `analisis_cinco_porques_analisiscincoporques` (
 
 LOCK TABLES `analisis_cinco_porques_analisiscincoporques` WRITE;
 /*!40000 ALTER TABLE `analisis_cinco_porques_analisiscincoporques` DISABLE KEYS */;
-INSERT INTO `analisis_cinco_porques_analisiscincoporques` VALUES (1,'responsable','Porque si','aprobado','','2026-07-08 17:56:29.319017','2026-07-08 18:02:16.682220',1,2,1),(2,'admin','las','aprobado','','2026-07-08 18:14:42.757475','2026-07-08 18:14:42.757498',1,1,1),(3,'admin','dasdasda','aprobado','','2026-07-16 18:03:22.601782','2026-07-16 18:03:22.601809',1,1,3),(4,'responsable','dsadas','aprobado','','2026-07-16 18:05:26.048631','2026-07-16 18:05:56.918003',1,2,7),(5,'responsable','dasdas','rechazado','porqr','2026-07-16 18:05:31.156346','2026-07-16 18:05:52.550557',1,2,7),(6,'responsable','dsda','aprobado','','2026-07-16 18:05:34.808438','2026-07-16 18:05:46.274236',1,2,7),(7,'responsable','fddsafds','rechazado','fafa','2026-07-16 18:12:29.579108','2026-07-16 18:13:14.521583',1,2,7),(8,'responsable','dsadsa','aprobado','','2026-07-16 18:12:33.672021','2026-07-16 18:12:59.292672',1,2,7),(9,'responsable','dsadas','aprobado','','2026-07-16 18:12:39.037082','2026-07-16 18:12:56.731808',1,2,7),(10,'responsable','dsadas','aprobado','','2026-07-16 18:12:42.131009','2026-07-16 18:12:54.197249',1,2,7);
 /*!40000 ALTER TABLE `analisis_cinco_porques_analisiscincoporques` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -187,7 +185,7 @@ CREATE TABLE `archivos_archivo` (
 
 LOCK TABLES `archivos_archivo` WRITE;
 /*!40000 ALTER TABLE `archivos_archivo` DISABLE KEYS */;
-INSERT INTO `archivos_archivo` VALUES (2,'campana.png','archivos/1/campana.png','image/png',9953,'2026-07-14 18:15:49.251478',1,NULL,4,NULL),(4,'campana.png','archivos/1/campana_eTRa3Z1.png','image/png',9953,'2026-07-16 17:15:00.143912',1,6,NULL,NULL),(5,'campana.png','archivos/2/campana.png','image/png',9953,'2026-07-16 17:17:27.680429',2,NULL,5,NULL);
+INSERT INTO `archivos_archivo` VALUES (4,'campana.png','archivos/1/campana_eTRa3Z1.png','image/png',9953,'2026-07-16 17:15:00.143912',1,6,NULL,NULL);
 /*!40000 ALTER TABLE `archivos_archivo` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -300,7 +298,7 @@ CREATE TABLE `catalogos_sectorcatalog` (
 
 LOCK TABLES `catalogos_sectorcatalog` WRITE;
 /*!40000 ALTER TABLE `catalogos_sectorcatalog` DISABLE KEYS */;
-INSERT INTO `catalogos_sectorcatalog` VALUES (1,'RECLAMO_CLIENTE','Reclamo Cliente','Hallazgos originados por reclamos de clientes',1,'2026-07-08 17:46:51.413602','2026-07-16 18:19:56.054247'),(2,'PROVEEDOR','Proveedor','Hallazgos relacionados con proveedores',1,'2026-07-08 17:46:51.416375','2026-07-16 18:19:56.057304'),(3,'INTERNO','Interno','Hallazgos internos de la organizaci??n',1,'2026-07-08 17:46:51.418863','2026-07-16 18:19:56.059666');
+INSERT INTO `catalogos_sectorcatalog` VALUES (1,'RECLAMO_CLIENTE','Reclamo Cliente','Hallazgos originados por reclamos de clientes',1,'2026-07-08 17:46:51.413602','2026-08-11 16:35:36.076127'),(2,'PROVEEDOR','Proveedor','Hallazgos relacionados con proveedores',1,'2026-07-08 17:46:51.416375','2026-08-11 16:35:36.078869'),(3,'INTERNO','Interno','Hallazgos internos de la organización',1,'2026-07-08 17:46:51.418863','2026-08-11 16:35:36.081049');
 /*!40000 ALTER TABLE `catalogos_sectorcatalog` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -335,7 +333,7 @@ CREATE TABLE `catalogos_subsectioncatalog` (
 
 LOCK TABLES `catalogos_subsectioncatalog` WRITE;
 /*!40000 ALTER TABLE `catalogos_subsectioncatalog` DISABLE KEYS */;
-INSERT INTO `catalogos_subsectioncatalog` VALUES (1,'ADMINISTRACION','Administraci??n',1,'2026-07-08 17:46:51.422396','2026-07-16 18:19:56.062774',3),(2,'COMPRAS','Compras',1,'2026-07-08 17:46:51.424957','2026-07-16 18:19:56.065266',3),(3,'PRODUCCION','Producci??n',1,'2026-07-08 17:46:51.427576','2026-07-16 18:19:56.067869',3),(4,'INGENIERIA','Ingenier??a',1,'2026-07-08 17:46:51.430184','2026-07-16 18:19:56.070397',3),(5,'VENTAS','Ventas',1,'2026-07-08 17:46:51.432710','2026-07-16 18:19:56.073473',3),(6,'POSTVENTAS','Postventas',1,'2026-07-08 17:46:51.435257','2026-07-16 18:19:56.081061',3),(7,'RRHH','RRHH',1,'2026-07-08 17:46:51.437875','2026-07-16 18:19:56.083965',3),(8,'SERVICIOS_TERCEROS','Servicios de terceros',1,'2026-07-08 17:46:51.440489','2026-07-16 18:19:56.086657',3),(9,'OTROS','Otros',1,'2026-07-08 17:46:51.443106','2026-07-16 18:19:56.089149',3);
+INSERT INTO `catalogos_subsectioncatalog` VALUES (1,'ADMINISTRACION','Administración',1,'2026-07-08 17:46:51.422396','2026-08-11 16:35:36.084243',3),(2,'COMPRAS','Compras',1,'2026-07-08 17:46:51.424957','2026-08-11 16:35:36.086565',3),(3,'PRODUCCION','Producción',1,'2026-07-08 17:46:51.427576','2026-08-11 16:35:36.088668',3),(4,'INGENIERIA','Ingeniería',1,'2026-07-08 17:46:51.430184','2026-08-11 16:35:36.090845',3),(5,'VENTAS','Ventas',1,'2026-07-08 17:46:51.432710','2026-08-11 16:35:36.092941',3),(6,'POSTVENTAS','Postventas',1,'2026-07-08 17:46:51.435257','2026-08-11 16:35:36.095234',3),(7,'RRHH','RRHH',1,'2026-07-08 17:46:51.437875','2026-08-11 16:35:36.097405',3),(8,'SERVICIOS_TERCEROS','Servicios de terceros',1,'2026-07-08 17:46:51.440489','2026-08-11 16:35:36.099567',3),(9,'OTROS','Otros',1,'2026-07-08 17:46:51.443106','2026-08-11 16:35:36.101797',3);
 /*!40000 ALTER TABLE `catalogos_subsectioncatalog` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -367,7 +365,7 @@ CREATE TABLE `catalogos_tipocatalog` (
 
 LOCK TABLES `catalogos_tipocatalog` WRITE;
 /*!40000 ALTER TABLE `catalogos_tipocatalog` DISABLE KEYS */;
-INSERT INTO `catalogos_tipocatalog` VALUES (1,'QUEJA_CLIENTE','Queja Cliente',1,'2026-07-08 17:46:51.447680','2026-07-16 18:19:56.092541'),(2,'NO_CONFORMIDAD','No Conformidad',1,'2026-07-08 17:46:51.449593','2026-07-16 18:19:56.094239'),(3,'OBSERVACION','Observaci??n',1,'2026-07-08 17:46:51.451571','2026-07-16 18:19:56.096008'),(4,'MEJORA_SUGERIDA','Mejora Sugerida',1,'2026-07-08 17:46:51.453479','2026-07-16 18:19:56.098011');
+INSERT INTO `catalogos_tipocatalog` VALUES (1,'QUEJA_CLIENTE','Queja Cliente',1,'2026-07-08 17:46:51.447680','2026-08-11 16:35:36.104784'),(2,'NO_CONFORMIDAD','No Conformidad',1,'2026-07-08 17:46:51.449593','2026-08-11 16:35:36.106420'),(3,'OBSERVACION','Observación',1,'2026-07-08 17:46:51.451571','2026-08-11 16:35:36.107890'),(4,'MEJORA_SUGERIDA','Mejora Sugerida',1,'2026-07-08 17:46:51.453479','2026-08-11 16:35:36.109451');
 /*!40000 ALTER TABLE `catalogos_tipocatalog` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -394,7 +392,7 @@ CREATE TABLE `chat_chat` (
 
 LOCK TABLES `chat_chat` WRITE;
 /*!40000 ALTER TABLE `chat_chat` DISABLE KEYS */;
-INSERT INTO `chat_chat` VALUES (1,'2026-07-08 17:48:50.053225',1),(2,'2026-07-14 16:12:40.800580',2),(3,'2026-07-14 16:43:05.314034',3),(5,'2026-07-16 16:48:52.020716',5),(6,'2026-07-16 17:15:00.055805',6),(7,'2026-07-16 17:16:08.373463',7);
+INSERT INTO `chat_chat` VALUES (6,'2026-07-16 17:15:00.055805',6);
 /*!40000 ALTER TABLE `chat_chat` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -414,7 +412,7 @@ CREATE TABLE `chat_chat_participantes` (
   KEY `chat_chat_participan_customuser_id_0fd07439_fk_users_cus` (`customuser_id`),
   CONSTRAINT `chat_chat_participan_customuser_id_0fd07439_fk_users_cus` FOREIGN KEY (`customuser_id`) REFERENCES `users_customuser` (`id`),
   CONSTRAINT `chat_chat_participantes_chat_id_043b694c_fk_chat_chat_id` FOREIGN KEY (`chat_id`) REFERENCES `chat_chat` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -423,7 +421,7 @@ CREATE TABLE `chat_chat_participantes` (
 
 LOCK TABLES `chat_chat_participantes` WRITE;
 /*!40000 ALTER TABLE `chat_chat_participantes` DISABLE KEYS */;
-INSERT INTO `chat_chat_participantes` VALUES (1,1,1),(15,1,3),(8,2,1),(7,2,2),(16,5,2),(18,7,1),(17,7,2);
+INSERT INTO `chat_chat_participantes` VALUES (19,6,1),(20,6,5);
 /*!40000 ALTER TABLE `chat_chat_participantes` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -457,7 +455,6 @@ CREATE TABLE `chat_mensaje` (
 
 LOCK TABLES `chat_mensaje` WRITE;
 /*!40000 ALTER TABLE `chat_mensaje` DISABLE KEYS */;
-INSERT INTO `chat_mensaje` VALUES (1,'s','2026-07-08 18:32:41.109630',2,1,0),(2,'sas','2026-07-14 16:31:02.273545',1,2,0),(3,'que paso?','2026-07-14 16:46:25.541645',2,2,0),(4,'','2026-07-14 18:15:49.292757',1,1,0),(5,'hola','2026-07-16 17:17:27.744868',2,7,0);
 /*!40000 ALTER TABLE `chat_mensaje` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -488,30 +485,7 @@ CREATE TABLE `contacto_externo_contactoexterno` (
 
 LOCK TABLES `contacto_externo_contactoexterno` WRITE;
 /*!40000 ALTER TABLE `contacto_externo_contactoexterno` DISABLE KEYS */;
-INSERT INTO `contacto_externo_contactoexterno` VALUES (1,'adsads','234241412','dsds@gmail.com','2026-07-14 16:12:40.819156','2026-07-14 16:12:40.819182',2),(2,'ds','532432523','gasto@gmail.com','2026-07-14 16:43:05.327288','2026-07-14 16:43:05.327323',3);
 /*!40000 ALTER TABLE `contacto_externo_contactoexterno` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `copilot_restore_test`
---
-
-DROP TABLE IF EXISTS `copilot_restore_test`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `copilot_restore_test` (
-  `id` int DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `copilot_restore_test`
---
-
-LOCK TABLES `copilot_restore_test` WRITE;
-/*!40000 ALTER TABLE `copilot_restore_test` DISABLE KEYS */;
-INSERT INTO `copilot_restore_test` VALUES (1);
-/*!40000 ALTER TABLE `copilot_restore_test` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -664,7 +638,7 @@ CREATE TABLE `hallazgos_hallazgo` (
 
 LOCK TABLES `hallazgos_hallazgo` WRITE;
 /*!40000 ALTER TABLE `hallazgos_hallazgo` DISABLE KEYS */;
-INSERT INTO `hallazgos_hallazgo` VALUES (1,'lasta','Todos lados','NO_CONFORMIDAD','CERRADO','2026-07-08',1,NULL,3,4,NULL),(2,'xzxz','Todos lados','NO_CONFORMIDAD','APROBADO','2026-07-14',1,NULL,1,NULL,NULL),(3,'ds','ds','QUEJA_CLIENTE','APROBADO','2026-07-14',1,NULL,1,NULL,NULL),(5,'que honda gente','dfsfwer34','OPORTUNIDAD_MEJORA','APROBADO','2026-07-16',2,NULL,3,4,NULL),(6,'eliminar puntos de soldadura de rotador','armado de equipos','OPORTUNIDAD_MEJORA','APROBADO','2026-07-16',1,NULL,3,3,NULL),(7,'eliminar puntos de soldadura en rotador','armado','OPORTUNIDAD_MEJORA','APROBADO','2026-07-16',2,NULL,3,3,NULL);
+INSERT INTO `hallazgos_hallazgo` VALUES (6,'eliminar puntos de soldadura de rotador','armado de equipos','OPORTUNIDAD_MEJORA','APROBADO','2026-07-16',1,NULL,3,3,NULL);
 /*!40000 ALTER TABLE `hallazgos_hallazgo` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -685,7 +659,7 @@ CREATE TABLE `hallazgos_hallazgoresponsable` (
   KEY `hallazgos_hallazgore_responsable_id_69274ed6_fk_users_cus` (`responsable_id`),
   CONSTRAINT `hallazgos_hallazgore_hallazgo_id_26410155_fk_hallazgos` FOREIGN KEY (`hallazgo_id`) REFERENCES `hallazgos_hallazgo` (`id`),
   CONSTRAINT `hallazgos_hallazgore_responsable_id_69274ed6_fk_users_cus` FOREIGN KEY (`responsable_id`) REFERENCES `users_customuser` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -694,7 +668,7 @@ CREATE TABLE `hallazgos_hallazgoresponsable` (
 
 LOCK TABLES `hallazgos_hallazgoresponsable` WRITE;
 /*!40000 ALTER TABLE `hallazgos_hallazgoresponsable` DISABLE KEYS */;
-INSERT INTO `hallazgos_hallazgoresponsable` VALUES (1,'2026-07-08 17:48:55.831363',1,1),(7,'2026-07-14 16:29:22.528758',2,2),(8,'2026-07-14 16:30:55.454392',2,1),(15,'2026-07-14 18:37:29.133554',1,3),(16,'2026-07-16 16:55:00.731619',5,2),(17,'2026-07-16 17:16:35.603495',7,2),(18,'2026-07-16 17:17:16.277208',7,1);
+INSERT INTO `hallazgos_hallazgoresponsable` VALUES (19,'2026-08-11 16:39:44.285315',6,1),(20,'2026-08-11 16:39:47.472091',6,5);
 /*!40000 ALTER TABLE `hallazgos_hallazgoresponsable` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -717,7 +691,7 @@ CREATE TABLE `hallazgos_hallazgoresponsablehistorial` (
   KEY `hallazgos_h_fecha_a_ae23db_idx` (`fecha_asignacion`),
   CONSTRAINT `hallazgos_hallazgore_hallazgo_id_a4b46348_fk_hallazgos` FOREIGN KEY (`hallazgo_id`) REFERENCES `hallazgos_hallazgo` (`id`),
   CONSTRAINT `hallazgos_hallazgore_responsable_id_317ad611_fk_users_cus` FOREIGN KEY (`responsable_id`) REFERENCES `users_customuser` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -726,7 +700,7 @@ CREATE TABLE `hallazgos_hallazgoresponsablehistorial` (
 
 LOCK TABLES `hallazgos_hallazgoresponsablehistorial` WRITE;
 /*!40000 ALTER TABLE `hallazgos_hallazgoresponsablehistorial` DISABLE KEYS */;
-INSERT INTO `hallazgos_hallazgoresponsablehistorial` VALUES (3,'2026-07-14 18:28:16.945915',NULL,1,1),(4,'2026-07-14 18:28:16.955077',NULL,2,2),(5,'2026-07-14 18:28:16.962814',NULL,2,1),(6,'2026-07-14 18:37:10.688434','2026-07-14 18:37:20.340757',1,3),(7,'2026-07-14 18:37:29.134172',NULL,1,3),(8,'2026-07-16 16:55:00.732353',NULL,5,2),(9,'2026-07-16 17:16:35.604111',NULL,7,2),(10,'2026-07-16 17:17:16.278658',NULL,7,1);
+INSERT INTO `hallazgos_hallazgoresponsablehistorial` VALUES (11,'2026-08-11 16:39:44.286373',NULL,6,1),(12,'2026-08-11 16:39:47.472748',NULL,6,5);
 /*!40000 ALTER TABLE `hallazgos_hallazgoresponsablehistorial` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -754,7 +728,7 @@ CREATE TABLE `notificaciones_notificacion` (
   KEY `notificaciones_notificacion_tipo_48e88b04` (`tipo`),
   CONSTRAINT `notificaciones_notif_destinatario_id_5c420f59_fk_users_cus` FOREIGN KEY (`destinatario_id`) REFERENCES `users_customuser` (`id`),
   CONSTRAINT `notificaciones_notif_hallazgo_relacionado_c53e5a84_fk_hallazgos` FOREIGN KEY (`hallazgo_relacionado_id`) REFERENCES `hallazgos_hallazgo` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=64 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=66 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -763,7 +737,7 @@ CREATE TABLE `notificaciones_notificacion` (
 
 LOCK TABLES `notificaciones_notificacion` WRITE;
 /*!40000 ALTER TABLE `notificaciones_notificacion` DISABLE KEYS */;
-INSERT INTO `notificaciones_notificacion` VALUES (1,'Solicitud de cambio de responsable pendiente - Hallazgo #1','Responsable None None solicita cambiar responsable para hallazgo #1.','2026-07-08 18:13:06.436782',1,1,1,'cambio_responsable_pendiente'),(2,'Solicitud de cierre de accion','El empleado Mirko Diosquez solicito cerrar la accion INMEDIATA del hallazgo #1.','2026-07-08 19:18:27.568742',1,1,1,'cierre_pendiente'),(3,'Cierre de accion aprobado','La solicitud de cierre de la accion INMEDIATA del hallazgo #1 fue aprobada.','2026-07-08 19:19:01.520512',1,2,1,'cierre_pendiente'),(4,'Solicitud de cambio de responsable pendiente - Hallazgo #1','Responsable None None solicita cambiar responsable para hallazgo #1.','2026-07-08 19:38:05.587902',1,1,1,'cambio_responsable_pendiente'),(5,'Asignado como responsable','Has sido asignado como responsable del hallazgo #2 de tipo NO_CONFORMIDAD.','2026-07-14 16:28:19.113245',1,2,2,'asignado_responsable'),(6,'Solicitud de cambio de responsable pendiente - Hallazgo #2','Responsable Mirko Diosquez solicita cambiar responsable para hallazgo #2.','2026-07-14 16:29:04.513204',1,1,2,'cambio_responsable_pendiente'),(7,'Solicitud de cambio aprobada - Hallazgo #2','Tu solicitud de cambio de responsable ha sido aprobada.','2026-07-14 16:29:22.532894',1,2,2,'cambio_responsable_pendiente'),(8,'Asignado como responsable','Has sido asignado como responsable del hallazgo #2 de tipo NO_CONFORMIDAD.','2026-07-14 16:30:55.456414',1,1,2,'asignado_responsable'),(9,'Nuevo mensaje en hallazgo #2','santiago buhler: sas...','2026-07-14 16:31:02.282720',1,2,2,'mensaje_sin_leer'),(10,'Nuevo mensaje en hallazgo #2','Mirko Diosquez: que paso?...','2026-07-14 16:46:25.549949',1,1,2,'mensaje_sin_leer'),(19,'Asignado como responsable','Has sido asignado como responsable del hallazgo #4 de tipo NO_CONFORMIDAD.','2026-07-14 18:12:37.660923',1,2,NULL,'asignado_responsable'),(20,'Removido como responsable','Has sido removido como responsable del hallazgo #4.','2026-07-14 18:12:37.738511',1,2,NULL,'asignado_responsable'),(21,'Nuevo mensaje en hallazgo #1','santiago buhler: ...','2026-07-14 18:15:49.299972',0,3,1,'mensaje_sin_leer'),(22,'Removido como responsable','Has sido removido como responsable del hallazgo #1.','2026-07-14 18:25:33.860393',0,3,1,'asignado_responsable'),(23,'Asignado como responsable','Has sido asignado como responsable del hallazgo #1 de tipo NO_CONFORMIDAD.','2026-07-14 18:26:08.208860',0,3,1,'asignado_responsable'),(24,'Removido como responsable','Has sido removido como responsable del hallazgo #1.','2026-07-14 18:26:13.882014',0,3,1,'asignado_responsable'),(25,'Asignado como responsable','Has sido asignado como responsable del hallazgo #1 de tipo NO_CONFORMIDAD.','2026-07-14 18:32:32.248132',0,3,1,'asignado_responsable'),(26,'Removido como responsable','Has sido removido como responsable del hallazgo #1.','2026-07-14 18:32:41.609942',0,3,1,'asignado_responsable'),(27,'Asignado como responsable','Has sido asignado como responsable del hallazgo #1 de tipo NO_CONFORMIDAD.','2026-07-14 18:32:49.399774',0,3,1,'asignado_responsable'),(28,'Removido como responsable','Has sido removido como responsable del hallazgo #1.','2026-07-14 18:33:11.978865',0,3,1,'asignado_responsable'),(29,'Asignado como responsable','Has sido asignado como responsable del hallazgo #1 de tipo NO_CONFORMIDAD.','2026-07-14 18:33:15.320384',0,3,1,'asignado_responsable'),(30,'Removido como responsable','Has sido removido como responsable del hallazgo #1.','2026-07-14 18:37:04.161409',0,3,1,'asignado_responsable'),(31,'Asignado como responsable','Has sido asignado como responsable del hallazgo #1 de tipo NO_CONFORMIDAD.','2026-07-14 18:37:10.691056',0,3,1,'asignado_responsable'),(32,'Removido como responsable','Has sido removido como responsable del hallazgo #1.','2026-07-14 18:37:20.353226',0,3,1,'asignado_responsable'),(33,'Asignado como responsable','Has sido asignado como responsable del hallazgo #1 de tipo NO_CONFORMIDAD.','2026-07-14 18:37:29.136653',0,3,1,'asignado_responsable'),(34,'Solicitud de cierre de accion','El empleado santiago buhler solicito cerrar la accion CORRECTIVA del hallazgo #2.','2026-07-14 19:54:03.557310',1,1,2,'cierre_pendiente'),(35,'Cierre de accion aprobado','La solicitud de cierre de la accion CORRECTIVA del hallazgo #2 fue aprobada.','2026-07-14 19:54:27.935660',1,1,2,'cierre_pendiente'),(36,'Nuevo hallazgo registrado','Se registro un hallazgo de tipo OPORTUNIDAD_MEJORA con estado PENDIENTE.','2026-07-16 16:48:52.024607',1,1,5,'cierre_pendiente'),(37,'Asignado como responsable','Has sido asignado como responsable del hallazgo #5 de tipo OPORTUNIDAD_MEJORA.','2026-07-16 16:55:00.741097',1,2,5,'asignado_responsable'),(38,'Solicitud de cierre de accion','El empleado santiago buhler solicito cerrar la accion CORRECTIVA del hallazgo #1.','2026-07-16 16:59:40.639408',1,1,1,'cierre_pendiente'),(39,'Solicitud de cierre de accion','El empleado santiago buhler solicito cerrar la accion VERIFICACION_EFICIENCIA del hallazgo #1.','2026-07-16 17:00:13.313888',1,1,1,'cierre_pendiente'),(40,'Cierre de accion aprobado','La solicitud de cierre de la accion VERIFICACION_EFICIENCIA del hallazgo #1 fue aprobada.','2026-07-16 17:00:27.662693',1,1,1,'cierre_pendiente'),(41,'Cierre de accion aprobado','La solicitud de cierre de la accion CORRECTIVA del hallazgo #1 fue aprobada.','2026-07-16 17:00:31.503329',1,1,1,'cierre_pendiente'),(42,'Nuevo hallazgo registrado','Se registro un hallazgo de tipo OPORTUNIDAD_MEJORA con estado PENDIENTE.','2026-07-16 17:16:08.375228',1,1,7,'cierre_pendiente'),(43,'Asignado como responsable','Has sido asignado como responsable del hallazgo #7 de tipo OPORTUNIDAD_MEJORA.','2026-07-16 17:16:35.607314',1,2,7,'asignado_responsable'),(44,'Asignado como responsable','Has sido asignado como responsable del hallazgo #7 de tipo OPORTUNIDAD_MEJORA.','2026-07-16 17:17:16.284722',1,1,7,'asignado_responsable'),(45,'Nuevo mensaje en hallazgo #7','Mirko Diosquez: hola...','2026-07-16 17:17:27.754003',1,1,7,'mensaje_sin_leer'),(46,'Porqu?? pendiente de aprobaci??n ??? Hallazgo #7','El responsable Mirko Diosquez agreg?? un nuevo porqu?? que requiere tu aprobaci??n en el Hallazgo #7.','2026-07-16 18:05:26.057203',1,1,7,'aprobacion_porque_pendiente'),(47,'Porqu?? pendiente de aprobaci??n ??? Hallazgo #7','El responsable Mirko Diosquez agreg?? un nuevo porqu?? que requiere tu aprobaci??n en el Hallazgo #7.','2026-07-16 18:05:31.162127',1,1,7,'aprobacion_porque_pendiente'),(48,'Porqu?? pendiente de aprobaci??n ??? Hallazgo #7','El responsable Mirko Diosquez agreg?? un nuevo porqu?? que requiere tu aprobaci??n en el Hallazgo #7.','2026-07-16 18:05:34.816736',1,1,7,'aprobacion_porque_pendiente'),(49,'Tu porqu?? fue aprobado ??? Hallazgo #7','El administrador aprob?? tu porqu?? en el Hallazgo #7.','2026-07-16 18:05:46.276250',1,2,7,'aprobacion_porque_pendiente'),(50,'Tu porqu?? fue rechazado - Hallazgo #7','Tu porqu?? en Hallazgo #7 ha sido rechazado.','2026-07-16 18:05:52.552766',1,2,7,'aprobacion_porque_pendiente'),(51,'Tu porqu?? fue rechazado - Hallazgo #7','Tu porqu?? en Hallazgo #7 ha sido rechazado.','2026-07-16 18:05:52.554066',1,1,7,'aprobacion_porque_pendiente'),(52,'Tu porqu?? fue rechazado - Hallazgo #7','Tu porqu?? en Hallazgo #7 ha sido rechazado.','2026-07-16 18:05:52.554501',1,2,7,'aprobacion_porque_pendiente'),(53,'Tu porqu?? fue aprobado ??? Hallazgo #7','El administrador aprob?? tu porqu?? en el Hallazgo #7.','2026-07-16 18:05:56.920510',1,2,7,'aprobacion_porque_pendiente'),(54,'Porqu?? pendiente de aprobaci??n ??? Hallazgo #7','El responsable Mirko Diosquez agreg?? un nuevo porqu?? que requiere tu aprobaci??n en el Hallazgo #7.','2026-07-16 18:12:29.588530',1,1,7,'aprobacion_porque_pendiente'),(55,'Porqu?? pendiente de aprobaci??n ??? Hallazgo #7','El responsable Mirko Diosquez agreg?? un nuevo porqu?? que requiere tu aprobaci??n en el Hallazgo #7.','2026-07-16 18:12:33.678190',1,1,7,'aprobacion_porque_pendiente'),(56,'Porqu?? pendiente de aprobaci??n ??? Hallazgo #7','El responsable Mirko Diosquez agreg?? un nuevo porqu?? que requiere tu aprobaci??n en el Hallazgo #7.','2026-07-16 18:12:39.045765',1,1,7,'aprobacion_porque_pendiente'),(57,'Porqu?? pendiente de aprobaci??n ??? Hallazgo #7','El responsable Mirko Diosquez agreg?? un nuevo porqu?? que requiere tu aprobaci??n en el Hallazgo #7.','2026-07-16 18:12:42.137842',1,1,7,'aprobacion_porque_pendiente'),(58,'Tu porqu?? fue aprobado ??? Hallazgo #7','El administrador aprob?? tu porqu?? en el Hallazgo #7.','2026-07-16 18:12:54.199154',0,2,7,'aprobacion_porque_pendiente'),(59,'Tu porqu?? fue aprobado ??? Hallazgo #7','El administrador aprob?? tu porqu?? en el Hallazgo #7.','2026-07-16 18:12:56.734022',0,2,7,'aprobacion_porque_pendiente'),(60,'Tu porqu?? fue aprobado ??? Hallazgo #7','El administrador aprob?? tu porqu?? en el Hallazgo #7.','2026-07-16 18:12:59.295107',0,2,7,'aprobacion_porque_pendiente'),(61,'Tu porqu?? fue rechazado - Hallazgo #7','Tu porqu?? en Hallazgo #7 ha sido rechazado.','2026-07-16 18:13:14.523544',0,2,7,'aprobacion_porque_pendiente'),(62,'Tu porqu?? fue rechazado - Hallazgo #7','Tu porqu?? en Hallazgo #7 ha sido rechazado.','2026-07-16 18:13:14.524809',1,1,7,'aprobacion_porque_pendiente'),(63,'Tu porqu?? fue rechazado - Hallazgo #7','Tu porqu?? en Hallazgo #7 ha sido rechazado.','2026-07-16 18:13:14.525901',0,2,7,'aprobacion_porque_pendiente');
+INSERT INTO `notificaciones_notificacion` VALUES (1,'Solicitud de cambio de responsable pendiente - Hallazgo #1','Responsable None None solicita cambiar responsable para hallazgo #1.','2026-07-08 18:13:06.436782',1,1,NULL,'cambio_responsable_pendiente'),(2,'Solicitud de cierre de accion','El empleado Mirko Diosquez solicito cerrar la accion INMEDIATA del hallazgo #1.','2026-07-08 19:18:27.568742',1,1,NULL,'cierre_pendiente'),(3,'Cierre de accion aprobado','La solicitud de cierre de la accion INMEDIATA del hallazgo #1 fue aprobada.','2026-07-08 19:19:01.520512',1,2,NULL,'cierre_pendiente'),(4,'Solicitud de cambio de responsable pendiente - Hallazgo #1','Responsable None None solicita cambiar responsable para hallazgo #1.','2026-07-08 19:38:05.587902',1,1,NULL,'cambio_responsable_pendiente'),(5,'Asignado como responsable','Has sido asignado como responsable del hallazgo #2 de tipo NO_CONFORMIDAD.','2026-07-14 16:28:19.113245',1,2,NULL,'asignado_responsable'),(6,'Solicitud de cambio de responsable pendiente - Hallazgo #2','Responsable Mirko Diosquez solicita cambiar responsable para hallazgo #2.','2026-07-14 16:29:04.513204',1,1,NULL,'cambio_responsable_pendiente'),(7,'Solicitud de cambio aprobada - Hallazgo #2','Tu solicitud de cambio de responsable ha sido aprobada.','2026-07-14 16:29:22.532894',1,2,NULL,'cambio_responsable_pendiente'),(8,'Asignado como responsable','Has sido asignado como responsable del hallazgo #2 de tipo NO_CONFORMIDAD.','2026-07-14 16:30:55.456414',1,1,NULL,'asignado_responsable'),(9,'Nuevo mensaje en hallazgo #2','santiago buhler: sas...','2026-07-14 16:31:02.282720',1,2,NULL,'mensaje_sin_leer'),(10,'Nuevo mensaje en hallazgo #2','Mirko Diosquez: que paso?...','2026-07-14 16:46:25.549949',1,1,NULL,'mensaje_sin_leer'),(19,'Asignado como responsable','Has sido asignado como responsable del hallazgo #4 de tipo NO_CONFORMIDAD.','2026-07-14 18:12:37.660923',1,2,NULL,'asignado_responsable'),(20,'Removido como responsable','Has sido removido como responsable del hallazgo #4.','2026-07-14 18:12:37.738511',1,2,NULL,'asignado_responsable'),(21,'Nuevo mensaje en hallazgo #1','santiago buhler: ...','2026-07-14 18:15:49.299972',0,3,NULL,'mensaje_sin_leer'),(22,'Removido como responsable','Has sido removido como responsable del hallazgo #1.','2026-07-14 18:25:33.860393',0,3,NULL,'asignado_responsable'),(23,'Asignado como responsable','Has sido asignado como responsable del hallazgo #1 de tipo NO_CONFORMIDAD.','2026-07-14 18:26:08.208860',0,3,NULL,'asignado_responsable'),(24,'Removido como responsable','Has sido removido como responsable del hallazgo #1.','2026-07-14 18:26:13.882014',0,3,NULL,'asignado_responsable'),(25,'Asignado como responsable','Has sido asignado como responsable del hallazgo #1 de tipo NO_CONFORMIDAD.','2026-07-14 18:32:32.248132',0,3,NULL,'asignado_responsable'),(26,'Removido como responsable','Has sido removido como responsable del hallazgo #1.','2026-07-14 18:32:41.609942',0,3,NULL,'asignado_responsable'),(27,'Asignado como responsable','Has sido asignado como responsable del hallazgo #1 de tipo NO_CONFORMIDAD.','2026-07-14 18:32:49.399774',0,3,NULL,'asignado_responsable'),(28,'Removido como responsable','Has sido removido como responsable del hallazgo #1.','2026-07-14 18:33:11.978865',0,3,NULL,'asignado_responsable'),(29,'Asignado como responsable','Has sido asignado como responsable del hallazgo #1 de tipo NO_CONFORMIDAD.','2026-07-14 18:33:15.320384',0,3,NULL,'asignado_responsable'),(30,'Removido como responsable','Has sido removido como responsable del hallazgo #1.','2026-07-14 18:37:04.161409',0,3,NULL,'asignado_responsable'),(31,'Asignado como responsable','Has sido asignado como responsable del hallazgo #1 de tipo NO_CONFORMIDAD.','2026-07-14 18:37:10.691056',0,3,NULL,'asignado_responsable'),(32,'Removido como responsable','Has sido removido como responsable del hallazgo #1.','2026-07-14 18:37:20.353226',0,3,NULL,'asignado_responsable'),(33,'Asignado como responsable','Has sido asignado como responsable del hallazgo #1 de tipo NO_CONFORMIDAD.','2026-07-14 18:37:29.136653',0,3,NULL,'asignado_responsable'),(34,'Solicitud de cierre de accion','El empleado santiago buhler solicito cerrar la accion CORRECTIVA del hallazgo #2.','2026-07-14 19:54:03.557310',1,1,NULL,'cierre_pendiente'),(35,'Cierre de accion aprobado','La solicitud de cierre de la accion CORRECTIVA del hallazgo #2 fue aprobada.','2026-07-14 19:54:27.935660',1,1,NULL,'cierre_pendiente'),(36,'Nuevo hallazgo registrado','Se registro un hallazgo de tipo OPORTUNIDAD_MEJORA con estado PENDIENTE.','2026-07-16 16:48:52.024607',1,1,NULL,'cierre_pendiente'),(37,'Asignado como responsable','Has sido asignado como responsable del hallazgo #5 de tipo OPORTUNIDAD_MEJORA.','2026-07-16 16:55:00.741097',1,2,NULL,'asignado_responsable'),(38,'Solicitud de cierre de accion','El empleado santiago buhler solicito cerrar la accion CORRECTIVA del hallazgo #1.','2026-07-16 16:59:40.639408',1,1,NULL,'cierre_pendiente'),(39,'Solicitud de cierre de accion','El empleado santiago buhler solicito cerrar la accion VERIFICACION_EFICIENCIA del hallazgo #1.','2026-07-16 17:00:13.313888',1,1,NULL,'cierre_pendiente'),(40,'Cierre de accion aprobado','La solicitud de cierre de la accion VERIFICACION_EFICIENCIA del hallazgo #1 fue aprobada.','2026-07-16 17:00:27.662693',1,1,NULL,'cierre_pendiente'),(41,'Cierre de accion aprobado','La solicitud de cierre de la accion CORRECTIVA del hallazgo #1 fue aprobada.','2026-07-16 17:00:31.503329',1,1,NULL,'cierre_pendiente'),(42,'Nuevo hallazgo registrado','Se registro un hallazgo de tipo OPORTUNIDAD_MEJORA con estado PENDIENTE.','2026-07-16 17:16:08.375228',1,1,NULL,'cierre_pendiente'),(43,'Asignado como responsable','Has sido asignado como responsable del hallazgo #7 de tipo OPORTUNIDAD_MEJORA.','2026-07-16 17:16:35.607314',1,2,NULL,'asignado_responsable'),(44,'Asignado como responsable','Has sido asignado como responsable del hallazgo #7 de tipo OPORTUNIDAD_MEJORA.','2026-07-16 17:17:16.284722',1,1,NULL,'asignado_responsable'),(45,'Nuevo mensaje en hallazgo #7','Mirko Diosquez: hola...','2026-07-16 17:17:27.754003',1,1,NULL,'mensaje_sin_leer'),(46,'Porqu?? pendiente de aprobaci??n ??? Hallazgo #7','El responsable Mirko Diosquez agreg?? un nuevo porqu?? que requiere tu aprobaci??n en el Hallazgo #7.','2026-07-16 18:05:26.057203',1,1,NULL,'aprobacion_porque_pendiente'),(47,'Porqu?? pendiente de aprobaci??n ??? Hallazgo #7','El responsable Mirko Diosquez agreg?? un nuevo porqu?? que requiere tu aprobaci??n en el Hallazgo #7.','2026-07-16 18:05:31.162127',1,1,NULL,'aprobacion_porque_pendiente'),(48,'Porqu?? pendiente de aprobaci??n ??? Hallazgo #7','El responsable Mirko Diosquez agreg?? un nuevo porqu?? que requiere tu aprobaci??n en el Hallazgo #7.','2026-07-16 18:05:34.816736',1,1,NULL,'aprobacion_porque_pendiente'),(49,'Tu porqu?? fue aprobado ??? Hallazgo #7','El administrador aprob?? tu porqu?? en el Hallazgo #7.','2026-07-16 18:05:46.276250',1,2,NULL,'aprobacion_porque_pendiente'),(50,'Tu porqu?? fue rechazado - Hallazgo #7','Tu porqu?? en Hallazgo #7 ha sido rechazado.','2026-07-16 18:05:52.552766',1,2,NULL,'aprobacion_porque_pendiente'),(51,'Tu porqu?? fue rechazado - Hallazgo #7','Tu porqu?? en Hallazgo #7 ha sido rechazado.','2026-07-16 18:05:52.554066',1,1,NULL,'aprobacion_porque_pendiente'),(52,'Tu porqu?? fue rechazado - Hallazgo #7','Tu porqu?? en Hallazgo #7 ha sido rechazado.','2026-07-16 18:05:52.554501',1,2,NULL,'aprobacion_porque_pendiente'),(53,'Tu porqu?? fue aprobado ??? Hallazgo #7','El administrador aprob?? tu porqu?? en el Hallazgo #7.','2026-07-16 18:05:56.920510',1,2,NULL,'aprobacion_porque_pendiente'),(54,'Porqu?? pendiente de aprobaci??n ??? Hallazgo #7','El responsable Mirko Diosquez agreg?? un nuevo porqu?? que requiere tu aprobaci??n en el Hallazgo #7.','2026-07-16 18:12:29.588530',1,1,NULL,'aprobacion_porque_pendiente'),(55,'Porqu?? pendiente de aprobaci??n ??? Hallazgo #7','El responsable Mirko Diosquez agreg?? un nuevo porqu?? que requiere tu aprobaci??n en el Hallazgo #7.','2026-07-16 18:12:33.678190',1,1,NULL,'aprobacion_porque_pendiente'),(56,'Porqu?? pendiente de aprobaci??n ??? Hallazgo #7','El responsable Mirko Diosquez agreg?? un nuevo porqu?? que requiere tu aprobaci??n en el Hallazgo #7.','2026-07-16 18:12:39.045765',1,1,NULL,'aprobacion_porque_pendiente'),(57,'Porqu?? pendiente de aprobaci??n ??? Hallazgo #7','El responsable Mirko Diosquez agreg?? un nuevo porqu?? que requiere tu aprobaci??n en el Hallazgo #7.','2026-07-16 18:12:42.137842',1,1,NULL,'aprobacion_porque_pendiente'),(58,'Tu porqu?? fue aprobado ??? Hallazgo #7','El administrador aprob?? tu porqu?? en el Hallazgo #7.','2026-07-16 18:12:54.199154',0,2,NULL,'aprobacion_porque_pendiente'),(59,'Tu porqu?? fue aprobado ??? Hallazgo #7','El administrador aprob?? tu porqu?? en el Hallazgo #7.','2026-07-16 18:12:56.734022',0,2,NULL,'aprobacion_porque_pendiente'),(60,'Tu porqu?? fue aprobado ??? Hallazgo #7','El administrador aprob?? tu porqu?? en el Hallazgo #7.','2026-07-16 18:12:59.295107',0,2,NULL,'aprobacion_porque_pendiente'),(61,'Tu porqu?? fue rechazado - Hallazgo #7','Tu porqu?? en Hallazgo #7 ha sido rechazado.','2026-07-16 18:13:14.523544',0,2,NULL,'aprobacion_porque_pendiente'),(62,'Tu porqu?? fue rechazado - Hallazgo #7','Tu porqu?? en Hallazgo #7 ha sido rechazado.','2026-07-16 18:13:14.524809',1,1,NULL,'aprobacion_porque_pendiente'),(63,'Tu porqu?? fue rechazado - Hallazgo #7','Tu porqu?? en Hallazgo #7 ha sido rechazado.','2026-07-16 18:13:14.525901',0,2,NULL,'aprobacion_porque_pendiente'),(64,'Asignado como responsable','Has sido asignado como responsable del hallazgo #6 de tipo OPORTUNIDAD_MEJORA.','2026-08-11 16:39:44.289181',1,1,6,'asignado_responsable'),(65,'Asignado como responsable','Has sido asignado como responsable del hallazgo #6 de tipo OPORTUNIDAD_MEJORA.','2026-08-11 16:39:47.475640',0,5,6,'asignado_responsable');
 /*!40000 ALTER TABLE `notificaciones_notificacion` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -834,7 +808,6 @@ CREATE TABLE `solicitud_cambio_responsable_solicitudcambioresponsable` (
 
 LOCK TABLES `solicitud_cambio_responsable_solicitudcambioresponsable` WRITE;
 /*!40000 ALTER TABLE `solicitud_cambio_responsable_solicitudcambioresponsable` DISABLE KEYS */;
-INSERT INTO `solicitud_cambio_responsable_solicitudcambioresponsable` VALUES (4,'cambiar','rechazada','porque no terminate','2026-07-08 18:13:06.434394','2026-07-08 18:14:28.343097',1,1,2,1),(5,'cambiar','aprobada','ya termine con mi parte','2026-07-08 19:38:05.584982','2026-07-08 19:41:46.525050',1,1,2,3),(6,'cambiar','aprobada','sas','2026-07-14 16:29:04.509135','2026-07-14 16:29:22.532042',1,2,2,2);
 /*!40000 ALTER TABLE `solicitud_cambio_responsable_solicitudcambioresponsable` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1052,4 +1025,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-07-16 18:28:56
+-- Dump completed on 2026-08-11 16:51:27

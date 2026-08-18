@@ -150,6 +150,9 @@ class HallazgoSerializer(serializers.ModelSerializer):
 				"id": a.id,
 				"tipo": a.tipo,
 				"estado": a.estado,
+				"descripcion": a.descripcion,
+				"fecha_inicio": a.fecha_inicio.isoformat() if a.fecha_inicio else None,
+				"fecha_fin": a.fecha_fin.isoformat() if a.fecha_fin else None,
 			}
 			for a in obj.acciones.all().order_by("id")
 		]

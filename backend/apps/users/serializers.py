@@ -75,6 +75,7 @@ class UserListSerializer(serializers.ModelSerializer):
             "is_active",
             "sector",
             "empresa",
+            "avatar",
         ]
         read_only_fields = fields
 
@@ -106,6 +107,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
             "is_active",
             "sector",
             "empresa",
+            "avatar",
         ]
         read_only_fields = fields
 
@@ -118,6 +120,27 @@ class UserDetailSerializer(serializers.ModelSerializer):
         if hasattr(obj, "cliente_profile"):
             return obj.cliente_profile.empresa
         return None
+
+
+class AvatarSerializer(serializers.ModelSerializer):
+    """Serializer exclusivo para actualizar el avatar sin requerir contraseña."""
+
+    VALID_AVATARS = {
+        "pato", "rinoceronte", "flamenco",
+        "tiburon", "mapache", "oso",
+        "cebra", "elefante", "tucan", "",
+    }
+
+    class Meta:
+        model = User
+        fields = ["avatar"]
+
+    def validate_avatar(self, value):
+        if value not in self.VALID_AVATARS:
+            raise serializers.ValidationError(
+                f"Avatar no válido. Opciones: {', '.join(sorted(self.VALID_AVATARS - {''}))}."
+            )
+        return value
 
 
 class UserCreateSerializer(serializers.ModelSerializer):

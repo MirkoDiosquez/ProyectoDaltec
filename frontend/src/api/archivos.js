@@ -66,6 +66,18 @@ export async function deleteArchivoAdmin(archivoId) {
 }
 
 /**
+ * Owner or admin: Delete own file while hallazgo is open.
+ * DELETE /archivos/{id}/owner_delete/
+ *
+ * @param {number} archivoId
+ * @returns {Promise<{detail: string, deleted_id: number}>}
+ */
+export async function deleteArchivo(archivoId) {
+  const { data } = await client.delete(`/archivos/${archivoId}/owner_delete/`);
+  return data;
+}
+
+/**
  * Admin: Bulk delete multiple files.
  * POST /archivos/admin_bulk_delete/
  *

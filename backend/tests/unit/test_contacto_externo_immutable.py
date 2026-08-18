@@ -18,12 +18,11 @@ def setup_data(db):
         email="admin@test.com",
         password="testpass123",
         tipo="ADMIN",
-        is_admin=True,
-    )
+        )
 
-    sector = SectorCatalog.objects.create(
+    sector, _ = SectorCatalog.objects.get_or_create(
         codigo="RECLAMO_CLIENTE",
-        nombre="Reclamo de Cliente",
+        defaults={"nombre": "Reclamo de Cliente"},
     )
 
     hallazgo = Hallazgo.objects.create(

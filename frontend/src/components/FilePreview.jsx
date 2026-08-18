@@ -5,11 +5,11 @@
  * direct browser navigation which cannot send the JWT Authorization header.
  */
 import { useEffect, useRef, useState } from 'react';
-import { getPreviewBlobUrl, downloadArchivo, deleteArchivoAdmin } from '../api/archivos.js';
+import { getPreviewBlobUrl, downloadArchivo, deleteArchivoAdmin, deleteArchivo } from '../api/archivos.js';
 import PDFViewer from './PDFViewer';
 import ImageViewer from './ImageViewer';
 
-export default function FilePreview({ archivo, isAdmin = false, onDeleted }) {
+export default function FilePreview({ archivo, isAdmin = false, canDelete = false, onDeleted }) {
   const [blobUrl, setBlobUrl] = useState(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [previewError, setPreviewError] = useState('');
@@ -73,10 +73,16 @@ export default function FilePreview({ archivo, isAdmin = false, onDeleted }) {
     
     setDeleting(true);
     try {
-      await deleteArchivoAdmin(archivo.id);
+      // Admins use the admin endpoint; owners use the owner endpoint
+      if (isAdmin) {
+        await deleteArchivoAdmin(archivo.id);
+      } else {
+        await deleteArchivo(archivo.id);
+      }
       if (onDeleted) onDeleted(archivo.id);
     } catch (error) {
-      alert('Error al eliminar archivo: ' + (error.message || 'Error desconocido'));
+      const msg = error?.response?.data?.detail || error.message || 'Error desconocido';
+      alert('Error al eliminar archivo: ' + msg);
     } finally {
       setDeleting(false);
     }
@@ -94,11 +100,13 @@ export default function FilePreview({ archivo, isAdmin = false, onDeleted }) {
       background: '#fff',
       display: 'grid',
       gap: '0.75rem',
+      minWidth: 0,
+      overflowX: 'hidden',
     }}>
       {/* File header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-        <div>
-          <p style={{ margin: 0, fontWeight: 700, fontSize: '0.95rem' }}>{archivo.nombre}</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, minWidth: 0 }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <p style={{ margin: 0, fontWeight: 700, fontSize: '0.95rem', wordBreak: 'break-all', overflowWrap: 'anywhere' }}>{archivo.nombre}</p>
           <p style={{ margin: '2px 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>
             {sizeMB} · {archivo.tipo_mime}
           </p>
@@ -111,7 +119,7 @@ export default function FilePreview({ archivo, isAdmin = false, onDeleted }) {
           >
             {downloading ? 'Descargando…' : '⬇ Descargar'}
           </button>
-          {isAdmin && (
+          {(isAdmin || canDelete) && (
             <button
               onClick={handleDelete}
               disabled={deleting}
