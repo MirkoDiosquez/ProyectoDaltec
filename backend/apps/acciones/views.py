@@ -1,3 +1,6 @@
+# Módulo de vistas para acciones correctivas.
+# Este conjunto de endpoints gestiona la actualización de tareas, cierre de
+# acciones y aprobación de solicitudes de cierre por parte del administrador.
 from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import status, viewsets
@@ -22,11 +25,13 @@ from apps.acciones.services import (
 )
 
 
+# AccionViewSet gestiona el ciclo de vida de las acciones asociadas a cada hallazgo.
 class AccionViewSet(viewsets.GenericViewSet):
 	permission_classes = [IsAuthenticated]
 	queryset = Accion.objects.select_related("hallazgo").prefetch_related("archivos")
 	parser_classes = [JSONParser, MultiPartParser, FormParser]
 
+	# get_queryset limita la consulta según el tipo de usuario y el hallazgo.
 	def get_queryset(self):
 		qs = self.queryset
 		hallazgo_id = self.kwargs.get("hallazgo_id")
@@ -47,12 +52,14 @@ class AccionViewSet(viewsets.GenericViewSet):
 			raise PermissionDenied(str(exc))
 		raise exc
 
+	# retrieve devuelve una acción concreta para poder ver detalle, estado y evidencias.
 	def retrieve(self, request, hallazgo_id=None, pk=None):
 		accion = self.get_queryset().filter(pk=pk).first()
 		if not accion:
 			return Response({"detail": "Accion no encontrada."}, status=status.HTTP_404_NOT_FOUND)
 		return Response(AccionSerializer(accion).data, status=status.HTTP_200_OK)
 
+	# partial_update actualiza los campos de una acción sin reemplazar toda la entidad.
 	def partial_update(self, request, hallazgo_id=None, pk=None):
 		accion = self.get_queryset().filter(pk=pk).first()
 		if not accion:
@@ -68,6 +75,7 @@ class AccionViewSet(viewsets.GenericViewSet):
 
 		return Response(AccionSerializer(actualizada).data, status=status.HTTP_200_OK)
 
+	# upload_archivo agrega evidencia a la acción para respaldar la solución implementada.
 	@action(detail=True, methods=["post"], url_path="upload_archivo")
 	def upload_archivo(self, request, hallazgo_id=None, pk=None):
 		accion = self.get_queryset().filter(pk=pk).first()
@@ -93,6 +101,7 @@ class AccionViewSet(viewsets.GenericViewSet):
 			status=status.HTTP_201_CREATED,
 		)
 
+	# solicitar_cierre crea una solicitud para que el administrador apruebe el cierre.
 	@action(detail=True, methods=["post"], url_path="solicitar_cierre")
 	def solicitar_cierre(self, request, hallazgo_id=None, pk=None):
 		accion = self.get_queryset().filter(pk=pk).first()
@@ -108,6 +117,7 @@ class AccionViewSet(viewsets.GenericViewSet):
 		return Response(SolicitudCierreSerializer(solicitud).data, status=status.HTTP_201_CREATED)
 
 
+# SolicitudCierreViewSet gestiona las aprobaciones y rechazos de cierre de acciones.
 class SolicitudCierreViewSet(viewsets.GenericViewSet):
 	permission_classes = [IsAuthenticated]
 	queryset = SolicitudCierreAccion.objects.select_related(
@@ -138,10 +148,12 @@ class SolicitudCierreViewSet(viewsets.GenericViewSet):
 			raise PermissionDenied(str(exc))
 		raise exc
 
+	# list devuelve la lista de solicitudes ordenadas por fecha para revisión del admin.
 	def list(self, request):
 		items = self.get_queryset().order_by("-fecha_solicitud")
 		return Response(SolicitudCierreSerializer(items, many=True).data, status=status.HTTP_200_OK)
 
+	# aprobar valida la solicitud y finaliza la acción como cerrada si corresponde.
 	@action(detail=True, methods=["post"], url_path="aprobar")
 	def aprobar(self, request, pk=None):
 		solicitud = self.get_queryset().filter(pk=pk).first()
@@ -155,6 +167,7 @@ class SolicitudCierreViewSet(viewsets.GenericViewSet):
 
 		return Response(SolicitudCierreSerializer(aprobada).data, status=status.HTTP_200_OK)
 
+	# rechazar devuelve la solicitud a estado pendiente con observación del administrador.
 	@action(detail=True, methods=["post"], url_path="rechazar")
 	def rechazar(self, request, pk=None):
 		solicitud = self.get_queryset().filter(pk=pk).first()

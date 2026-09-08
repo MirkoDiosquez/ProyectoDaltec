@@ -1,3 +1,6 @@
+# Módulo de vistas para la gestión de hallazgos.
+# Aquí se define la lógica principal del flujo de creación, aprobación,
+# asignación de responsables, carga de archivos y cierre de hallazgos.
 from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.contrib.auth import get_user_model
@@ -32,6 +35,9 @@ User = get_user_model()
 
 
 
+# HallazgoViewSet centraliza la administración de hallazgos.
+# Permite crear registros, filtrar por tipo, asignar responsables,
+# aprobar/rechazar, adjuntar archivos y consultar estadísticas.
 class HallazgoViewSet(viewsets.ModelViewSet):
 	queryset = Hallazgo.objects.select_related("creado_por", "sector", "subseccion", "tipo_catalogo").prefetch_related("responsables", "acciones", "archivos")
 	permission_classes = [IsAuthenticated]
@@ -42,6 +48,8 @@ class HallazgoViewSet(viewsets.ModelViewSet):
 	search_fields = ['descripcion', 'ubicacion']
 	ordering_fields = ['fecha_creacion', 'estado']
 
+	# create crea un nuevo hallazgo con el serializador correspondiente y devuelve
+	# la representación serializada para que el frontend pueda renderizarla.
 	def create(self, request, *args, **kwargs):
 		serializer = self.get_serializer(data=request.data)
 		serializer.is_valid(raise_exception=True)
@@ -49,12 +57,16 @@ class HallazgoViewSet(viewsets.ModelViewSet):
 		output = HallazgoSerializer(hallazgo, context={"request": request})
 		return Response(output.data, status=status.HTTP_201_CREATED)
 
+	# get_permissions fija reglas según la acción. Por ejemplo, la creación
+	# exige permisos específicos según el tipo de hallazgo.
 	def get_permissions(self):
 		permissions = [IsAuthenticated]
 		if self.action == "create":
 			permissions.append(HallazgoTipoPermission)
 		return [permission() for permission in permissions]
 
+	# get_queryset filtra la información según el tipo de usuario: administrador,
+	# empleado o cliente. Esto mantiene la privacidad y la trazabilidad de cada rol.
 	def get_queryset(self):
 		user = self.request.user
 		base = self.queryset
@@ -116,6 +128,8 @@ class HallazgoViewSet(viewsets.ModelViewSet):
 		self._require_admin_password(request)
 		return super().destroy(request, *args, **kwargs)
 
+	# aprobar cambia el estado del hallazgo a aprobado, validando que el usuario
+	# tenga permisos suficientes para realizar esa acción.
 	@action(detail=True, methods=["post"])
 	def aprobar(self, request, pk=None):
 		hallazgo = self._get_hallazgo()
@@ -125,6 +139,7 @@ class HallazgoViewSet(viewsets.ModelViewSet):
 			self._translate_service_error(exc)
 		return Response(HallazgoSerializer(hallazgo).data)
 
+	# rechazar marca el hallazgo como rechazado y evita que siga en flujo activo.
 	@action(detail=True, methods=["post"])
 	def rechazar(self, request, pk=None):
 		hallazgo = self._get_hallazgo()
@@ -134,6 +149,7 @@ class HallazgoViewSet(viewsets.ModelViewSet):
 			self._translate_service_error(exc)
 		return Response(HallazgoSerializer(hallazgo).data)
 
+	# reclasificar permite cambiar el tipo de hallazgo y revalidar las reglas del negocio.
 	@action(detail=True, methods=["post"])
 	def reclasificar(self, request, pk=None):
 		hallazgo = self._get_hallazgo()
@@ -147,6 +163,7 @@ class HallazgoViewSet(viewsets.ModelViewSet):
 			self._translate_service_error(exc)
 		return Response(HallazgoSerializer(hallazgo).data)
 
+	# add_responsable asocia un responsable al hallazgo para ejecutar tareas y acciones.
 	@action(detail=True, methods=["post"], url_path="add_responsable")
 	def add_responsable(self, request, pk=None):
 		hallazgo = self._get_hallazgo()
@@ -168,6 +185,7 @@ class HallazgoViewSet(viewsets.ModelViewSet):
 			status=status.HTTP_200_OK,
 		)
 
+	# remove_responsable quita la vinculación de un responsable con el hallazgo.
 	@action(detail=True, methods=["post"], url_path="remove_responsable")
 	def remove_responsable(self, request, pk=None):
 		hallazgo = self._get_hallazgo()
@@ -182,6 +200,7 @@ class HallazgoViewSet(viewsets.ModelViewSet):
 
 		return Response(result, status=status.HTTP_200_OK)
 
+	# upload_archivo adjunta un archivo de evidencia al hallazgo, validando su tipo y tamaño.
 	@action(detail=True, methods=["post"], url_path="upload_archivo")
 	def upload_archivo(self, request, pk=None):
 		hallazgo = self._get_hallazgo()
@@ -245,6 +264,7 @@ class HallazgoViewSet(viewsets.ModelViewSet):
 		
 		return Response(result, status=status.HTTP_200_OK)
 
+	# estadisticas devuelve métricas para el dashboard administrativo del sistema.
 	@action(detail=False, methods=["get"])
 	def estadisticas(self, request):
 		"""Admin-only endpoint for dashboard statistics.

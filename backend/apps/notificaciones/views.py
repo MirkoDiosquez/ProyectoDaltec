@@ -1,3 +1,5 @@
+# Módulo de notificaciones y avisos del sistema.
+# Se encarga de entregar mensajes relevantes a cada usuario según su rol y hallazgo asociado.
 from rest_framework import viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -9,6 +11,7 @@ from apps.notificaciones.models import Notificacion
 from apps.notificaciones.serializers import NotificacionSerializer
 
 
+# NotificacionViewSet centraliza la visualización y lectura de avisos del sistema.
 class NotificacionViewSet(viewsets.ModelViewSet):
     """
     Notificaciones ViewSet with role-based filtering (T120).
@@ -28,12 +31,14 @@ class NotificacionViewSet(viewsets.ModelViewSet):
     filterset_fields = ['tipo', 'leida']
     ordering_fields = ['-fecha']
 
+    # get_queryset restringe cada usuario a ver solo sus propias notificaciones.
     def get_queryset(self):
         """Filter notifications by current user as destinatario."""
         return Notificacion.objects.filter(
             destinatario=self.request.user
         ).order_by("-fecha")
 
+    # marcar_leida marca una notificación como leída cuando el usuario la visualiza.
     @action(detail=True, methods=["patch"])
     def marcar_leida(self, request, pk=None):
         """Mark a notification as read."""
@@ -42,6 +47,7 @@ class NotificacionViewSet(viewsets.ModelViewSet):
         notificacion.save(update_fields=["leida"])
         return Response(NotificacionSerializer(notificacion).data)
     
+    # marcar_todas_leidas permite limpiar el estado de notificaciones pendientes del usuario.
     @action(detail=False, methods=["post"])
     def marcar_todas_leidas(self, request):
         """Mark all notifications as read for current user (T120)."""
@@ -52,6 +58,7 @@ class NotificacionViewSet(viewsets.ModelViewSet):
             "message": f"Marked {count} notifications as read"
         })
 
+    # marcar_chat_leidas deja leídos los avisos del chat asociados a un hallazgo concreto.
     @action(detail=False, methods=["post"])
     def marcar_chat_leidas(self, request):
         """Mark unread chat-related notifications as read for a hallazgo chat."""
@@ -77,6 +84,7 @@ class NotificacionViewSet(viewsets.ModelViewSet):
             }
         )
 
+    # marcar_hallazgo_leidas marca como leídos todos los avisos de un hallazgo en particular.
     @action(detail=False, methods=["post"])
     def marcar_hallazgo_leidas(self, request):
         """Mark all unread notifications related to a specific hallazgo as read."""

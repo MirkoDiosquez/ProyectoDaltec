@@ -1,5 +1,8 @@
 """
 Archivo views for file management and admin operations.
+
+Este módulo controla la carga, descarga, listado y eliminación de archivos
+adjuntos. Se utiliza como soporte documental para evidencias, hallazgos y acciones.
 """
 from django.core.exceptions import PermissionDenied
 from django.http import FileResponse, Http404
@@ -12,6 +15,7 @@ from apps.archivos.models import Archivo
 from apps.archivos.serializers import ArchivoSerializer
 
 
+# ArchivoViewSet gestiona la administración de documentos y evidencias del sistema.
 class ArchivoViewSet(viewsets.ModelViewSet):
     """
     ViewSet for archivo management.
@@ -22,6 +26,7 @@ class ArchivoViewSet(viewsets.ModelViewSet):
     queryset = Archivo.objects.all()
     serializer_class = ArchivoSerializer
 
+    # get_queryset protege la información: los usuarios normales solo ven sus propios archivos.
     def get_queryset(self):
         user = self.request.user
         if getattr(user, "is_admin", False):
@@ -31,6 +36,7 @@ class ArchivoViewSet(viewsets.ModelViewSet):
             # Regular users only see their own uploaded files
             return Archivo.objects.filter(cargado_por=user)
 
+    # perform_destroy elimina el archivo físico y su registro de base de datos cuando corresponde.
     def perform_destroy(self, instance):
         """Delete file from storage when deleting Archivo instance."""
         user = self.request.user
@@ -45,6 +51,7 @@ class ArchivoViewSet(viewsets.ModelViewSet):
         
         instance.delete()
 
+    # download permite devolver el archivo para su descarga desde la UI o desde la API.
     @action(detail=True, methods=["get"])
     def download(self, request, pk=None):
         """Download a file (stream the FileField)."""
@@ -65,6 +72,7 @@ class ArchivoViewSet(viewsets.ModelViewSet):
         except FileNotFoundError:
             raise Http404("Archivo no encontrado en el sistema de archivos")
 
+    # admin_list ofrece una vista administrativa con filtros para revisiones y auditorías.
     @action(detail=False, methods=["get"])
     def admin_list(self, request):
         """Admin-only endpoint to list all files with metadata."""
@@ -90,6 +98,7 @@ class ArchivoViewSet(viewsets.ModelViewSet):
             'archivos': serializer.data,
         })
 
+    # admin_delete elimina un archivo específico con permiso administrativo.
     @action(detail=True, methods=["delete"])
     def admin_delete(self, request, pk=None):
         """Admin-only endpoint to delete a specific file."""
@@ -115,6 +124,7 @@ class ArchivoViewSet(viewsets.ModelViewSet):
             status=status.HTTP_204_NO_CONTENT,
         )
 
+    # bulk_delete borra varios archivos a la vez para administración masiva de evidencias.
     @action(detail=False, methods=["delete"])
     def bulk_delete(self, request):
         """Admin-only endpoint to bulk delete files."""

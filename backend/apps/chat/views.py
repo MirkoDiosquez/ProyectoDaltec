@@ -1,3 +1,5 @@
+# Módulo de chat para la comunicación de hallazgos.
+# Permite consultar conversaciones por hallazgo y restringir acceso a participantes y admins.
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, NotFound
@@ -9,6 +11,7 @@ from apps.chat.serializers import ChatSerializer, ChatListSerializer, MensajeSer
 from apps.hallazgos.models import Hallazgo
 
 
+# ChatViewSet expone la conversación asociada a un hallazgo.
 class ChatViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ViewSet for accessing chat rooms associated with hallazgos.
@@ -22,6 +25,7 @@ class ChatViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = ChatSerializer
 
+    # get_object permite acceder al chat por el id del hallazgo, simplificando la URL.
     def get_object(self):
         """
         Override get_object to support lookup by hallazgo_id instead of chat_id.
@@ -38,6 +42,7 @@ class ChatViewSet(viewsets.ReadOnlyModelViewSet):
         except Chat.DoesNotExist:
             raise NotFound("Chat for this hallazgo does not exist.")
 
+    # check_object_permissions valida que el usuario participe del hallazgo o sea admin.
     def check_object_permissions(self, request, obj):
         """
         Custom permission check: user must be a participant or admin.

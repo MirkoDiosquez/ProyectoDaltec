@@ -51,13 +51,16 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // If already authenticated, go straight to hallazgos
+  // Cuando el usuario ya está autenticado, se redirige a la pantalla anterior
+  // o al listado de hallazgos para evitar que vuelva al login innecesariamente.
   if (isAuthenticated) {
     const from = location.state?.from?.pathname || "/hallazgos";
     navigate(from, { replace: true });
     return null;
   }
 
+  // handleSubmit valida el formulario, llama al servicio de autenticación y
+  // envia al usuario al destino correcto si la sesión se crea con éxito.
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
