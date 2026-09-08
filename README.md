@@ -302,4 +302,3 @@ Para reportar issues, consultar la documentación o contribuir:
 1. Revisa [ARCHITECTURE.md](docs/ARCHITECTURE.md) para entender el diseño
 2. Consulta [DEPLOYMENT.md](docs/DEPLOYMENT.md) para problemas de deployment
 3. Crea un issue en GitHub con descripción clara
-4. Contacta a DevOps: ops@daltec.com
