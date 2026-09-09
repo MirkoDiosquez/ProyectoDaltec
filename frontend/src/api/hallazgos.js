@@ -99,33 +99,6 @@ export async function uploadArchivo(id, file) {
   return data;
 }
 
-export async function listPorques(hallazgoId, params = {}) {
-  const { data } = await client.get(`${BASE}${hallazgoId}/porques/`, { params });
-  return data?.results || data;
-}
-
-export async function createPorque(hallazgoId, textoCausa) {
-  const { data } = await client.post(`${BASE}${hallazgoId}/porques/`, {
-    texto_causa: textoCausa,
-  });
-  return data;
-}
-
-export async function approvePorque(hallazgoId, porqueId) {
-  const { data } = await client.post(
-    `${BASE}${hallazgoId}/porques/${porqueId}/approve/`
-  );
-  return data;
-}
-
-export async function rejectPorque(hallazgoId, porqueId, observacion = "") {
-  const { data } = await client.post(
-    `${BASE}${hallazgoId}/porques/${porqueId}/reject/`,
-    { observacion }
-  );
-  return data;
-}
-
 /**
  * List solicitudes de cambio de responsable for a hallazgo (T110, T108).
  * GET /hallazgos/{hallazgo_id}/solicitudes-cambio-responsable/

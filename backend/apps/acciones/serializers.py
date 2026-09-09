@@ -5,6 +5,7 @@ from apps.acciones.models import Accion, SolicitudCierreAccion
 
 class AccionSerializer(serializers.ModelSerializer):
 	archivos = serializers.SerializerMethodField()
+	puede_gestionar_porques = serializers.SerializerMethodField()
 
 	class Meta:
 		model = Accion
@@ -17,6 +18,7 @@ class AccionSerializer(serializers.ModelSerializer):
 			"fecha_inicio",
 			"fecha_fin",
 			"archivos",
+			"puede_gestionar_porques",
 		]
 		read_only_fields = ["id", "hallazgo", "tipo", "estado", "archivos"]
 
@@ -30,6 +32,17 @@ class AccionSerializer(serializers.ModelSerializer):
 			}
 			for a in obj.archivos.all()
 		]
+
+	def get_puede_gestionar_porques(self, obj):
+		request = self.context.get("request")
+		user = getattr(request, "user", None)
+		if not user or not user.is_authenticated:
+			return False
+		if getattr(user, "is_admin", False):
+			return True
+		if obj.tipo != "CORRECTIVA":
+			return False
+		return obj.hallazgo.responsables.filter(pk=user.pk).exists()
 
 
 class AccionUpdateSerializer(serializers.Serializer):

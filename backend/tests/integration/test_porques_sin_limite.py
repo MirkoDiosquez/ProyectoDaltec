@@ -10,6 +10,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from apps.hallazgos.models import Hallazgo, TipoHallazgo
 from apps.analisis_cinco_porques.models import AnalisisCincoPorques
 from apps.catalogos.models import SectorCatalog
+from apps.acciones.models import Accion, TipoAccion
 
 User = get_user_model()
 
@@ -64,6 +65,11 @@ def hallazgo_con_responsable(db, admin_user, responsable_user, sector_proveedor)
     return hallazgo
 
 
+@pytest.fixture
+def accion_correctiva(hallazgo_con_responsable):
+    return Accion.objects.get(hallazgo=hallazgo_con_responsable, tipo=TipoAccion.CORRECTIVA)
+
+
 @pytest.mark.django_db
 class TestPorquesConLimiteAprobados:
     """Verify max 5 approved porqués per hallazgo."""
@@ -74,12 +80,12 @@ class TestPorquesConLimiteAprobados:
         return client
 
     def test_admin_can_create_only_up_to_5_aprobados(
-        self, api_client, admin_user, hallazgo_con_responsable
+        self, api_client, admin_user, hallazgo_con_responsable, accion_correctiva
     ):
         """Admin can create 5 approved porqués; 6th should fail with 400."""
         client = self._auth_client(api_client, admin_user)
         hallazgo_id = hallazgo_con_responsable.pk
-        url = f"/api/v1/hallazgos/{hallazgo_id}/porques/"
+        url = f"/api/v1/hallazgos/{hallazgo_id}/acciones/{accion_correctiva.id}/porques/"
 
         for i in range(1, 6):
             payload = {"texto_causa": f"Admin porqué #{i}: causa directa {i}"}
@@ -104,7 +110,7 @@ class TestPorquesConLimiteAprobados:
         assert len(list_response.data) == 5
 
     def test_admin_cannot_approve_when_hallazgo_already_has_5_aprobados(
-        self, api_client, admin_user, responsable_user, hallazgo_con_responsable
+        self, api_client, admin_user, responsable_user, hallazgo_con_responsable, accion_correctiva
     ):
         """If there are already 5 approved porqués, approving another pending one fails."""
         for i in range(1, 6):
@@ -126,7 +132,7 @@ class TestPorquesConLimiteAprobados:
         )
 
         client = self._auth_client(api_client, admin_user)
-        url = f"/api/v1/hallazgos/{hallazgo_con_responsable.pk}/porques/{pending.pk}/approve/"
+        url = f"/api/v1/hallazgos/{hallazgo_con_responsable.pk}/acciones/{accion_correctiva.id}/porques/{pending.pk}/approve/"
         response = client.post(url, format="json")
 
         assert response.status_code == 400
@@ -134,7 +140,7 @@ class TestPorquesConLimiteAprobados:
         assert pending.estado == "pendiente"
 
     def test_responsable_cannot_create_new_porque_after_5_aprobados(
-        self, api_client, admin_user, responsable_user, hallazgo_con_responsable
+        self, api_client, admin_user, responsable_user, hallazgo_con_responsable, accion_correctiva
     ):
         """Responsable cannot add more porqués once 5 approved already exist."""
         for i in range(1, 6):
@@ -148,7 +154,7 @@ class TestPorquesConLimiteAprobados:
             )
 
         client = self._auth_client(api_client, responsable_user)
-        url = f"/api/v1/hallazgos/{hallazgo_con_responsable.pk}/porques/"
+        url = f"/api/v1/hallazgos/{hallazgo_con_responsable.pk}/acciones/{accion_correctiva.id}/porques/"
         response = client.post(
             url,
             {"texto_causa": "Nueva causa de responsable"},

@@ -2,7 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 
 import {
+  approvePorqueAccion,
+  createPorqueAccion,
   getAccion,
+  listPorquesAccion,
+  rejectPorqueAccion,
   solicitarCierreAccion,
   updateAccion,
   uploadArchivoAccion,
@@ -35,6 +39,8 @@ export default function AccionDetailPage() {
   const [form, setForm] = useState({ descripcion: "", fecha_inicio: "", fecha_fin: "" });
   const [observacion, setObservacion] = useState("");
   const [archivo, setArchivo] = useState(null);
+  const [porques, setPorques] = useState([]);
+  const [nuevoPorque, setNuevoPorque] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -55,6 +61,13 @@ export default function AccionDetailPage() {
         fecha_inicio: data.fecha_inicio || "",
         fecha_fin: data.fecha_fin || "",
       });
+
+      if (data?.tipo === "CORRECTIVA") {
+        const porquesData = await listPorquesAccion(hallazgoId, id);
+        setPorques(Array.isArray(porquesData) ? porquesData : []);
+      } else {
+        setPorques([]);
+      }
     } catch (e) {
       setError(e?.response?.data?.detail || "No se pudo cargar la accion.");
     } finally {
@@ -67,6 +80,7 @@ export default function AccionDetailPage() {
   }, [refresh]);
 
   const puedeSolicitarCierre = useMemo(() => accion?.estado === "EN_PROGRESO", [accion?.estado]);
+  const canManagePorques = isAdmin || !!accion?.puede_gestionar_porques;
 
   const onGuardar = async (event) => {
     event.preventDefault();
@@ -116,6 +130,60 @@ export default function AccionDetailPage() {
       setSaving(false);
     }
   };
+
+  const onCreatePorque = async (event) => {
+    event.preventDefault();
+    const texto = nuevoPorque.trim();
+    if (!texto || !hallazgoId) return;
+
+    setSaving(true);
+    setError("");
+    try {
+      await createPorqueAccion(hallazgoId, id, texto);
+      setNuevoPorque("");
+      await refresh();
+    } catch (e) {
+      setError(e?.response?.data?.detail || "No se pudo crear el porque.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const onApprovePorque = async (porqueId) => {
+    if (!hallazgoId) return;
+    setSaving(true);
+    setError("");
+    try {
+      await approvePorqueAccion(hallazgoId, id, porqueId);
+      await refresh();
+    } catch (e) {
+      setError(e?.response?.data?.detail || "No se pudo aprobar el porque.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const onRejectPorque = async (porqueId) => {
+    if (!hallazgoId) return;
+    const motivo = window.prompt("Motivo de rechazo (opcional):", "") || "";
+    setSaving(true);
+    setError("");
+    try {
+      await rejectPorqueAccion(hallazgoId, id, porqueId, motivo);
+      await refresh();
+    } catch (e) {
+      setError(e?.response?.data?.detail || "No se pudo rechazar el porque.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const porquesAprobados = Array.isArray(porques)
+    ? porques.filter((p) => p.estado === "aprobado")
+    : [];
+  const porquesNoAprobados = Array.isArray(porques)
+    ? porques.filter((p) => p.estado !== "aprobado")
+    : [];
 
   if (loading) {
     return (
@@ -344,6 +412,99 @@ export default function AccionDetailPage() {
           </button>
         </div>
       </section>
+
+      {accion.tipo === "CORRECTIVA" && (
+        <section id="porques" style={cardStyle}>
+          <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 700, color: "#0f172a" }}>
+            Analisis de 5 porques
+          </h2>
+
+          {canManagePorques ? (
+            <form onSubmit={onCreatePorque} style={{ display: "grid", gap: 8 }}>
+              <textarea
+                rows={3}
+                value={nuevoPorque}
+                onChange={(event) => setNuevoPorque(event.target.value)}
+                placeholder="Describe la causa raiz..."
+                disabled={saving}
+                style={{ width: "100%", resize: "vertical", ...textareaStyle }}
+              />
+              <div>
+                <button type="submit" disabled={saving || !nuevoPorque.trim()} style={saving ? { ...btnPrimary, opacity: 0.6 } : btnPrimary}>
+                  Agregar porque
+                </button>
+              </div>
+            </form>
+          ) : (
+            <p style={{ margin: 0, color: "#64748b" }}>
+              Solo admin o responsables asignados pueden agregar porques.
+            </p>
+          )}
+
+          {porques.length > 0 ? (
+            <div style={{ display: "grid", gap: 10 }}>
+              {porquesAprobados.length > 0 ? (
+                porquesAprobados.map((p, idx) => (
+                  <div key={p.id} style={{ border: "1px solid #d1fae5", background: "#f0fdf4", borderRadius: 10, padding: "0.9rem" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                      <strong>Porque #{idx + 1}</strong>
+                      <span style={{ color: "#166534", fontWeight: 700 }}>Aprobado</span>
+                    </div>
+                    <p style={{ marginBottom: 0 }}>{p.texto_causa}</p>
+                  </div>
+                ))
+              ) : (
+                <p style={{ margin: 0, color: "#64748b" }}>Todavia no hay porques aprobados.</p>
+              )}
+
+              {porquesNoAprobados.length > 0 && (
+                <details>
+                  <summary style={{ cursor: "pointer", fontWeight: 600 }}>
+                    Ver porques pendientes/rechazados ({porquesNoAprobados.length})
+                  </summary>
+                  <div style={{ marginTop: 8, display: "grid", gap: 8 }}>
+                    {porquesNoAprobados.map((p) => (
+                      <div key={p.id} style={{ border: "1px solid #e2e8f0", borderRadius: 8, padding: "0.75rem", background: "#f8fafc" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                          <strong>Porque</strong>
+                          <span style={{ fontWeight: 700, color: p.estado === "rechazado" ? "#b91c1c" : "#92400e" }}>
+                            {p.estado}
+                          </span>
+                        </div>
+                        <p style={{ marginBottom: p.observacion_rechazo ? 6 : 0 }}>{p.texto_causa}</p>
+                        {p.observacion_rechazo && (
+                          <p style={{ margin: 0, color: "#991b1b", fontSize: "0.9rem" }}>
+                            Motivo rechazo: {p.observacion_rechazo}
+                          </p>
+                        )}
+                        {isAdmin && p.estado === "pendiente" && (
+                          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                            <button type="button" onClick={() => onApprovePorque(p.id)} disabled={saving} style={saving ? { ...btnPrimary, opacity: 0.6 } : btnPrimary}>
+                              Aprobar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onRejectPorque(p.id)}
+                              disabled={saving}
+                              style={saving ? { ...btnSecondary, opacity: 0.6 } : btnSecondary}
+                            >
+                              Rechazar
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              )}
+            </div>
+          ) : (
+            <p style={{ margin: 0, color: "#64748b" }}>
+              Todavia no hay porques cargados para esta accion correctiva.
+            </p>
+          )}
+        </section>
+      )}
     </main>
   );
 }

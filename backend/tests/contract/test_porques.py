@@ -7,6 +7,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from apps.hallazgos.models import Hallazgo, EstadoHallazgo, TipoHallazgo
 from apps.catalogos.models import SectorCatalog
 from apps.analisis_cinco_porques.models import AnalisisCincoPorques
+from apps.acciones.models import Accion, TipoAccion
 
 User = get_user_model()
 
@@ -34,8 +35,8 @@ def responsable_user(db):
 
 
 @pytest.fixture
-def hallazgo(db, admin_user):
-    sector, _ = SectorCatalog.objects.get_or_create(codigo="INTERNO", defaults={"nombre": "Interno"})
+def hallazgo(db, admin_user, responsable_user):
+    sector = SectorCatalog.objects.create(codigo="INTERNO", nombre="Interno")
     h = Hallazgo.objects.create(
         descripcion="Test hallazgo",
         ubicacion="Test",
@@ -48,18 +49,23 @@ def hallazgo(db, admin_user):
     return h
 
 
+@pytest.fixture
+def accion_correctiva(hallazgo):
+    return Accion.objects.get(hallazgo=hallazgo, tipo=TipoAccion.CORRECTIVA)
+
+
 @pytest.mark.django_db
 class TestAnalisisCincoPorquesContract:
     """Contract tests for porqué creation and approval."""
 
-    def test_responsable_creates_porque_pending(self, api_client, responsable_user, hallazgo):
+    def test_responsable_creates_porque_pending(self, api_client, responsable_user, hallazgo, accion_correctiva):
         """Test: Responsable creates porqué → estado=pendiente."""
         refresh = RefreshToken.for_user(responsable_user)
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
         
         payload = {"texto_causa": "Root cause analysis"}
         response = api_client.post(
-            f"/api/v1/hallazgos/{hallazgo.id}/porques/",
+            f"/api/v1/hallazgos/{hallazgo.id}/acciones/{accion_correctiva.id}/porques/",
             payload,
             format="json"
         )
@@ -68,14 +74,14 @@ class TestAnalisisCincoPorquesContract:
         assert response.json()["estado"] == "pendiente"
         assert response.json()["autor_tipo"] == "responsable"
 
-    def test_admin_creates_porque_approved(self, api_client, admin_user, hallazgo):
+    def test_admin_creates_porque_approved(self, api_client, admin_user, hallazgo, accion_correctiva):
         """Test: Admin creates porqué → estado=aprobado."""
         refresh = RefreshToken.for_user(admin_user)
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
         
         payload = {"texto_causa": "Root cause analysis"}
         response = api_client.post(
-            f"/api/v1/hallazgos/{hallazgo.id}/porques/",
+            f"/api/v1/hallazgos/{hallazgo.id}/acciones/{accion_correctiva.id}/porques/",
             payload,
             format="json"
         )
@@ -84,7 +90,7 @@ class TestAnalisisCincoPorquesContract:
         assert response.json()["estado"] == "aprobado"
         assert response.json()["autor_tipo"] == "admin"
 
-    def test_admin_approves_pending_porque(self, api_client, admin_user, responsable_user, hallazgo):
+    def test_admin_approves_pending_porque(self, api_client, admin_user, responsable_user, hallazgo, accion_correctiva):
         """Test: Admin approves pending porqué."""
         # Create as responsable
         porque = AnalisisCincoPorques.objects.create(
@@ -99,14 +105,14 @@ class TestAnalisisCincoPorquesContract:
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
         
         response = api_client.post(
-            f"/api/v1/hallazgos/{hallazgo.id}/porques/{porque.id}/approve/",
+            f"/api/v1/hallazgos/{hallazgo.id}/acciones/{accion_correctiva.id}/porques/{porque.id}/approve/",
             format="json"
         )
         
         assert response.status_code == 200
         assert response.json()["estado"] == "aprobado"
 
-    def test_admin_rejects_pending_porque(self, api_client, admin_user, responsable_user, hallazgo):
+    def test_admin_rejects_pending_porque(self, api_client, admin_user, responsable_user, hallazgo, accion_correctiva):
         """Test: Admin rejects pending porqué."""
         porque = AnalisisCincoPorques.objects.create(
             hallazgo=hallazgo,
@@ -121,7 +127,7 @@ class TestAnalisisCincoPorquesContract:
         
         payload = {"observacion": "Invalid analysis"}
         response = api_client.post(
-            f"/api/v1/hallazgos/{hallazgo.id}/porques/{porque.id}/reject/",
+            f"/api/v1/hallazgos/{hallazgo.id}/acciones/{accion_correctiva.id}/porques/{porque.id}/reject/",
             payload,
             format="json"
         )
@@ -135,7 +141,7 @@ class TestAnalisisCincoPorquesIntegration:
     """Integration test for complete porqué workflow."""
 
     def test_workflow_responsable_creates_admin_approves(
-        self, api_client, admin_user, responsable_user, hallazgo
+        self, api_client, admin_user, responsable_user, hallazgo, accion_correctiva
     ):
         """Workflow: Responsable creates → admin sees pending → admin approves."""
         # Step 1: Responsable creates
@@ -144,7 +150,7 @@ class TestAnalisisCincoPorquesIntegration:
         
         payload = {"texto_causa": "Root cause"}
         create_resp = api_client.post(
-            f"/api/v1/hallazgos/{hallazgo.id}/porques/",
+            f"/api/v1/hallazgos/{hallazgo.id}/acciones/{accion_correctiva.id}/porques/",
             payload,
             format="json"
         )
@@ -156,18 +162,18 @@ class TestAnalisisCincoPorquesIntegration:
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
         
         approve_resp = api_client.post(
-            f"/api/v1/hallazgos/{hallazgo.id}/porques/{porque_id}/approve/",
+            f"/api/v1/hallazgos/{hallazgo.id}/acciones/{accion_correctiva.id}/porques/{porque_id}/approve/",
             format="json"
         )
         assert approve_resp.status_code == 200
         assert approve_resp.json()["estado"] == "aprobado"
-        
-        # Step 3: Verify in hallazgo detail
+
+        # Step 3: Verify in corrective action porques list
         detail_resp = api_client.get(
-            f"/api/v1/hallazgos/{hallazgo.id}/",
+            f"/api/v1/hallazgos/{hallazgo.id}/acciones/{accion_correctiva.id}/porques/",
             format="json"
         )
         assert detail_resp.status_code == 200
-        porques = detail_resp.json()["porques"]
+        porques = detail_resp.json()
         assert len(porques) > 0
         assert porques[0]["estado"] == "aprobado"

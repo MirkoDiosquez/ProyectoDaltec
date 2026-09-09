@@ -40,9 +40,6 @@ class IsAdminUserTipo(IsAuthenticated):
         )
 
 
-# UserViewSet centraliza la gestión de usuarios en la API.
-# Permite crear, listar, consultar, editar y desactivar usuarios, además de
-# manejar acciones especiales como perfil propio y cambio de avatar.
 class UserViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -53,8 +50,6 @@ class UserViewSet(
 ):
     queryset = User.objects.all().order_by("apellido", "nombre", "dni")
 
-    # define qué permisos requiere cada acción: administradores gestionan
-    # usuarios y los usuarios autenticados pueden editar su perfil propio.
     def get_permissions(self):
         if self.action in ("me", "set_avatar", "list", "retrieve", "update", "partial_update"):
             return [IsAuthenticated()]
@@ -100,8 +95,6 @@ class UserViewSet(
         return Response(output.data, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=["get", "patch"])
-    # me devuelve el perfil del usuario actual y permite editarlo sin pedir un
-    # id en la URL, lo que facilita la pantalla de perfil del frontend.
     def me(self, request):
         user = request.user
         if request.method.lower() == "get":
@@ -119,8 +112,6 @@ class UserViewSet(
         data = UserDetailSerializer(updated_user, context={"request": request}).data
         return Response(data, status=status.HTTP_200_OK)
 
-    # set_avatar actualiza la foto de perfil del usuario autenticado sin
-    # requerir confirmar contraseña, simplificando la edición del avatar.
     @action(detail=False, methods=["patch"], url_path="me/avatar")
     def set_avatar(self, request):
         """PATCH /api/v1/usuarios/me/avatar/ — cambia el avatar sin requerir contraseña."""
@@ -204,8 +195,6 @@ class LoginView(APIView):
 
     permission_classes = [AllowAny]
 
-    # post valida la credencial del usuario y, si es correcta, entrega los
-    # tokens JWT que usarán el resto de la API y el frontend para autenticarse.
     def post(self, request):
         dni = request.data.get("dni")
         password = request.data.get("password")

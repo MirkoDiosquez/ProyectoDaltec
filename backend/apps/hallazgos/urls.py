@@ -3,7 +3,6 @@ from rest_framework.routers import DefaultRouter
 
 from apps.hallazgos.views import HallazgoViewSet
 from apps.solicitud_cambio_responsable.viewsets import SolicitudCambioResponsableViewSet
-from apps.analisis_cinco_porques.viewsets import AnalisisCincoPorquesViewSet
 
 router = DefaultRouter()
 router.register(r"", HallazgoViewSet, basename="hallazgo")
@@ -14,11 +13,6 @@ nested_router.register(
     r"solicitudes-cambio-responsable",
     SolicitudCambioResponsableViewSet,
     basename="solicitud_cambio_responsable"
-)
-nested_router.register(
-    r"porques",
-    AnalisisCincoPorquesViewSet,
-    basename="porque"
 )
 
 urlpatterns = [

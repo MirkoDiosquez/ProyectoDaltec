@@ -72,8 +72,6 @@ class HallazgoSerializer(serializers.ModelSerializer):
 	tipo_catalogo = TipoCatalogSerializer(read_only=True)
 	# Phase 4: Include external contact (read-only, only for RECLAMO_CLIENTE)
 	contacto_externo = ContactoExternoSerializer(read_only=True)
-	# Phase 5: Include porques (read-only, nested list)
-	porques = serializers.SerializerMethodField()
 	# Phase 6: Include attached files
 	archivos = serializers.SerializerMethodField()
 
@@ -96,18 +94,10 @@ class HallazgoSerializer(serializers.ModelSerializer):
 			"tipo_catalogo",
 			# Phase 4 fields
 			"contacto_externo",
-			# Phase 5 fields
-			"porques",
 			# Phase 6 fields
 			"archivos",
 		]
 		read_only_fields = fields
-	
-	def get_porques(self, obj):
-		"""Return list of porqués for this hallazgo."""
-		from apps.analisis_cinco_porques.serializers import AnalisisCincoPorquesSerializer
-		porques = obj.porques.all().order_by('-created_at')
-		return AnalisisCincoPorquesSerializer(porques, many=True).data
 
 	def get_archivos(self, obj):
 		"""Return list of files attached to this hallazgo (Phase 6)."""

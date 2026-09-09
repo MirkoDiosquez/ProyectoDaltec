@@ -28,6 +28,37 @@ export async function solicitarCierreAccion(hallazgoId, accionId, observacion = 
   return data;
 }
 
+export async function listPorquesAccion(hallazgoId, accionId, params = {}) {
+  const { data } = await client.get(
+    `/hallazgos/${hallazgoId}/acciones/${accionId}/porques/`,
+    { params }
+  );
+  return data?.results || data;
+}
+
+export async function createPorqueAccion(hallazgoId, accionId, textoCausa) {
+  const { data } = await client.post(
+    `/hallazgos/${hallazgoId}/acciones/${accionId}/porques/`,
+    { texto_causa: textoCausa }
+  );
+  return data;
+}
+
+export async function approvePorqueAccion(hallazgoId, accionId, porqueId) {
+  const { data } = await client.post(
+    `/hallazgos/${hallazgoId}/acciones/${accionId}/porques/${porqueId}/approve/`
+  );
+  return data;
+}
+
+export async function rejectPorqueAccion(hallazgoId, accionId, porqueId, observacion = "") {
+  const { data } = await client.post(
+    `/hallazgos/${hallazgoId}/acciones/${accionId}/porques/${porqueId}/reject/`,
+    { observacion }
+  );
+  return data;
+}
+
 export async function listSolicitudesCierre(params = {}) {
   const { data } = await client.get("/solicitudes-cierre/", { params });
   return data;

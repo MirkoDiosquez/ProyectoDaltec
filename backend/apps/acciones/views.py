@@ -16,6 +16,12 @@ from apps.acciones.serializers import (
 	AccionUpdateSerializer,
 	SolicitudCierreSerializer,
 )
+from apps.analisis_cinco_porques.models import AnalisisCincoPorques
+from apps.analisis_cinco_porques.serializers import (
+	AnalisisCincoPorquesCreateSerializer,
+	AnalisisCincoPorquesSerializer,
+)
+from apps.analisis_cinco_porques.services import AnalisisCincoPorquesService
 from apps.acciones.services import (
 	actualizar,
 	adjuntar_archivo,
@@ -29,6 +35,7 @@ from apps.acciones.services import (
 class AccionViewSet(viewsets.GenericViewSet):
 	permission_classes = [IsAuthenticated]
 	queryset = Accion.objects.select_related("hallazgo").prefetch_related("archivos")
+	serializer_class = AccionSerializer
 	parser_classes = [JSONParser, MultiPartParser, FormParser]
 
 	# get_queryset limita la consulta según el tipo de usuario y el hallazgo.
@@ -43,6 +50,11 @@ class AccionViewSet(viewsets.GenericViewSet):
 			return qs
 		if getattr(user, "is_empleado", False):
 			return qs.filter(hallazgo__responsables=user).distinct()
+		if getattr(user, "is_cliente", False):
+			return qs.filter(
+				hallazgo__cliente_asociado=user,
+				hallazgo__tipo="QUEJA_CLIENTE",
+			)
 		return qs.none()
 
 	def _translate(self, exc):
@@ -57,7 +69,20 @@ class AccionViewSet(viewsets.GenericViewSet):
 		accion = self.get_queryset().filter(pk=pk).first()
 		if not accion:
 			return Response({"detail": "Accion no encontrada."}, status=status.HTTP_404_NOT_FOUND)
-		return Response(AccionSerializer(accion).data, status=status.HTTP_200_OK)
+		return Response(self.get_serializer(accion).data, status=status.HTTP_200_OK)
+
+	def _require_correctiva(self, accion):
+		if accion.tipo != "CORRECTIVA":
+			raise ValidationError({"detail": "Los 5 porques solo aplican a la accion CORRECTIVA."})
+
+	def _get_porque_for_accion(self, accion, porque_id):
+		porque = AnalisisCincoPorques.objects.filter(
+			pk=porque_id,
+			hallazgo=accion.hallazgo,
+		).first()
+		if not porque:
+			raise ValidationError({"detail": "Porque no encontrado para esta accion."})
+		return porque
 
 	# partial_update actualiza los campos de una acción sin reemplazar toda la entidad.
 	def partial_update(self, request, hallazgo_id=None, pk=None):
@@ -73,7 +98,7 @@ class AccionViewSet(viewsets.GenericViewSet):
 		except Exception as exc:
 			self._translate(exc)
 
-		return Response(AccionSerializer(actualizada).data, status=status.HTTP_200_OK)
+		return Response(self.get_serializer(actualizada).data, status=status.HTTP_200_OK)
 
 	# upload_archivo agrega evidencia a la acción para respaldar la solución implementada.
 	@action(detail=True, methods=["post"], url_path="upload_archivo")
@@ -115,6 +140,74 @@ class AccionViewSet(viewsets.GenericViewSet):
 			self._translate(exc)
 
 		return Response(SolicitudCierreSerializer(solicitud).data, status=status.HTTP_201_CREATED)
+
+	@action(detail=True, methods=["get"], url_path="porques")
+	def list_porques(self, request, hallazgo_id=None, pk=None):
+		accion = self.get_queryset().filter(pk=pk).first()
+		if not accion:
+			return Response({"detail": "Accion no encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+		self._require_correctiva(accion)
+		porques = AnalisisCincoPorques.objects.filter(hallazgo=accion.hallazgo).order_by("-created_at")
+		return Response(AnalisisCincoPorquesSerializer(porques, many=True).data, status=status.HTTP_200_OK)
+
+	@action(detail=True, methods=["post"], url_path="porques")
+	def create_porque(self, request, hallazgo_id=None, pk=None):
+		accion = self.get_queryset().filter(pk=pk).first()
+		if not accion:
+			return Response({"detail": "Accion no encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+		self._require_correctiva(accion)
+		serializer = AnalisisCincoPorquesCreateSerializer(
+			data=request.data,
+			context={
+				"request": request,
+				"hallazgo": accion.hallazgo,
+			},
+		)
+		serializer.is_valid(raise_exception=True)
+		porque = serializer.save()
+		return Response(
+			AnalisisCincoPorquesSerializer(porque).data,
+			status=status.HTTP_201_CREATED,
+		)
+
+	@action(detail=True, methods=["post"], url_path=r"porques/(?P<porque_id>[^/.]+)/approve")
+	def approve_porque(self, request, hallazgo_id=None, pk=None, porque_id=None):
+		accion = self.get_queryset().filter(pk=pk).first()
+		if not accion:
+			return Response({"detail": "Accion no encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+		self._require_correctiva(accion)
+		if not getattr(request.user, "is_admin", False):
+			raise PermissionDenied("Only administrators can approve porques.")
+
+		porque = self._get_porque_for_accion(accion, porque_id)
+		try:
+			porque = AnalisisCincoPorquesService.approve(request.user, porque)
+		except DjangoValidationError as exc:
+			return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+		return Response(AnalisisCincoPorquesSerializer(porque).data, status=status.HTTP_200_OK)
+
+	@action(detail=True, methods=["post"], url_path=r"porques/(?P<porque_id>[^/.]+)/reject")
+	def reject_porque(self, request, hallazgo_id=None, pk=None, porque_id=None):
+		accion = self.get_queryset().filter(pk=pk).first()
+		if not accion:
+			return Response({"detail": "Accion no encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+		self._require_correctiva(accion)
+		if not getattr(request.user, "is_admin", False):
+			raise PermissionDenied("Only administrators can reject porques.")
+
+		porque = self._get_porque_for_accion(accion, porque_id)
+		observacion = request.data.get("observacion", "")
+		try:
+			porque = AnalisisCincoPorquesService.reject(request.user, porque, observacion)
+		except DjangoValidationError as exc:
+			return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+		return Response(AnalisisCincoPorquesSerializer(porque).data, status=status.HTTP_200_OK)
 
 
 # SolicitudCierreViewSet gestiona las aprobaciones y rechazos de cierre de acciones.
