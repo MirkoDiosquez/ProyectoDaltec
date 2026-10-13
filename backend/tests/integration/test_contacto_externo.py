@@ -42,9 +42,9 @@ def empleado_user(db):
 @pytest.fixture
 def setup_sectors(db):
     """Create sectors."""
-    SectorCatalog.objects.get_or_create(
+    SectorCatalog.objects.create(
         codigo="RECLAMO_CLIENTE",
-        defaults={"nombre": "Reclamo de Cliente"},
+        nombre="Reclamo de Cliente",
     )
 
 
@@ -61,6 +61,7 @@ class TestContactoExternoIntegration:
 
         # Step 1: Create hallazgo with contact
         create_payload = {
+            "descripcion_general": "Reclamo por defecto crítico",
             "descripcion": "Cliente reclama defecto crítico",
             "ubicacion": "Ubicacion cliente",
             "tipo": "QUEJA_CLIENTE",
@@ -93,6 +94,7 @@ class TestContactoExternoIntegration:
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
 
         payload = {
+            "descripcion_general": "Hallazgo reportado por empleado",
             "descripcion": "Hallazgo empleado",
             "ubicacion": "Ubicacion",
             "tipo": "NO_CONFORMIDAD",
@@ -114,6 +116,7 @@ class TestContactoExternoIntegration:
 
         # Create without contact
         payload1 = {
+            "descripcion_general": "Hallazgo sin datos de contacto",
             "descripcion": "Hallazgo sin contacto",
             "ubicacion": "Ubicacion",
             "tipo": "QUEJA_CLIENTE",
@@ -132,6 +135,7 @@ class TestContactoExternoIntegration:
 
         # Create hallazgo with contact
         payload1 = {
+            "descripcion_general": "Hallazgo con contacto externo",
             "descripcion": "Con contacto",
             "ubicacion": "Ubicacion",
             "tipo": "QUEJA_CLIENTE",

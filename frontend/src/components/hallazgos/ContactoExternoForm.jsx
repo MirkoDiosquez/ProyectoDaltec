@@ -2,9 +2,7 @@
  * ContactoExternoForm.jsx - Form for external contact data (Phase 4 T047)
  * 
  * Renders fields for nombre_empresa, telefono, email.
- * Visible only when:
- * - sector === "RECLAMO_CLIENTE"
- * - user.is_admin === true
+ * Visible when sector === "RECLAMO_CLIENTE"
  */
 import React from "react";
 
@@ -16,11 +14,10 @@ function ContactoExternoForm({
   onTelefonoChange,
   onEmailChange,
   sectorCodigo,
-  isAdmin,
   disabled,
 }) {
-  // Show form only if sector = RECLAMO_CLIENTE and user is admin
-  if (sectorCodigo !== "RECLAMO_CLIENTE" || !isAdmin) {
+  // Show form only if sector = RECLAMO_CLIENTE
+  if (sectorCodigo !== "RECLAMO_CLIENTE") {
     return null;
   }
 

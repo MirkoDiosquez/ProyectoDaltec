@@ -249,6 +249,12 @@ El sistema cuenta con un panel de notificaciones que muestra contenido relevante
 - **FR-044**: Cuando un mensaje de chat contiene la etiqueta "#urgente" (case-insensitive; acepta #urgente, #Urgente, #URGENTE, etc.), TODOS los participantes activos del chat (incluyendo el Admin en modo lectura) DEBEN recibir una notificación de urgencia, independientemente de si están conectados al chat en ese momento.
 - **FR-045**: Las notificaciones de urgencia por "#urgente" DEBEN llegar a los destinatarios en tiempo real cuando están conectados al sistema.
 
+#### Descripción General del Hallazgo
+
+- **FR-046**: El hallazgo DEBE incluir una descripción general obligatoria al crearse, visible en el detalle del hallazgo.
+- **FR-047**: La lista de hallazgos DEBE mostrar la descripción general en lugar de la descripción detallada.
+- **FR-048**: El Admin DEBE poder editar la descripción general, la descripción, la ubicación y la clasificación por tipo y sector/subsección de un hallazgo. El tipo solo puede cambiarse mientras el hallazgo está PENDIENTE. Los cambios NO DEBEN modificar el estado ni los responsables, que se administran mediante sus flujos correspondientes.
+
 ### Key Entities
 
 - **Sector**: Clasificación de origen del hallazgo. Valores cerrados: "Reclamo cliente", "Proveedor", "Interno". Asociado a un hallazgo. Dimensión ortogonal al campo `tipo` existente (NO_CONFORMIDAD, OPORTUNIDAD_MEJORA, QUEJA_CLIENTE); ambos campos coexisten de forma independiente.

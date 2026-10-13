@@ -5,6 +5,8 @@ import { getMe, getUserById, setAvatar, updateMe, updateUser } from "../../api/u
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useCatalogoContext } from "../../context/CatalogoContext.jsx";
 
+const PROTECTED_USER_DNI = 48464317;
+
 const AVATARS = [
   { key: "pato",         label: "Pato" },
   { key: "rinoceronte",  label: "Rinoceronte" },
@@ -69,7 +71,6 @@ const INITIAL_FORM = {
   tipo: "EMPLEADO",
   sector: "",
   empresa: "EMPRESA_A",
-  password_confirmacion: "",
   new_password: "",
   avatar: "",
 };
@@ -83,6 +84,9 @@ export default function PerfilUsuarioPage() {
   const [avatarSaving, setAvatarSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [confirmError, setConfirmError] = useState("");
+  const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
   const [profile, setProfile] = useState(null);
   const [form, setForm] = useState(INITIAL_FORM);
 
@@ -91,8 +95,6 @@ export default function PerfilUsuarioPage() {
     if (!id) return true;
     return Number(id) === loggedUser?.id;
   }, [id, loggedUser?.id]);
-
-  const canChangeRole = isAdmin && isSelfProfile;
   const sectorOptions = useMemo(() => getSubseccionesBySetor("INTERNO"), [getSubseccionesBySetor]);
 
   useEffect(() => {
@@ -114,7 +116,6 @@ export default function PerfilUsuarioPage() {
           tipo: data.tipo ?? "EMPLEADO",
           sector: data.sector ?? "",
           empresa: data.empresa ?? "EMPRESA_A",
-          password_confirmacion: "",
           new_password: "",
           avatar: data.avatar ?? "",
         });
@@ -134,6 +135,12 @@ export default function PerfilUsuarioPage() {
   const onChange = (event) => {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const closeConfirmSave = () => {
+    setConfirmSaveOpen(false);
+    setConfirmPassword("");
+    setConfirmError("");
   };
 
   const onAvatarSelect = async (avatarKey) => {
@@ -156,11 +163,29 @@ export default function PerfilUsuarioPage() {
     }
   };
 
-  const onSubmit = async (event) => {
+  const onSubmit = (event) => {
     event.preventDefault();
+    if (!canEditProfile || saving) {
+      return;
+    }
+
+    setError("");
+    setSuccess("");
+    setConfirmPassword("");
+    setConfirmError("");
+    setConfirmSaveOpen(true);
+  };
+
+  const confirmSaveProfile = async () => {
+    if (!confirmPassword.trim()) {
+      setConfirmError("Ingresá tu contraseña para confirmar los cambios.");
+      return;
+    }
+
     setSaving(true);
     setError("");
     setSuccess("");
+    setConfirmError("");
 
     const payload = {
       dni: Number(form.dni),
@@ -168,7 +193,7 @@ export default function PerfilUsuarioPage() {
       apellido: form.apellido.trim(),
       sexo: form.sexo,
       email: form.email.trim(),
-      password_confirmacion: form.password_confirmacion,
+      password_confirmacion: confirmPassword,
     };
 
     if (canChangeRole) {
@@ -192,7 +217,6 @@ export default function PerfilUsuarioPage() {
       setProfile(updated);
       setForm((prev) => ({
         ...prev,
-        password_confirmacion: "",
         new_password: "",
         tipo: updated.tipo,
         sector: updated.sector ?? "",
@@ -211,8 +235,9 @@ export default function PerfilUsuarioPage() {
         });
       }
       setSuccess("Perfil actualizado correctamente.");
+      closeConfirmSave();
     } catch (apiError) {
-      setError(getErrorMessage(apiError));
+      setConfirmError(getErrorMessage(apiError));
     } finally {
       setSaving(false);
     }
@@ -225,6 +250,11 @@ export default function PerfilUsuarioPage() {
       </main>
     );
   }
+
+  const isProtectedProfile = Number(profile?.dni) === PROTECTED_USER_DNI;
+  const canEditProfile = isSelfProfile || (isAdmin && !isProtectedProfile);
+  const canChangeRole = isAdmin && !isProtectedProfile;
+  const canChangeAvatar = isSelfProfile && !isProtectedProfile;
 
   const currentTipo = canChangeRole ? form.tipo : profile?.tipo;
 
@@ -315,7 +345,7 @@ export default function PerfilUsuarioPage() {
           </span>
         </div>
         <p style={{ margin: 0, color: "rgba(255,255,255,0.65)", fontSize: "0.82rem" }}>
-          Toda modificación requiere contraseña de confirmación
+          Toda modificación requiere confirmación desde una ventana emergente
         </p>
       </div>
 
@@ -349,20 +379,20 @@ export default function PerfilUsuarioPage() {
                 type="button"
                 title={label}
                 onClick={() => onAvatarSelect(key)}
-                disabled={avatarSaving}
+                disabled={!canChangeAvatar || avatarSaving}
                 style={{
                   padding: 4,
                   borderRadius: 12,
                   border: selected ? "2.5px solid #1d4ed8" : "2.5px solid transparent",
                   background: selected ? "#eff6ff" : "#f8fafc",
-                  cursor: avatarSaving ? "not-allowed" : "pointer",
+                  cursor: !canChangeAvatar || avatarSaving ? "not-allowed" : "pointer",
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
                   gap: 4,
                   transition: "border-color 0.15s, background 0.15s",
                   outline: "none",
-                  opacity: avatarSaving ? 0.6 : 1,
+                  opacity: !canChangeAvatar || avatarSaving ? 0.6 : 1,
                 }}
               >
                 <img
@@ -382,18 +412,18 @@ export default function PerfilUsuarioPage() {
             type="button"
             title="Sin avatar"
             onClick={() => onAvatarSelect("")}
-            disabled={avatarSaving}
+            disabled={!canChangeAvatar || avatarSaving}
             style={{
               padding: 4,
               borderRadius: 12,
               border: form.avatar === "" ? "2.5px solid #1d4ed8" : "2.5px solid transparent",
               background: form.avatar === "" ? "#eff6ff" : "#f8fafc",
-              cursor: avatarSaving ? "not-allowed" : "pointer",
+              cursor: !canChangeAvatar || avatarSaving ? "not-allowed" : "pointer",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               gap: 4,
-              opacity: avatarSaving ? 0.6 : 1,
+              opacity: !canChangeAvatar || avatarSaving ? 0.6 : 1,
             }}
           >
             <div
@@ -437,6 +467,7 @@ export default function PerfilUsuarioPage() {
               onChange={onChange}
               min="1"
               required
+              disabled={!canEditProfile}
               style={inputStyle}
             />
           </label>
@@ -449,6 +480,7 @@ export default function PerfilUsuarioPage() {
               value={form.nombre}
               onChange={onChange}
               required
+              disabled={!canEditProfile}
               style={inputStyle}
             />
           </label>
@@ -461,13 +493,14 @@ export default function PerfilUsuarioPage() {
               value={form.apellido}
               onChange={onChange}
               required
+              disabled={!canEditProfile}
               style={inputStyle}
             />
           </label>
 
           <label style={labelStyle}>
             <span style={{ fontWeight: 600, fontSize: "0.875rem", color: "#374151" }}>Sexo</span>
-            <select name="sexo" value={form.sexo} onChange={onChange} style={inputStyle}>
+            <select name="sexo" value={form.sexo} onChange={onChange} style={inputStyle} disabled={!canEditProfile}>
               <option value="M">Masculino</option>
               <option value="F">Femenino</option>
               <option value="O">Otro</option>
@@ -482,6 +515,7 @@ export default function PerfilUsuarioPage() {
               value={form.email}
               onChange={onChange}
               required
+              disabled={!canEditProfile}
               style={inputStyle}
             />
           </label>
@@ -521,6 +555,7 @@ export default function PerfilUsuarioPage() {
                 value={form.sector}
                 onChange={onChange}
                 required
+                disabled={!canEditProfile}
                 style={inputStyle}
               >
                 <option value="">Selecciona un sector interno</option>
@@ -544,6 +579,7 @@ export default function PerfilUsuarioPage() {
                 value={form.empresa}
                 onChange={onChange}
                 required
+                disabled={!canEditProfile}
                 style={inputStyle}
               >
                 <option value="EMPRESA_A">Empresa A</option>
@@ -576,20 +612,7 @@ export default function PerfilUsuarioPage() {
               value={form.new_password}
               onChange={onChange}
               minLength={6}
-              style={inputStyle}
-            />
-          </label>
-
-          <label style={labelStyle}>
-            <span style={{ fontWeight: 600, fontSize: "0.875rem", color: "#374151" }}>
-              Contraseña de confirmación
-            </span>
-            <input
-              type="password"
-              name="password_confirmacion"
-              value={form.password_confirmacion}
-              onChange={onChange}
-              required
+              disabled={!canEditProfile}
               style={inputStyle}
             />
           </label>
@@ -630,6 +653,23 @@ export default function PerfilUsuarioPage() {
         )}
 
         {/* Actions */}
+        {isProtectedProfile && (
+          <p
+            style={{
+              marginTop: "1.25rem",
+              marginBottom: 0,
+              padding: "0.75rem 1rem",
+              borderRadius: 8,
+              background: "#fff7ed",
+              border: "1px solid #fdba74",
+              color: "#9a3412",
+              fontSize: "0.875rem",
+            }}
+          >
+            La cuenta con DNI 48464317 está protegida y no puede ser modificada.
+          </p>
+        )}
+
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: "1.75rem" }}>
           <Link
             to={isAdmin ? "/usuarios" : "/"}
@@ -648,16 +688,16 @@ export default function PerfilUsuarioPage() {
           </Link>
           <button
             type="submit"
-            disabled={saving}
+            disabled={!canEditProfile || saving}
             style={{
               padding: "0.6rem 1.4rem",
               borderRadius: 8,
               border: "none",
-              background: saving ? "#93c5fd" : "#1d4ed8",
+              background: !canEditProfile || saving ? "#93c5fd" : "#1d4ed8",
               color: "#fff",
               fontWeight: 600,
               fontSize: "0.9rem",
-              cursor: saving ? "not-allowed" : "pointer",
+              cursor: !canEditProfile || saving ? "not-allowed" : "pointer",
               transition: "background 0.15s ease",
             }}
           >
@@ -665,6 +705,103 @@ export default function PerfilUsuarioPage() {
           </button>
         </div>
       </form>
+
+      {confirmSaveOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.55)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "1rem",
+            zIndex: 200,
+          }}
+          onClick={closeConfirmSave}
+        >
+          <div style={{ width: "100%", maxWidth: 500, display: "grid", gap: 10 }} onClick={(e) => e.stopPropagation()}>
+            {confirmError && (
+              <p
+                style={{
+                  margin: 0,
+                  padding: "0.75rem 1rem",
+                  borderRadius: 10,
+                  background: "#fef2f2",
+                  border: "1px solid #fecaca",
+                  color: "#b91c1c",
+                  fontSize: "0.9rem",
+                  boxShadow: "0 10px 20px rgba(15,23,42,0.15)",
+                }}
+              >
+                {confirmError}
+              </p>
+            )}
+            <div
+              style={{
+                width: "100%",
+                borderRadius: 12,
+                border: "1px solid #e2e8f0",
+                background: "#fff",
+                padding: "1rem",
+                boxShadow: "0 20px 40px rgba(15,23,42,0.25)",
+                display: "grid",
+                gap: 10,
+              }}
+              role="dialog"
+              aria-modal="true"
+            >
+              <h3 style={{ margin: 0, color: "#0f172a" }}>Confirmar cambios de perfil</h3>
+              <p style={{ margin: 0, color: "#334155", lineHeight: 1.45 }}>
+                Vas a guardar los cambios del perfil de {form.nombre} {form.apellido}.
+              </p>
+              <label style={{ display: "grid", gap: 6, marginTop: 4 }}>
+                <span style={{ fontWeight: 600, color: "#334155" }}>Contraseña de confirmación</span>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  style={inputStyle}
+                  placeholder="Ingresá tu contraseña actual"
+                  autoFocus
+                />
+              </label>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
+                <button
+                  type="button"
+                  onClick={closeConfirmSave}
+                  disabled={saving}
+                  style={{
+                    padding: "0.45rem 0.8rem",
+                    borderRadius: 8,
+                    border: "1px solid #cbd5e1",
+                    background: "#fff",
+                    color: "#334155",
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmSaveProfile}
+                  disabled={saving}
+                  style={{
+                    padding: "0.45rem 0.8rem",
+                    borderRadius: 8,
+                    border: "none",
+                    background: "#1d4ed8",
+                    color: "#fff",
+                    fontWeight: 700,
+                    opacity: saving ? 0.7 : 1,
+                  }}
+                >
+                  {saving ? "Guardando..." : "Sí, guardar"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

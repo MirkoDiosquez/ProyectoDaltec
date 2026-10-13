@@ -11,6 +11,13 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
+PROTECTED_USER_DNI = 48464317
+
+
+def is_protected_user(user) -> bool:
+    return bool(user and getattr(user, "dni", None) == PROTECTED_USER_DNI)
+
+
 class UserTipo(models.TextChoices):
     ADMIN = "ADMIN", "Administrador"
     EMPLEADO = "EMPLEADO", "Empleado"
@@ -96,6 +103,10 @@ class CustomUser(AbstractUser):
     @property
     def is_cliente(self) -> bool:
         return self.tipo == UserTipo.CLIENTE
+
+    @property
+    def is_protected(self) -> bool:
+        return is_protected_user(self)
 
 
 class EmpleadoProfile(models.Model):

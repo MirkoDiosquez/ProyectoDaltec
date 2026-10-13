@@ -40,6 +40,10 @@ class Hallazgo(models.Model):
     FR-022: Auto-closes when all 3 Accion instances reach CERRADA.
     """
 
+    descripcion_general = models.TextField(
+        default="",
+        verbose_name="Descripción general",
+    )
     descripcion = models.TextField(verbose_name="Descripción")
     ubicacion = models.CharField(max_length=200, verbose_name="Ubicación")
     tipo = models.CharField(

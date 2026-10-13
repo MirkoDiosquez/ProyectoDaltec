@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { connectChat, sendMessage, disconnect, isConnected, getChatByHallazgo } from "../../api/chat.js";
+import { connectChat, deleteMessage, disconnect, isConnected, getChatByHallazgo } from "../../api/chat.js";
 import { getHallazgo } from "../../api/hallazgos.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useNotificaciones } from "../../context/NotificacionContext.jsx";
@@ -105,6 +105,11 @@ export default function ChatPage() {
           onMessageReceived: (mensaje) => {
             if (isMountedRef.current) setMessages((prev) => [...prev, mensaje]);
           },
+          onMessageDeleted: (mensaje) => {
+            if (isMountedRef.current) {
+              setMessages((prev) => prev.map((item) => (item.id === mensaje.id ? { ...item, ...mensaje } : item)));
+            }
+          },
           onParticipantRemoved: (detail) => {
             if (isMountedRef.current) {
               setConnectionError(detail);
@@ -157,6 +162,18 @@ export default function ChatPage() {
       }
     };
   }, [hallazgoId, accessToken]);
+
+  const handleDeleteMessage = useCallback(
+    (messageId) => {
+      try {
+        deleteMessage(wsRef.current || ws, messageId);
+        setComposerError("");
+      } catch {
+        setComposerError("No se pudo solicitar la eliminación del mensaje.");
+      }
+    },
+    [ws]
+  );
 
   // Render
   return (
@@ -242,7 +259,15 @@ export default function ChatPage() {
             {loadingHistory ? "Cargando historial..." : "No hay mensajes aún. ¡Empezá la conversación!"}
           </p>
         ) : (
-          messages.map((msg, idx) => <ChatMessage key={idx} mensaje={msg} index={idx} />)
+          messages.map((msg, idx) => (
+            <ChatMessage
+              key={msg.id || idx}
+              mensaje={msg}
+              index={idx}
+              isAdmin={isAdmin}
+              onDeleteMessage={handleDeleteMessage}
+            />
+          ))
         )}
       </div>
 

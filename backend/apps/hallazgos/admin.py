@@ -8,6 +8,7 @@ class HallazgoAdmin(admin.ModelAdmin):
     list_display = ["id", "tipo", "estado", "creado_por", "cliente_asociado", "fecha_creacion"]
     list_filter = ["tipo", "estado", "cliente_asociado"]
     search_fields = [
+        "descripcion_general",
         "descripcion",
         "ubicacion",
         "creado_por__nombre",

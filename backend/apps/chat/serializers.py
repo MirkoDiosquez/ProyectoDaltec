@@ -34,12 +34,12 @@ class ParticipanteSerializer(serializers.Serializer):
 class MensajeSerializer(serializers.ModelSerializer):
     """Serializer for individual messages in a chat with archivos support (T083)."""
     autor = serializers.SerializerMethodField()
-    archivos = ArchivoSerializer(many=True, read_only=True)
+    archivos = serializers.SerializerMethodField()
 
     class Meta:
         model = Mensaje
-        fields = ["id", "chat_id", "contenido", "fecha_hora", "autor", "archivos"]
-        read_only_fields = ["id", "chat_id", "fecha_hora", "autor", "archivos"]
+        fields = ["id", "chat_id", "contenido", "fecha_hora", "autor", "archivos", "eliminado_por_admin"]
+        read_only_fields = ["id", "chat_id", "fecha_hora", "autor", "archivos", "eliminado_por_admin"]
 
     def get_autor(self, obj):
         """Serialize the autor (user) information."""
@@ -49,6 +49,11 @@ class MensajeSerializer(serializers.ModelSerializer):
             "apellido": obj.autor.apellido,
             "tipo": obj.autor.tipo,
         }
+
+    def get_archivos(self, obj):
+        if obj.eliminado_por_admin:
+            return []
+        return ArchivoSerializer(obj.archivos.all(), many=True).data
 
 
 class ChatSerializer(serializers.ModelSerializer):

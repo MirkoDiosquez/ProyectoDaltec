@@ -38,6 +38,7 @@ This document defines all Django ORM models (new and extended) required for the 
 │  │Hallazgo (Extended)                         │                 │
 │  ├────────────────────────────────────────────┤                 │
 │  │id (PK)                                     │                 │
+│  │descripcion_general                         │                 │
 │  │descripcion                                 │                 │
 │  │ubicacion                                   │                 │
 │  │creado_por_id (FK: Usuario)                 │                 │
@@ -272,6 +273,7 @@ from catalogos.models import SectorCatalog, SubsectionCatalog, TipoCatalog
 
 class Hallazgo(models.Model):
     # Existing fields
+    descripcion_general = models.TextField()
     descripcion = models.TextField()
     ubicacion = models.CharField(max_length=255, blank=True)
     creado_por = models.ForeignKey(

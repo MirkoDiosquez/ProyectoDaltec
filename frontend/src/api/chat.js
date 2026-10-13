@@ -4,6 +4,7 @@
  * Provides functions to:
  * - connectChat(hallazgoId, token, handlers): Connect to chat WebSocket
  * - sendMessage(ws, contenido): Send a message to the chat
+ * - deleteMessage(ws, messageId): Request admin deletion of a message
  * - disconnect(ws): Close the WebSocket connection
  *
  * WebSocket URL pattern: ws://host/ws/chat/{hallazgo_id}/?token={access_token}
@@ -37,6 +38,7 @@ const getWsHost = () => {
  * @param {Object} handlers - Event handlers
  * @param {Function} handlers.onMessageReceived - Called with (mensaje) when message arrives
  * @param {Function} handlers.onParticipantRemoved - Called with (detail) when user removed
+ * @param {Function} handlers.onMessageDeleted - Called with (mensaje) when an admin deletes a message
  * @param {Function} handlers.onError - Called with (error) on errors
  * @param {Function} handlers.onConnected - Called when connection succeeds
  * @param {Function} handlers.onDisconnected - Called when connection closes
@@ -66,6 +68,8 @@ export const connectChat = (hallazgoId, token, handlers = {}) => {
 
           if (data.type === "chat.message" && handlers.onMessageReceived) {
             handlers.onMessageReceived(data.mensaje);
+          } else if (data.type === "chat.message_deleted" && handlers.onMessageDeleted) {
+            handlers.onMessageDeleted(data.mensaje);
           } else if (data.type === "ping") {
             // Respond to server keepalive ping with pong
             ws.send(JSON.stringify({ type: "pong" }));
@@ -138,6 +142,19 @@ export const sendMessage = (ws, contenido) => {
 
   ws.send(JSON.stringify(message));
   console.log("[Chat] Message sent:", contenido);
+};
+
+export const deleteMessage = (ws, messageId) => {
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    throw new Error("WebSocket is not connected");
+  }
+
+  ws.send(
+    JSON.stringify({
+      type: "chat.delete_message",
+      message_id: messageId,
+    })
+  );
 };
 
 /**

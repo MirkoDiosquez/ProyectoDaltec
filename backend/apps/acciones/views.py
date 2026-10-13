@@ -209,6 +209,25 @@ class AccionViewSet(viewsets.GenericViewSet):
 
 		return Response(AnalisisCincoPorquesSerializer(porque).data, status=status.HTTP_200_OK)
 
+	@action(detail=True, methods=["post"], url_path=r"porques/(?P<porque_id>[^/.]+)/unapprove")
+	def unapprove_porque(self, request, hallazgo_id=None, pk=None, porque_id=None):
+		accion = self.get_queryset().filter(pk=pk).first()
+		if not accion:
+			return Response({"detail": "Accion no encontrada."}, status=status.HTTP_404_NOT_FOUND)
+
+		self._require_correctiva(accion)
+		if not getattr(request.user, "is_admin", False):
+			raise PermissionDenied("Only administrators can revoke porqué approval.")
+
+		porque = self._get_porque_for_accion(accion, porque_id)
+		observacion = request.data.get("observacion", "")
+		try:
+			porque = AnalisisCincoPorquesService.unapprove(request.user, porque, observacion)
+		except DjangoValidationError as exc:
+			return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+		return Response(AnalisisCincoPorquesSerializer(porque).data, status=status.HTTP_200_OK)
+
 
 # SolicitudCierreViewSet gestiona las aprobaciones y rechazos de cierre de acciones.
 class SolicitudCierreViewSet(viewsets.GenericViewSet):

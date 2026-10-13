@@ -20,7 +20,7 @@ const employeeSteps = [
   {
     title: "Entrar al chat del hallazgo",
     description:
-      "Abre el detalle de un hallazgo y entra al chat para coordinar acciones, enviar mensajes y adjuntar archivos.",
+      "Abre el detalle del hallazgo y entra al chat para coordinar acciones y adjuntar archivos. Si el mensaje requiere atencion prioritaria, incluye #urgente; se notificara a los participantes y administradores.",
   },
   {
     title: "Consultar notificaciones",

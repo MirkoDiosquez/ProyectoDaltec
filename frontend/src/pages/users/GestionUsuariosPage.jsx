@@ -5,6 +5,8 @@ import { createUser, deleteUser, listUsers, setUserActive, updateUser } from "..
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useCatalogoContext } from "../../context/CatalogoContext.jsx";
 
+const PROTECTED_USER_DNI = 48464317;
+
 const tableCell = {
   borderBottom: "1px solid #e2e8f0",
   padding: "0.6rem 0.5rem",
@@ -60,7 +62,8 @@ export default function GestionUsuariosPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [adminPassword, setAdminPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [confirmError, setConfirmError] = useState("");
   const [roleDrafts, setRoleDrafts] = useState({});
   const [savingUserId, setSavingUserId] = useState(null);
   const [statusChangingUserId, setStatusChangingUserId] = useState(null);
@@ -149,20 +152,38 @@ export default function GestionUsuariosPage() {
     }));
   };
 
-  const onApplyRole = async (targetUser) => {
-    if (!adminPassword.trim()) {
-      setError("Ingresá tu contraseña de administrador para confirmar cambios.");
+  const closeConfirmAction = () => {
+    setConfirmAction(null);
+    setConfirmPassword("");
+    setConfirmError("");
+  };
+
+  const onApplyRole = (targetUser) => {
+    setError("");
+    setSuccess("");
+    setConfirmPassword("");
+    setConfirmError("");
+    setConfirmAction({
+      type: "change-role",
+      targetUser,
+    });
+  };
+
+  const submitRoleChange = async (targetUser) => {
+    if (!confirmPassword.trim()) {
+      setConfirmError("Ingresá tu contraseña de administrador para confirmar cambios.");
       return;
     }
 
     setSavingUserId(targetUser.id);
     setError("");
     setSuccess("");
+    setConfirmError("");
 
     const draft = roleDrafts[targetUser.id] || { tipo: targetUser.tipo };
     const payload = {
       tipo: draft.tipo,
-      password_confirmacion: adminPassword,
+      password_confirmacion: confirmPassword,
     };
 
     if (draft.tipo === "EMPLEADO") {
@@ -192,8 +213,9 @@ export default function GestionUsuariosPage() {
         },
       }));
       setSuccess(`Rol actualizado para ${updated.nombre} ${updated.apellido}.`);
+      closeConfirmAction();
     } catch (apiError) {
-      setError(getErrorMessage(apiError));
+      setConfirmError(getErrorMessage(apiError));
     } finally {
       setSavingUserId(null);
     }
@@ -254,11 +276,10 @@ export default function GestionUsuariosPage() {
   };
 
   const onToggleUserStatus = (targetUser) => {
-    if (!adminPassword.trim()) {
-      setError("Ingresá tu contraseña de administrador para confirmar cambios.");
-      return;
-    }
-
+    setError("");
+    setSuccess("");
+    setConfirmPassword("");
+    setConfirmError("");
     setConfirmAction({
       type: "toggle-status",
       targetUser,
@@ -267,11 +288,10 @@ export default function GestionUsuariosPage() {
   };
 
   const onDeleteUser = (targetUser) => {
-    if (!adminPassword.trim()) {
-      setError("Ingresá tu contraseña de administrador para confirmar cambios.");
-      return;
-    }
-
+    setError("");
+    setSuccess("");
+    setConfirmPassword("");
+    setConfirmError("");
     setConfirmAction({
       type: "delete",
       targetUser,
@@ -285,6 +305,17 @@ export default function GestionUsuariosPage() {
 
     setError("");
     setSuccess("");
+    setConfirmError("");
+
+    if (!confirmPassword.trim()) {
+      setConfirmError("Ingresá tu contraseña de administrador para confirmar cambios.");
+      return;
+    }
+
+    if (confirmAction.type === "change-role") {
+      await submitRoleChange(targetUser);
+      return;
+    }
 
     if (confirmAction.type === "toggle-status") {
       setStatusChangingUserId(targetUser.id);
@@ -292,7 +323,7 @@ export default function GestionUsuariosPage() {
         const updated = await setUserActive(
           targetUser.id,
           confirmAction.isActivating,
-          adminPassword
+          confirmPassword
         );
         setUsers((prev) =>
           prev.map((u) => (u.id === targetUser.id ? { ...u, is_active: updated.is_active } : u))
@@ -300,11 +331,11 @@ export default function GestionUsuariosPage() {
         setSuccess(
           `${updated.nombre} ${updated.apellido} ${updated.is_active ? "habilitado" : "deshabilitado"} correctamente.`
         );
+        closeConfirmAction();
       } catch (apiError) {
-        setError(getErrorMessage(apiError));
+        setConfirmError(getErrorMessage(apiError));
       } finally {
         setStatusChangingUserId(null);
-        setConfirmAction(null);
       }
       return;
     }
@@ -312,7 +343,7 @@ export default function GestionUsuariosPage() {
     if (confirmAction.type === "delete") {
       setDeletingUserId(targetUser.id);
       try {
-        await deleteUser(targetUser.id, adminPassword);
+        await deleteUser(targetUser.id, confirmPassword);
         setUsers((prev) => prev.filter((u) => u.id !== targetUser.id));
         setRoleDrafts((prev) => {
           const copy = { ...prev };
@@ -320,11 +351,11 @@ export default function GestionUsuariosPage() {
           return copy;
         });
         setSuccess(`${targetUser.nombre} ${targetUser.apellido} fue eliminado.`);
+        closeConfirmAction();
       } catch (apiError) {
-        setError(getErrorMessage(apiError));
+        setConfirmError(getErrorMessage(apiError));
       } finally {
         setDeletingUserId(null);
-        setConfirmAction(null);
       }
     }
   };
@@ -345,43 +376,6 @@ export default function GestionUsuariosPage() {
           Accedé a perfiles y cambiá roles directamente desde esta lista.
         </p>
       </header>
-
-      <section
-        style={{
-          border: "1px solid #e2e8f0",
-          borderRadius: 12,
-          background: "#fff",
-          padding: "1rem",
-          marginBottom: "1rem",
-          display: "grid",
-          gap: "0.75rem",
-        }}
-      >
-        <label style={{ display: "grid", gap: 6 }}>
-          <span style={{ fontWeight: 600 }}>Contraseña de administrador (obligatoria para modificar)</span>
-          <input
-            type="password"
-            value={adminPassword}
-            onChange={(e) => setAdminPassword(e.target.value)}
-            style={{ ...inputStyle, maxWidth: 420 }}
-            placeholder="Tu contraseña actual"
-          />
-        </label>
-
-        <label style={{ display: "grid", gap: 6 }}>
-          <span style={{ fontWeight: 600 }}>Buscar usuario</span>
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            style={{ ...inputStyle, maxWidth: 420 }}
-            placeholder="Nombre, email o DNI"
-          />
-        </label>
-
-        {error && <p style={{ color: "#b91c1c", margin: 0 }}>{error}</p>}
-        {success && <p style={{ color: "#166534", margin: 0 }}>{success}</p>}
-      </section>
 
       <section
         style={{
@@ -455,6 +449,32 @@ export default function GestionUsuariosPage() {
           border: "1px solid #e2e8f0",
           borderRadius: 12,
           background: "#fff",
+          padding: "1rem",
+          marginBottom: "1rem",
+          display: "grid",
+          gap: "0.75rem",
+        }}
+      >
+        <label style={{ display: "grid", gap: 6 }}>
+          <span style={{ fontWeight: 600 }}>Buscar usuario</span>
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            style={{ ...inputStyle, maxWidth: 420 }}
+            placeholder="Nombre, email o DNI"
+          />
+        </label>
+
+        {error && <p style={{ color: "#b91c1c", margin: 0 }}>{error}</p>}
+        {success && <p style={{ color: "#166534", margin: 0 }}>{success}</p>}
+      </section>
+
+      <section
+        style={{
+          border: "1px solid #e2e8f0",
+          borderRadius: 12,
+          background: "#fff",
           overflowX: "auto",
         }}
       >
@@ -472,9 +492,9 @@ export default function GestionUsuariosPage() {
           </thead>
           <tbody>
             {filteredUsers.map((u) => {
-              const isTargetAnotherAdmin = u.tipo === "ADMIN" && u.id !== loggedUser?.id;
+              const isProtectedUser = Number(u.dni) === PROTECTED_USER_DNI;
               const isOwnUser = u.id === loggedUser?.id;
-              const isBlockedForStatusOrDelete = isTargetAnotherAdmin || isOwnUser;
+              const isBlockedForStatusOrDelete = isProtectedUser || isOwnUser;
               const draft = roleDrafts[u.id] || { tipo: u.tipo, sector: "", empresa: "EMPRESA_A" };
 
               return (
@@ -508,7 +528,7 @@ export default function GestionUsuariosPage() {
                         value={draft.tipo}
                         onChange={(e) => onRoleDraftChange(u.id, "tipo", e.target.value)}
                         style={inputStyle}
-                        disabled={isTargetAnotherAdmin}
+                        disabled={isProtectedUser}
                       >
                         <option value="EMPLEADO">Empleado</option>
                         <option value="CLIENTE">Cliente</option>
@@ -520,7 +540,7 @@ export default function GestionUsuariosPage() {
                           value={draft.sector || ""}
                           onChange={(e) => onRoleDraftChange(u.id, "sector", e.target.value)}
                           style={inputStyle}
-                          disabled={isTargetAnotherAdmin}
+                          disabled={isProtectedUser}
                         >
                           <option value="">Sector interno (subsección)</option>
                           {internalSectorOptions.map((sub) => (
@@ -542,7 +562,7 @@ export default function GestionUsuariosPage() {
                           value={draft.empresa || "EMPRESA_A"}
                           onChange={(e) => onRoleDraftChange(u.id, "empresa", e.target.value)}
                           style={inputStyle}
-                          disabled={isTargetAnotherAdmin}
+                          disabled={isProtectedUser}
                         >
                           <option value="EMPRESA_A">Empresa A</option>
                           <option value="EMPRESA_B">Empresa B</option>
@@ -553,7 +573,7 @@ export default function GestionUsuariosPage() {
                   </td>
                   <td style={tableCell}>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      {isTargetAnotherAdmin ? (
+                      {isProtectedUser ? (
                         <span
                           style={{
                             border: "1px solid #94a3b8",
@@ -564,7 +584,7 @@ export default function GestionUsuariosPage() {
                             fontWeight: 600,
                             fontSize: "0.85rem",
                           }}
-                          title="No podés editar el perfil de otro administrador"
+                          title="No podés editar el perfil de la cuenta protegida"
                         >
                           Perfil bloqueado
                         </span>
@@ -588,15 +608,15 @@ export default function GestionUsuariosPage() {
                       <button
                         type="button"
                         onClick={() => onApplyRole(u)}
-                        disabled={isTargetAnotherAdmin || savingUserId === u.id}
+                        disabled={isProtectedUser || savingUserId === u.id}
                         style={{
                           padding: "0.4rem 0.7rem",
                           fontSize: "0.85rem",
-                          opacity: isTargetAnotherAdmin || savingUserId === u.id ? 0.6 : 1,
+                          opacity: isProtectedUser || savingUserId === u.id ? 0.6 : 1,
                         }}
                         title={
-                          isTargetAnotherAdmin
-                            ? "No podés modificar el perfil ni rol de otro administrador"
+                          isProtectedUser
+                            ? "No podés modificar el perfil ni rol de la cuenta protegida"
                             : "Aplicar cambio de rol"
                         }
                       >
@@ -634,8 +654,8 @@ export default function GestionUsuariosPage() {
                         title={
                           isOwnUser
                             ? "No podés cambiar el estado de tu propio usuario"
-                            : isTargetAnotherAdmin
-                              ? "No podés gestionar otro administrador"
+                            : isProtectedUser
+                              ? "No podés gestionar la cuenta protegida"
                               : u.is_active
                                 ? "Deshabilitar usuario"
                                 : "Habilitar usuario"
@@ -679,8 +699,8 @@ export default function GestionUsuariosPage() {
                         title={
                           isOwnUser
                             ? "No podés eliminar tu propio usuario"
-                            : isTargetAnotherAdmin
-                              ? "No podés eliminar otro administrador"
+                            : isProtectedUser
+                              ? "No podés eliminar la cuenta protegida"
                               : "Eliminar usuario"
                         }
                       >
@@ -715,42 +735,71 @@ export default function GestionUsuariosPage() {
             padding: "1rem",
             zIndex: 200,
           }}
-          onClick={() => setConfirmAction(null)}
+          onClick={closeConfirmAction}
         >
-          <div
-            style={{
-              width: "100%",
-              maxWidth: 500,
-              borderRadius: 12,
-              border: "1px solid #e2e8f0",
-              background: "#fff",
-              padding: "1rem",
-              boxShadow: "0 20px 40px rgba(15,23,42,0.25)",
-              display: "grid",
-              gap: 10,
-            }}
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-          >
+          <div style={{ width: "100%", maxWidth: 500, display: "grid", gap: 10 }} onClick={(e) => e.stopPropagation()}>
+            {confirmError && (
+              <p
+                style={{
+                  margin: 0,
+                  padding: "0.75rem 1rem",
+                  borderRadius: 10,
+                  background: "#fef2f2",
+                  border: "1px solid #fecaca",
+                  color: "#b91c1c",
+                  fontSize: "0.9rem",
+                  boxShadow: "0 10px 20px rgba(15,23,42,0.15)",
+                }}
+              >
+                {confirmError}
+              </p>
+            )}
+            <div
+              style={{
+                width: "100%",
+                borderRadius: 12,
+                border: "1px solid #e2e8f0",
+                background: "#fff",
+                padding: "1rem",
+                boxShadow: "0 20px 40px rgba(15,23,42,0.25)",
+                display: "grid",
+                gap: 10,
+              }}
+              role="dialog"
+              aria-modal="true"
+            >
             <h3 style={{ margin: 0, color: "#0f172a" }}>
-              {confirmAction.type === "delete" ? "Confirmar eliminación" : "Confirmar cambio de estado"}
+              {confirmAction.type === "delete"
+                ? "Confirmar eliminación"
+                : confirmAction.type === "change-role"
+                  ? "Confirmar cambio de rol"
+                  : "Confirmar cambio de estado"}
             </h3>
             <p style={{ margin: 0, color: "#334155", lineHeight: 1.45 }}>
               {confirmAction.type === "delete"
                 ? `Vas a eliminar a ${confirmAction.targetUser.nombre} ${confirmAction.targetUser.apellido}. Esta acción no se puede deshacer.`
+                : confirmAction.type === "change-role"
+                  ? `Vas a actualizar el rol y los datos asociados de ${confirmAction.targetUser.nombre} ${confirmAction.targetUser.apellido}.`
                 : confirmAction.isActivating
                   ? `Vas a habilitar a ${confirmAction.targetUser.nombre} ${confirmAction.targetUser.apellido}.`
                   : `Vas a deshabilitar a ${confirmAction.targetUser.nombre} ${confirmAction.targetUser.apellido}.`}
             </p>
-            <p style={{ margin: 0, color: "#64748b", fontSize: "0.9rem" }}>
-              Se usará la contraseña de administrador ingresada para confirmar la operación.
-            </p>
+            <label style={{ display: "grid", gap: 6, marginTop: 4 }}>
+              <span style={{ fontWeight: 600, color: "#334155" }}>Contraseña de administrador</span>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                style={inputStyle}
+                placeholder="Ingresá tu contraseña actual"
+                autoFocus
+              />
+            </label>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
               <button
                 type="button"
-                onClick={() => setConfirmAction(null)}
-                disabled={statusChangingUserId !== null || deletingUserId !== null}
+                onClick={closeConfirmAction}
+                disabled={statusChangingUserId !== null || deletingUserId !== null || savingUserId !== null}
                 style={{
                   padding: "0.45rem 0.8rem",
                   borderRadius: 8,
@@ -764,7 +813,7 @@ export default function GestionUsuariosPage() {
               <button
                 type="button"
                 onClick={onConfirmAction}
-                disabled={statusChangingUserId !== null || deletingUserId !== null}
+                disabled={statusChangingUserId !== null || deletingUserId !== null || savingUserId !== null}
                 style={{
                   padding: "0.45rem 0.8rem",
                   borderRadius: 8,
@@ -772,16 +821,20 @@ export default function GestionUsuariosPage() {
                   background: confirmAction.type === "delete" ? "#dc2626" : "#0f766e",
                   color: "#fff",
                   fontWeight: 700,
-                  opacity: statusChangingUserId !== null || deletingUserId !== null ? 0.7 : 1,
+                  opacity:
+                    statusChangingUserId !== null || deletingUserId !== null || savingUserId !== null ? 0.7 : 1,
                 }}
               >
-                {statusChangingUserId !== null || deletingUserId !== null
+                {statusChangingUserId !== null || deletingUserId !== null || savingUserId !== null
                   ? "Procesando..."
                   : confirmAction.type === "delete"
                     ? "Sí, eliminar"
+                    : confirmAction.type === "change-role"
+                      ? "Sí, guardar"
                     : "Sí, confirmar"}
               </button>
             </div>
+          </div>
           </div>
         </div>
       )}

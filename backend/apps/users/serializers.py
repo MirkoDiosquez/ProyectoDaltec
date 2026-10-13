@@ -3,7 +3,13 @@ from django.db import transaction
 from rest_framework import serializers
 
 from apps.catalogos.models import SubsectionCatalog
-from apps.users.models import ClienteProfile, EmpleadoProfile, UserTipo
+from apps.users.models import (
+    ClienteProfile,
+    EmpleadoProfile,
+    PROTECTED_USER_DNI,
+    UserTipo,
+    is_protected_user,
+)
 
 User = get_user_model()
 
@@ -272,9 +278,9 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                 {"password_confirmacion": "La contraseña de confirmación es inválida."}
             )
 
-        if actor.pk != instance.pk and getattr(instance, "is_admin", False):
+        if is_protected_user(instance):
             raise serializers.ValidationError(
-                "Un administrador no puede editar el perfil ni el rol de otro administrador."
+                f"No está permitido modificar la cuenta protegida con DNI {PROTECTED_USER_DNI}."
             )
 
         final_tipo = attrs.get("tipo", instance.tipo)

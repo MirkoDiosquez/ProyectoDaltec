@@ -29,6 +29,7 @@ from apps.users.serializers import (
     UserListSerializer,
     UserUpdateSerializer,
 )
+from apps.users.models import PROTECTED_USER_DNI, is_protected_user
 
 User = get_user_model()
 
@@ -69,10 +70,6 @@ class UserViewSet(
         actor = self.request.user
 
         if getattr(actor, "is_admin", False):
-            if getattr(obj, "is_admin", False) and obj.pk != actor.pk:
-                raise PermissionDenied(
-                    "Un administrador no puede editar el perfil ni rol de otro administrador."
-                )
             return obj
 
         if actor.pk != obj.pk:
@@ -93,6 +90,20 @@ class UserViewSet(
         user = serializer.save()
         output = UserListSerializer(user, context={"request": request})
         return Response(output.data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+        serializer = self.get_serializer(
+            instance,
+            data=request.data,
+            partial=partial,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        updated_user = serializer.save()
+        data = UserDetailSerializer(updated_user, context={"request": request}).data
+        return Response(data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["get", "patch"])
     def me(self, request):
@@ -139,8 +150,10 @@ class UserViewSet(
     def _validate_manage_target_user(self, actor, target):
         if actor.pk == target.pk:
             raise ValidationError("No podés ejecutar esta acción sobre tu propio usuario.")
-        if getattr(target, "is_admin", False):
-            raise ValidationError("No está permitido gestionar cuentas de otros administradores.")
+        if is_protected_user(target):
+            raise ValidationError(
+                f"No está permitido modificar la cuenta protegida con DNI {PROTECTED_USER_DNI}."
+            )
 
     @action(detail=True, methods=["post"])
     def activar(self, request, pk=None):

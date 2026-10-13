@@ -10,7 +10,7 @@ class ContactoExterno(models.Model):
     
     Characteristics:
     - OneToOne relationship with Hallazgo (immutable after creation)
-    - Only used for sector=RECLAMO_CLIENTE hallazgos (admin enforces at validation level)
+    - Only used for sector=RECLAMO_CLIENTE hallazgos
     - Immutable post-creation: no PATCH after creation (only DELETE + recreate via hallazgo update)
     - All fields required at creation
     """

@@ -42,13 +42,13 @@ def empleado_user(db):
 @pytest.fixture
 def setup_sectors(db):
     """Create sectors for testing."""
-    SectorCatalog.objects.get_or_create(
+    SectorCatalog.objects.create(
         codigo="RECLAMO_CLIENTE",
-        defaults={"nombre": "Reclamo de Cliente"},
+        nombre="Reclamo de Cliente",
     )
-    SectorCatalog.objects.get_or_create(
+    SectorCatalog.objects.create(
         codigo="PROVEEDOR",
-        defaults={"nombre": "Proveedor"},
+        nombre="Proveedor",
     )
 
 
@@ -64,6 +64,7 @@ class TestContactoExternoContract:
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
 
         payload = {
+            "descripcion_general": "Reclamo por defecto del producto",
             "descripcion": "Cliente reclama defecto en producto",
             "ubicacion": "Ubicacion del cliente",
             "tipo": "QUEJA_CLIENTE",
@@ -96,6 +97,7 @@ class TestContactoExternoContract:
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
 
         payload = {
+            "descripcion_general": "Hallazgo registrado por empleado",
             "descripcion": "Hallazgo empleado",
             "ubicacion": "Ubicacion",
             "tipo": "NO_CONFORMIDAD",
@@ -116,6 +118,7 @@ class TestContactoExternoContract:
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
 
         payload = {
+            "descripcion_general": "Hallazgo relacionado con proveedor",
             "descripcion": "Hallazgo proveedor",
             "ubicacion": "Ubicacion",
             "tipo": "NO_CONFORMIDAD",
@@ -136,6 +139,7 @@ class TestContactoExternoContract:
 
         # Create hallazgo with contact
         payload = {
+            "descripcion_general": "Reclamo de cliente",
             "descripcion": "Cliente reclama",
             "ubicacion": "Ubicacion",
             "tipo": "QUEJA_CLIENTE",
@@ -170,6 +174,7 @@ class TestContactoExternoContract:
 
         # Only provide nombre_empresa, missing other fields
         payload = {
+            "descripcion_general": "Reclamo de cliente",
             "descripcion": "Cliente reclama",
             "ubicacion": "Ubicacion",
             "tipo": "QUEJA_CLIENTE",

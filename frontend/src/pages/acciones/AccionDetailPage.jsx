@@ -7,6 +7,7 @@ import {
   getAccion,
   listPorquesAccion,
   rejectPorqueAccion,
+  unapprovePorqueAccion,
   solicitarCierreAccion,
   updateAccion,
   uploadArchivoAccion,
@@ -38,6 +39,8 @@ export default function AccionDetailPage() {
   const [accion, setAccion] = useState(null);
   const [form, setForm] = useState({ descripcion: "", fecha_inicio: "", fecha_fin: "" });
   const [observacion, setObservacion] = useState("");
+  const [unapprovePorqueId, setUnapprovePorqueId] = useState(null);
+  const [unapproveReason, setUnapproveReason] = useState("");
   const [archivo, setArchivo] = useState(null);
   const [porques, setPorques] = useState([]);
   const [nuevoPorque, setNuevoPorque] = useState("");
@@ -173,6 +176,23 @@ export default function AccionDetailPage() {
       await refresh();
     } catch (e) {
       setError(e?.response?.data?.detail || "No se pudo rechazar el porque.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const onUnapprovePorque = async (porqueId) => {
+    if (!hallazgoId) return;
+
+    setSaving(true);
+    setError("");
+    try {
+      await unapprovePorqueAccion(hallazgoId, id, porqueId, unapproveReason);
+      setUnapprovePorqueId(null);
+      setUnapproveReason("");
+      await refresh();
+    } catch (e) {
+      setError(e?.response?.data?.detail || "No se pudo desaprobar el porque.");
     } finally {
       setSaving(false);
     }
@@ -451,6 +471,20 @@ export default function AccionDetailPage() {
                       <span style={{ color: "#166534", fontWeight: 700 }}>Aprobado</span>
                     </div>
                     <p style={{ marginBottom: 0 }}>{p.texto_causa}</p>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUnapprovePorqueId(p.id);
+                          setUnapproveReason("");
+                          setError("");
+                        }}
+                        disabled={saving}
+                        style={{ ...(saving ? { ...btnSecondary, opacity: 0.6 } : btnSecondary), marginTop: 8 }}
+                      >
+                        Desaprobar
+                      </button>
+                    )}
                   </div>
                 ))
               ) : (
@@ -504,6 +538,78 @@ export default function AccionDetailPage() {
             </p>
           )}
         </section>
+      )}
+
+      {unapprovePorqueId !== null && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.55)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "1rem",
+            zIndex: 200,
+          }}
+          onClick={() => {
+            if (!saving) setUnapprovePorqueId(null);
+          }}
+        >
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              onUnapprovePorque(unapprovePorqueId);
+            }}
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="unapprove-porque-title"
+            style={{
+              width: "100%",
+              maxWidth: 500,
+              borderRadius: 12,
+              border: "1px solid #e2e8f0",
+              background: "#fff",
+              padding: "1rem",
+              boxShadow: "0 20px 40px rgba(15,23,42,0.25)",
+              display: "grid",
+              gap: 10,
+            }}
+          >
+            <h2 id="unapprove-porque-title" style={{ margin: 0, color: "#0f172a", fontSize: "1.1rem" }}>
+              Desaprobar porqué
+            </h2>
+            <p style={{ margin: 0, color: "#334155", lineHeight: 1.45 }}>
+              El motivo es opcional. Si lo completás, quedará registrado con el rechazo.
+            </p>
+            <label style={labelStyle}>
+              Motivo (opcional)
+              <textarea
+                value={unapproveReason}
+                onChange={(event) => setUnapproveReason(event.target.value)}
+                placeholder="Ingresá el motivo para desaprobar"
+                rows={4}
+                disabled={saving}
+                autoFocus
+                style={textareaStyle}
+              />
+            </label>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
+              <button
+                type="button"
+                onClick={() => setUnapprovePorqueId(null)}
+                disabled={saving}
+                style={btnSecondary}
+              >
+                Cancelar
+              </button>
+              <button type="submit" disabled={saving} style={saving ? { ...btnPrimary, opacity: 0.6 } : btnPrimary}>
+                {saving ? "Desaprobando…" : "Confirmar desaprobación"}
+              </button>
+            </div>
+          </form>
+        </div>
       )}
     </main>
   );

@@ -43,6 +43,7 @@ services:
         condition: service_healthy
     command: >
       sh -c "python manage.py migrate --noinput &&
+             python manage.py configurar_id_inicial_hallazgo &&
              python manage.py load_catalogs &&
              python manage.py collectstatic --noinput &&
              daphne -b 0.0.0.0 -p 8000 config.asgi:application"

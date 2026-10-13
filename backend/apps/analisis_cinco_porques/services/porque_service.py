@@ -10,9 +10,10 @@ class AnalisisCincoPorquesService:
     """Business logic for 5-why analysis (porqué) operations.
     
     Workflow:
-    - create(user, hallazgo, texto_causa): Responsables create pending porqués; admin auto-approves
+    - create(user, hallazgo, texto_causa): Responsables/admin create porqués that start approved
     - approve(user, porque): Admin only; transition pending → aprobado
     - reject(user, porque, observacion): Admin only; transition pending → rechazado
+    - unapprove(user, porque, observacion): Admin only; transition approved → rechazado
     """
 
     MAX_APROBADOS_POR_HALLAZGO = 5
@@ -63,8 +64,8 @@ class AnalisisCincoPorquesService:
                     "Solo administradores y responsables asignados pueden agregar porqués."
                 )
             autor_tipo = 'responsable'
-            estado = 'pendiente'  # Requires admin approval
-            aprobado_por = None
+            estado = 'aprobado'  # No admin approval required
+            aprobado_por = user
         else:
             raise PermissionDenied(
                 "Solo administradores y empleados (responsables) pueden agregar porqués."
@@ -161,6 +162,27 @@ class AnalisisCincoPorquesService:
         
         return porque
 
+    @staticmethod
+    @transaction.atomic
+    def unapprove(user, porque, observacion=""):
+        """Revoke an approved porqué and move it to rejected state (admin only)."""
+        if not getattr(user, 'is_admin', False):
+            raise PermissionDenied("Only administrators can revoke porqué approval.")
+
+        if porque.estado != 'aprobado':
+            raise ValidationError(
+                f"Only approved porqués can be revoked. This porqué is {porque.estado}."
+            )
+
+        porque.estado = 'rechazado'
+        porque.observacion_rechazo = observacion.strip() if observacion else ""
+        porque.aprobado_por = user
+        porque.full_clean()
+        porque.save()
+
+        _notify_approval(porque, approved=False)
+        return porque
+
 
 def _notify_approval(porque, approved=True):
     """Create notifications for porqué approval/rejection.
@@ -178,19 +200,17 @@ def _notify_approval(porque, approved=True):
         titulo = f"Tu porqué fue rechazado - Hallazgo #{porque.hallazgo.id}"
         mensaje = f"Tu porqué en Hallazgo #{porque.hallazgo.id} ha sido rechazado."
     
-    # Notify hallazgo creator
-    Notificacion.objects.create(
-        destinatario=porque.hallazgo.creado_por,
-        hallazgo_relacionado=porque.hallazgo,
-        tipo=tipo,
-        titulo=titulo,
-        mensaje=mensaje,
-    )
-    
-    # Notify all responsables of the hallazgo
-    for responsable in porque.hallazgo.responsables.all():
+    # Notify the creator and all responsables once, even if a user fills both roles.
+    destinatarios = {porque.hallazgo.creado_por_id: porque.hallazgo.creado_por}
+    destinatarios.update({
+        responsable.id: responsable
+        for responsable in porque.hallazgo.responsables.all()
+    })
+    for destinatario in destinatarios.values():
+        if destinatario is None:
+            continue
         Notificacion.objects.create(
-            destinatario=responsable,
+            destinatario=destinatario,
             hallazgo_relacionado=porque.hallazgo,
             tipo=tipo,
             titulo=titulo,

@@ -90,6 +90,12 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             except Exception as exc:
                 logger.exception("[ChatConsumer] Unhandled error in chat.send: %s", exc)
                 await self.send_json({"type": "error", "detail": "Error interno al procesar el mensaje."})
+        elif message_type == "chat.delete_message":
+            try:
+                await self._handle_chat_delete(content)
+            except Exception as exc:
+                logger.exception("[ChatConsumer] Unhandled error in chat.delete_message: %s", exc)
+                await self.send_json({"type": "error", "detail": "Error interno al eliminar el mensaje."})
         elif message_type == "pong":
             pass  # Client alive — no action needed
 
@@ -168,12 +174,44 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                     },
                 )
 
+    async def _handle_chat_delete(self, content):
+        message_id = content.get("message_id")
+        if not message_id:
+            await self.send_json({"type": "error", "detail": "Falta el identificador del mensaje."})
+            return
+
+        user = self.scope.get("user")
+        if not getattr(user, "is_admin", False):
+            await self.send_json({"type": "error", "detail": "Solo un administrador puede eliminar mensajes."})
+            return
+
+        deleted_message = await self._delete_message_as_admin(message_id)
+        if not deleted_message:
+            await self.send_json({"type": "error", "detail": "No se pudo eliminar el mensaje solicitado."})
+            return
+
+        await self.channel_layer.group_send(
+            self.group_name,
+            {
+                "type": "chat.message_deleted",
+                "mensaje": deleted_message,
+            },
+        )
+
     async def chat_message(self, event):
         """
         Broadcast handler for chat.message events.
         Sends message data to connected client.
         """
         await self.send_json(event)
+
+    async def chat_message_deleted(self, event):
+        await self.send_json(
+            {
+                "type": "chat.message_deleted",
+                "mensaje": event["mensaje"],
+            }
+        )
 
     async def chat_participant_removed(self, event):
         """
@@ -209,6 +247,39 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             return chat.participantes.filter(id=user.id).exists()
         except Chat.DoesNotExist:
             return False
+
+    @database_sync_to_async
+    def _delete_message_as_admin(self, message_id):
+        Mensaje = apps.get_model("chat", "Mensaje")
+
+        try:
+            mensaje = Mensaje.objects.select_related("autor").get(
+                id=message_id,
+                chat__hallazgo_id=self.hallazgo_id,
+            )
+        except Mensaje.DoesNotExist:
+            return None
+
+        if not mensaje.eliminado_por_admin:
+            mensaje.contenido = "Eliminado por el admin"
+            mensaje.tiene_urgente = False
+            mensaje.eliminado_por_admin = True
+            mensaje.save(update_fields=["contenido", "tiene_urgente", "eliminado_por_admin"])
+
+        return {
+            "id": mensaje.id,
+            "chat_id": mensaje.chat_id,
+            "contenido": mensaje.contenido,
+            "fecha_hora": mensaje.fecha_hora.isoformat(),
+            "autor": {
+                "id": mensaje.autor_id,
+                "nombre": mensaje.autor.nombre,
+                "apellido": mensaje.autor.apellido,
+                "tipo": mensaje.autor.tipo,
+            },
+            "archivos": [],
+            "eliminado_por_admin": True,
+        }
 
     @database_sync_to_async
     def _save_mensaje(self, contenido, user, archivos_ids=None):
@@ -308,13 +379,17 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
             return {
                 "id": mensaje.id,
+                "chat_id": mensaje.chat_id,
                 "contenido": mensaje.contenido,
                 "fecha_hora": mensaje.fecha_hora,
                 "autor": {
                     "id": user.id,
                     "nombre": getattr(user, 'nombre', user.username),
+                    "apellido": getattr(user, 'apellido', ""),
+                    "tipo": getattr(user, 'tipo', ""),
                 },
                 "archivos": archivos_data,
+                "eliminado_por_admin": mensaje.eliminado_por_admin,
                 "tiene_urgente": tiene_urgente,
                 "notificaciones_urgentes": notificaciones_urgentes,
             }

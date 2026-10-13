@@ -1,7 +1,11 @@
 """Integration tests for WebSocket urgent messages (T131)."""
+import asyncio
+
 import pytest
+from channels.testing import WebsocketCommunicator
 from django.contrib.auth import get_user_model
 from apps.chat.models import Chat, Mensaje
+from apps.chat.consumers import ChatConsumer
 from apps.hallazgos.models import Hallazgo
 from apps.notificaciones.models import Notificacion
 
@@ -112,77 +116,59 @@ class TestUrgentMessageNotifications:
         assert mensaje1.tiene_urgente is True
         assert mensaje2.tiene_urgente is True
 
-    def test_urgent_message_creates_notifications(
-        self, hallazgo_with_chat, employee1, employee2
+    @pytest.mark.asyncio
+    @pytest.mark.django_db(allow_async_unsafe=True)
+    async def test_websocket_urgent_message_notifies_each_recipient_once(
+        self, hallazgo_with_chat, admin_user, employee1, employee2
     ):
-        """
-        Test: Urgent message creates notifications for other participants (T122, T131).
-        """
-        hallazgo, chat = hallazgo_with_chat
-
-        # Clear any existing notifications
+        """Urgent messages notify participants and admins without duplicate rows."""
+        hallazgo, _ = hallazgo_with_chat
         Notificacion.objects.all().delete()
 
-        # Create urgent message from employee1
-        mensaje = Mensaje.objects.create(
-            chat=chat,
-            autor=employee1,
-            contenido="This is important #urgente info",
-            tiene_urgente=True,
+        communicator = WebsocketCommunicator(
+            ChatConsumer.as_asgi(),
+            f"/ws/chat/{hallazgo.id}/",
         )
+        communicator.scope["user"] = employee1
+        communicator.scope["url_route"] = {"kwargs": {"hallazgo_id": hallazgo.id}}
 
-        # Manually trigger the notification creation
-        # (normally done by signal in _save_mensaje)
-        Notificacion.objects.create(
-            titulo="Mensaje urgente en chat",
-            mensaje=f"Mensaje urgente de {employee1.nombre} {employee1.apellido}: This is important #urgente",
-            tipo="mensaje_urgente",
-            destinatario=employee2,
-            hallazgo_relacionado=hallazgo,
-        )
+        connected, _ = await communicator.connect()
+        assert connected
+        try:
+            await communicator.send_json_to({
+                "type": "chat.send",
+                "contenido": "This is important #URGENTE",
+            })
+            response = await asyncio.wait_for(communicator.receive_json_from(), timeout=2)
+            assert response["type"] == "chat.message"
 
-        # Verify notification was created for employee2 (not the sender)
-        notif = Notificacion.objects.get(destinatario=employee2)
-        assert notif.tipo == "mensaje_urgente"
-        assert "urgente" in notif.mensaje.lower()
-        assert employee1.nombre in notif.mensaje
+            employee_notifications = Notificacion.objects.filter(
+                destinatario=employee2,
+                tipo="mensaje_urgente",
+                hallazgo_relacionado=hallazgo,
+            )
+            admin_notifications = Notificacion.objects.filter(
+                destinatario=admin_user,
+                tipo="mensaje_urgente",
+                hallazgo_relacionado=hallazgo,
+            )
+            sender_notifications = Notificacion.objects.filter(
+                destinatario=employee1,
+                tipo="mensaje_urgente",
+                hallazgo_relacionado=hallazgo,
+            )
 
-    def test_urgent_message_not_sent_to_sender(
-        self, hallazgo_with_chat, employee1, employee2
-    ):
-        """
-        Test: Urgent message doesn't create notification for sender (T122).
-        """
-        hallazgo, chat = hallazgo_with_chat
+            assert employee_notifications.count() == 1
+            assert admin_notifications.count() == 1
+            assert sender_notifications.count() == 0
+            assert Notificacion.objects.filter(
+                tipo="mensaje_urgente",
+                hallazgo_relacionado=hallazgo,
+            ).count() == 2
+        finally:
+            await communicator.disconnect()
 
-        # Clear notifications
-        Notificacion.objects.all().delete()
-
-        # Create urgent message from employee1
-        Mensaje.objects.create(
-            chat=chat,
-            autor=employee1,
-            contenido="Urgent #urgente",
-            tiene_urgente=True,
-        )
-
-        # Manually create notification for other participant
-        Notificacion.objects.create(
-            titulo="Mensaje urgente",
-            mensaje="Test",
-            tipo="mensaje_urgente",
-            destinatario=employee2,
-            hallazgo_relacionado=hallazgo,
-        )
-
-        # Verify NO notification for sender
-        sender_notifs = Notificacion.objects.filter(
-            destinatario=employee1,
-            tipo="mensaje_urgente"
-        )
-        assert sender_notifs.count() == 0
-
-    def test_non_urgent_message_no_notifications(
+    def test_non_urgent_message_does_not_create_urgent_notifications(
         self, hallazgo_with_chat, employee1, employee2
     ):
         """
@@ -207,38 +193,3 @@ class TestUrgentMessageNotifications:
         )
         assert urgent_notifs.count() == 0
 
-    def test_urgent_notification_type(
-        self, hallazgo_with_chat, employee1, employee2
-    ):
-        """
-        Test: Urgent message notifications have tipo='mensaje_urgente' (T119, T122).
-        """
-        hallazgo, chat = hallazgo_with_chat
-
-        Notificacion.objects.all().delete()
-
-        Mensaje.objects.create(
-            chat=chat,
-            autor=employee1,
-            contenido="Critical #urgente",
-            tiene_urgente=True,
-        )
-
-        # Manually create notification
-        notif = Notificacion.objects.create(
-            titulo="Urgent",
-            mensaje="Test",
-            tipo="mensaje_urgente",
-            destinatario=employee2,
-            hallazgo_relacionado=hallazgo,
-        )
-
-        # Verify tipo is correctly set
-        assert notif.tipo == "mensaje_urgente"
-
-        # Can be filtered by tipo
-        filtered = Notificacion.objects.filter(
-            destinatario=employee2,
-            tipo="mensaje_urgente"
-        )
-        assert filtered.count() == 1

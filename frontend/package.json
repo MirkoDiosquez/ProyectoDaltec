@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "axios": "^1.7.2",
+    "ag-charts-community": "^11.2.0",
+    "ag-charts-react": "^11.2.0",
     "pdfjs-dist": "^4.0.379",
     "prop-types": "^15.8.1",
     "react": "^18.3.1",

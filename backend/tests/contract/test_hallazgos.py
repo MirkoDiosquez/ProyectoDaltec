@@ -1,10 +1,12 @@
 """Contract tests for hallazgos API with sector/subseccion classification (Phase 3 T039)."""
+from datetime import date
+
 import pytest
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from apps.hallazgos.models import Hallazgo
+from apps.hallazgos.models import Hallazgo, TipoHallazgo
 from apps.catalogos.models import SectorCatalog, SubsectionCatalog, TipoCatalog
 
 User = get_user_model()
@@ -50,29 +52,31 @@ def auth_token(admin_user):
 @pytest.fixture
 def catalog_data(db):
     """Create catalog data: sectors, subsecciones, tipos."""
-    sector_interno, _ = SectorCatalog.objects.get_or_create(
+    sector_interno = SectorCatalog.objects.create(
         codigo="INTERNO",
-        defaults={"nombre": "Interno", "descripcion": "Hallazgos internos de la organización"},
+        nombre="Interno",
+        descripcion="Hallazgos internos de la organización",
     )
-    sector_proveedor, _ = SectorCatalog.objects.get_or_create(
+    sector_proveedor = SectorCatalog.objects.create(
         codigo="PROVEEDOR",
-        defaults={"nombre": "Proveedor", "descripcion": "Hallazgos relacionados con proveedores"},
+        nombre="Proveedor",
+        descripcion="Hallazgos relacionados con proveedores",
     )
 
-    SubsectionCatalog.objects.get_or_create(
+    SubsectionCatalog.objects.create(
         sector=sector_interno,
         codigo="ADMIN",
-        defaults={"nombre": "Administración"},
+        nombre="Administración",
     )
-    SubsectionCatalog.objects.get_or_create(
+    SubsectionCatalog.objects.create(
         sector=sector_interno,
         codigo="OPERACIONES",
-        defaults={"nombre": "Operaciones"},
+        nombre="Operaciones",
     )
 
-    TipoCatalog.objects.get_or_create(
+    TipoCatalog.objects.create(
         codigo="NO_CONFORMIDAD",
-        defaults={"nombre": "No Conformidad"},
+        nombre="No Conformidad",
     )
 
     return {
@@ -91,6 +95,7 @@ class TestHallazgoSectorClassification:
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
 
         payload = {
+            "descripcion_general": "Resumen del hallazgo proveedor",
             "descripcion": "Test hallazgo proveedor",
             "ubicacion": "Proveedor A",
             "tipo": "NO_CONFORMIDAD",
@@ -100,6 +105,7 @@ class TestHallazgoSectorClassification:
         response = api_client.post("/api/v1/hallazgos/", payload, format="json")
         assert response.status_code == 201
         data = response.json()
+        assert data["descripcion_general"] == "Resumen del hallazgo proveedor"
         assert data["sector"]["codigo"] == "PROVEEDOR"
         assert data["subseccion"] is None
 
@@ -111,6 +117,7 @@ class TestHallazgoSectorClassification:
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
 
         payload = {
+            "descripcion_general": "Resumen del hallazgo interno",
             "descripcion": "Test hallazgo interno sin subseccion",
             "ubicacion": "Ubicacion interna",
             "tipo": "NO_CONFORMIDAD",
@@ -130,6 +137,7 @@ class TestHallazgoSectorClassification:
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
 
         payload = {
+            "descripcion_general": "Resumen del hallazgo interno",
             "descripcion": "Test hallazgo interno con subseccion",
             "ubicacion": "Ubicacion interna",
             "tipo": "NO_CONFORMIDAD",
@@ -149,6 +157,7 @@ class TestHallazgoSectorClassification:
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
 
         payload = {
+            "descripcion_general": "Resumen del hallazgo",
             "descripcion": "Test hallazgo",
             "ubicacion": "Ubicacion",
             "tipo": "NO_CONFORMIDAD",
@@ -165,6 +174,7 @@ class TestHallazgoSectorClassification:
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
 
         payload = {
+            "descripcion_general": "Resumen del hallazgo",
             "descripcion": "Test hallazgo",
             "ubicacion": "Ubicacion",
             "tipo": "NO_CONFORMIDAD",
@@ -179,6 +189,39 @@ class TestHallazgoSectorClassification:
         data = response.json()
         # Verify filtering works (may be paginated)
         assert "results" in data or isinstance(data, list)
+
+    def test_create_hallazgo_requires_descripcion_general(self, api_client, admin_user, catalog_data):
+        refresh = RefreshToken.for_user(admin_user)
+        api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
+
+        payload = {
+            "descripcion": "Descripcion detallada",
+            "ubicacion": "Ubicacion",
+            "tipo": "NO_CONFORMIDAD",
+            "sector_codigo": "PROVEEDOR",
+        }
+
+        response = api_client.post("/api/v1/hallazgos/", payload, format="json")
+
+        assert response.status_code == 400
+        assert "descripcion_general" in response.json()
+
+    def test_create_hallazgo_rejects_blank_descripcion_general(self, api_client, admin_user, catalog_data):
+        refresh = RefreshToken.for_user(admin_user)
+        api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
+
+        payload = {
+            "descripcion_general": "   ",
+            "descripcion": "Descripcion detallada",
+            "ubicacion": "Ubicacion",
+            "tipo": "NO_CONFORMIDAD",
+            "sector_codigo": "PROVEEDOR",
+        }
+
+        response = api_client.post("/api/v1/hallazgos/", payload, format="json")
+
+        assert response.status_code == 400
+        assert "descripcion_general" in response.json()
 
 
 @pytest.mark.django_db
@@ -244,3 +287,54 @@ class TestHallazgoDeletionContract:
 
         assert response.status_code == 403
         assert Hallazgo.objects.filter(id=hallazgo.id).exists()
+
+
+@pytest.mark.django_db
+class TestHallazgoDashboardStatistics:
+    def test_estadisticas_incluye_hallazgos_por_trimestre_apilados(self, api_client, admin_user):
+        refresh = RefreshToken.for_user(admin_user)
+        api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
+
+        hallazgo_q1_nc = Hallazgo.objects.create(
+            descripcion="Hallazgo Q1 NC",
+            ubicacion="Planta 1",
+            tipo=TipoHallazgo.NO_CONFORMIDAD,
+            creado_por=admin_user,
+        )
+        Hallazgo.objects.filter(pk=hallazgo_q1_nc.pk).update(fecha_creacion=date(2025, 1, 15))
+
+        hallazgo_q1_queja = Hallazgo.objects.create(
+            descripcion="Hallazgo Q1 Queja",
+            ubicacion="Planta 2",
+            tipo=TipoHallazgo.QUEJA_CLIENTE,
+            creado_por=admin_user,
+        )
+        Hallazgo.objects.filter(pk=hallazgo_q1_queja.pk).update(fecha_creacion=date(2025, 3, 30))
+
+        hallazgo_q2_mejora = Hallazgo.objects.create(
+            descripcion="Hallazgo Q2 Mejora",
+            ubicacion="Planta 3",
+            tipo=TipoHallazgo.OPORTUNIDAD_MEJORA,
+            creado_por=admin_user,
+        )
+        Hallazgo.objects.filter(pk=hallazgo_q2_mejora.pk).update(fecha_creacion=date(2025, 4, 2))
+
+        response = api_client.get("/api/v1/hallazgos/estadisticas/", format="json")
+
+        assert response.status_code == 200
+        data = response.json()
+
+        assert "hallazgos_por_trimestre" in data
+        trimestres = {item["label"]: item for item in data["hallazgos_por_trimestre"]}
+
+        assert trimestres["2025 T1"]["NO_CONFORMIDAD"] == 1
+        assert trimestres["2025 T1"]["QUEJA_CLIENTE"] == 1
+        assert trimestres["2025 T1"]["total"] == 2
+        assert trimestres["2025 T2"]["OPORTUNIDAD_MEJORA"] == 1
+        assert trimestres["2025 T2"]["total"] == 1
+
+        assert "hallazgos_por_mes" in data
+        meses = {item["label"]: item for item in data["hallazgos_por_mes"]}
+        assert meses["2025-01"]["NO_CONFORMIDAD"] == 1
+        assert meses["2025-03"]["QUEJA_CLIENTE"] == 1
+        assert meses["2025-04"]["OPORTUNIDAD_MEJORA"] == 1

@@ -26,7 +26,7 @@ def admin_user(db):
 
 @pytest.fixture
 def hallazgo(db, admin_user):
-    sector, _ = SectorCatalog.objects.get_or_create(codigo="INTERNO", defaults={"nombre": "Interno"})
+    sector = SectorCatalog.objects.create(codigo="INTERNO", nombre="Interno")
     return Hallazgo.objects.create(
         descripcion="Test hallazgo",
         ubicacion="Test",

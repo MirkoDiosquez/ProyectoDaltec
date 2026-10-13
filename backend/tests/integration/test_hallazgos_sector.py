@@ -41,29 +41,32 @@ def empleado_user(db):
 @pytest.fixture
 def setup_catalogs(db):
     """Setup all catalog data."""
-    sector_interno, _ = SectorCatalog.objects.get_or_create(
+    # Create sectors
+    sector_interno = SectorCatalog.objects.create(
         codigo="INTERNO",
-        defaults={"nombre": "Interno"},
+        nombre="Interno",
     )
-    sector_proveedor, _ = SectorCatalog.objects.get_or_create(
+    sector_proveedor = SectorCatalog.objects.create(
         codigo="PROVEEDOR",
-        defaults={"nombre": "Proveedor"},
+        nombre="Proveedor",
     )
 
-    sub_admin, _ = SubsectionCatalog.objects.get_or_create(
+    # Create subsecciones for INTERNO
+    sub_admin = SubsectionCatalog.objects.create(
         sector=sector_interno,
         codigo="ADMIN",
-        defaults={"nombre": "Administración"},
+        nombre="Administración",
     )
-    sub_ops, _ = SubsectionCatalog.objects.get_or_create(
+    sub_ops = SubsectionCatalog.objects.create(
         sector=sector_interno,
         codigo="OPERACIONES",
-        defaults={"nombre": "Operaciones"},
+        nombre="Operaciones",
     )
 
-    tipo, _ = TipoCatalog.objects.get_or_create(
+    # Create tipo
+    tipo = TipoCatalog.objects.create(
         codigo="NO_CONFORMIDAD",
-        defaults={"nombre": "No Conformidad"},
+        nombre="No Conformidad",
     )
 
     return {
@@ -88,6 +91,7 @@ class TestHallazgoSectorClassificationWorkflow:
 
         # Step 1: Create hallazgo with sector=PROVEEDOR
         create_payload = {
+            "descripcion_general": "Resumen del hallazgo proveedor",
             "descripcion": "Hallazgo proveedor test",
             "ubicacion": "Proveedor location",
             "tipo": "NO_CONFORMIDAD",
@@ -116,6 +120,7 @@ class TestHallazgoSectorClassificationWorkflow:
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
 
         payload = {
+            "descripcion_general": "Resumen del hallazgo interno",
             "descripcion": "Hallazgo interno sin subseccion",
             "ubicacion": "Internal location",
             "tipo": "NO_CONFORMIDAD",
@@ -137,6 +142,7 @@ class TestHallazgoSectorClassificationWorkflow:
 
         # Create with sector INTERNO + subseccion ADMIN
         create_payload = {
+            "descripcion_general": "Resumen del hallazgo interno",
             "descripcion": "Hallazgo interno con subseccion",
             "ubicacion": "Admin area",
             "tipo": "NO_CONFORMIDAD",
@@ -168,6 +174,7 @@ class TestHallazgoSectorClassificationWorkflow:
 
         # Create hallazgo 1: sector PROVEEDOR
         payload1 = {
+            "descripcion_general": "Resumen del hallazgo proveedor",
             "descripcion": "Hallazgo proveedor",
             "ubicacion": "Proveedor A",
             "tipo": "NO_CONFORMIDAD",
@@ -179,6 +186,7 @@ class TestHallazgoSectorClassificationWorkflow:
 
         # Create hallazgo 2: sector INTERNO + subseccion OPERACIONES
         payload2 = {
+            "descripcion_general": "Resumen del hallazgo de operaciones",
             "descripcion": "Hallazgo operaciones",
             "ubicacion": "Operaciones area",
             "tipo": "NO_CONFORMIDAD",

@@ -12,6 +12,7 @@ const SectorSelector = ({
   onSectorChange,
   onSubseccionChange,
   disabled = false,
+  required = true,
 }) => {
   const { sectors, getSubseccionesBySetor } = useCatalogoContext();
   const [subsecciones, setSubsecciones] = useState([]);
@@ -34,13 +35,13 @@ const SectorSelector = ({
   return (
     <div className="sector-selector">
       <div className="form-group">
-        <label htmlFor="sector_codigo">Sector *</label>
+        <label htmlFor="sector_codigo">Sector{required ? ' *' : ''}</label>
         <select
           id="sector_codigo"
           value={sectorCodigo || ''}
           onChange={(e) => onSectorChange(e.target.value || null)}
           disabled={disabled}
-          required
+          required={required}
           className="form-control"
         >
           <option value="">Selecciona un sector</option>

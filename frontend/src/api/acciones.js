@@ -59,6 +59,14 @@ export async function rejectPorqueAccion(hallazgoId, accionId, porqueId, observa
   return data;
 }
 
+export async function unapprovePorqueAccion(hallazgoId, accionId, porqueId, observacion = "") {
+  const { data } = await client.post(
+    `/hallazgos/${hallazgoId}/acciones/${accionId}/porques/${porqueId}/unapprove/`,
+    { observacion }
+  );
+  return data;
+}
+
 export async function listSolicitudesCierre(params = {}) {
   const { data } = await client.get("/solicitudes-cierre/", { params });
   return data;

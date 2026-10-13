@@ -1,7 +1,9 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from apps.hallazgos.models import Hallazgo, TipoHallazgo
+from apps.hallazgos.models import EstadoHallazgo, Hallazgo, TipoHallazgo
+from apps.catalogos.models import SectorCatalog, SubsectionCatalog
+from apps.catalogos.services import SectorService
 from apps.catalogos.serializers import SectorCatalogSerializer, SubsectionCatalogSerializer, TipoCatalogSerializer
 from apps.contacto_externo.serializers import ContactoExternoSerializer
 
@@ -79,6 +81,7 @@ class HallazgoSerializer(serializers.ModelSerializer):
 		model = Hallazgo
 		fields = [
 			"id",
+			"descripcion_general",
 			"descripcion",
 			"ubicacion",
 			"tipo",
@@ -153,8 +156,110 @@ class HallazgoSerializer(serializers.ModelSerializer):
 		return super().update(instance, validated_data)
 
 
+class HallazgoUpdateSerializer(serializers.ModelSerializer):
+	descripcion_general = serializers.CharField(
+		required=True,
+		allow_blank=False,
+		trim_whitespace=True,
+	)
+	descripcion = serializers.CharField(
+		required=True,
+		allow_blank=False,
+		trim_whitespace=True,
+	)
+	ubicacion = serializers.CharField(
+		required=True,
+		allow_blank=False,
+		trim_whitespace=True,
+		max_length=200,
+	)
+	tipo = serializers.ChoiceField(choices=TipoHallazgo.choices, required=True)
+	sector_codigo = serializers.CharField(
+		write_only=True,
+		required=False,
+		trim_whitespace=True,
+	)
+	subseccion_codigo = serializers.CharField(
+		write_only=True,
+		required=False,
+		allow_blank=True,
+		trim_whitespace=True,
+	)
+
+	class Meta:
+		model = Hallazgo
+		fields = [
+			"descripcion_general",
+			"descripcion",
+			"ubicacion",
+			"tipo",
+			"sector_codigo",
+			"subseccion_codigo",
+		]
+
+	def validate(self, attrs):
+		if (
+			"tipo" in attrs
+			and attrs["tipo"] != self.instance.tipo
+			and self.instance.estado != EstadoHallazgo.PENDIENTE
+		):
+			raise serializers.ValidationError({
+				"tipo": "Solo se puede reclasificar un hallazgo en estado PENDIENTE."
+			})
+
+		if not {"sector_codigo", "subseccion_codigo"}.intersection(attrs):
+			return attrs
+
+		instance = self.instance
+		sector_actual = instance.sector.codigo if instance.sector_id else ""
+		subseccion_actual = instance.subseccion.codigo if instance.subseccion_id else ""
+		sector_codigo = attrs.get("sector_codigo", sector_actual)
+		sector_cambio = sector_codigo != sector_actual
+		subseccion_codigo = attrs.get(
+			"subseccion_codigo",
+			"" if sector_cambio else subseccion_actual,
+		)
+
+		if not sector_codigo:
+			raise serializers.ValidationError({
+				"sector_codigo": "Seleccioná un sector para modificar la clasificación."
+			})
+
+		is_valid, error_message = SectorService.validate_sector_subseccion_pair(
+			sector_codigo,
+			subseccion_codigo,
+		)
+		if not is_valid:
+			error_field = "sector_codigo" if error_message.startswith("Sector ") else "subseccion_codigo"
+			raise serializers.ValidationError({error_field: error_message})
+
+		sector = SectorCatalog.objects.get(codigo=sector_codigo, activo=True)
+		subseccion = None
+		if subseccion_codigo:
+			subseccion = SubsectionCatalog.objects.get(
+				sector=sector,
+				codigo=subseccion_codigo,
+				activo=True,
+			)
+
+		attrs["sector"] = sector
+		attrs["subseccion"] = subseccion
+		attrs.pop("sector_codigo", None)
+		attrs.pop("subseccion_codigo", None)
+		return attrs
+
+
 
 class HallazgoCreateSerializer(serializers.ModelSerializer):
+	descripcion_general = serializers.CharField(
+		required=True,
+		allow_blank=False,
+		trim_whitespace=True,
+		error_messages={
+			"required": "La descripción general es obligatoria.",
+			"blank": "La descripción general es obligatoria.",
+		},
+	)
 	cliente_asociado = serializers.PrimaryKeyRelatedField(
 		queryset=User.objects.filter(tipo="CLIENTE", is_active=True),
 		required=False,
@@ -164,7 +269,7 @@ class HallazgoCreateSerializer(serializers.ModelSerializer):
 	# Phase 3: Accept sector/subseccion for classification
 	sector_codigo = serializers.CharField(write_only=True, required=True)
 	subseccion_codigo = serializers.CharField(write_only=True, required=False, allow_blank=True)
-	# Phase 4: Accept external contact data (admin-only, only for RECLAMO_CLIENTE)
+	# Phase 4: Accept external contact data (only for RECLAMO_CLIENTE)
 	contacto_externo_nombre_empresa = serializers.CharField(write_only=True, required=False, allow_blank=True)
 	contacto_externo_telefono = serializers.CharField(write_only=True, required=False, allow_blank=True)
 	contacto_externo_email = serializers.EmailField(write_only=True, required=False, allow_blank=True)
@@ -172,6 +277,7 @@ class HallazgoCreateSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Hallazgo
 		fields = [
+			"descripcion_general",
 			"descripcion",
 			"ubicacion",
 			"tipo",
@@ -218,19 +324,13 @@ class HallazgoCreateSerializer(serializers.ModelSerializer):
 		contacto_provided = any(contacto_campos)  # True if ANY contacto field is provided
 		
 		if contacto_provided:
-			# Validation 1: Only admin can provide contacto_externo
-			if not getattr(user, "is_admin", False):
-				raise serializers.ValidationError(
-					{"contacto_externo_nombre_empresa": "Solo administradores pueden proporcionar datos de contacto externo."}
-				)
-			
-			# Validation 2: contacto_externo requires sector=RECLAMO_CLIENTE
+			# Validation 1: contacto_externo requires sector=RECLAMO_CLIENTE
 			if sector_codigo != "RECLAMO_CLIENTE":
 				raise serializers.ValidationError(
 					{"contacto_externo_nombre_empresa": "Datos de contacto externo (ContactoExterno) solo se pueden asociar a hallazgos con sector=RECLAMO_CLIENTE."}
 				)
 			
-			# Validation 3: ALL contacto fields must be provided if ANY is provided
+			# Validation 2: ALL contacto fields must be provided if ANY is provided
 			if not all(contacto_campos):
 				raise serializers.ValidationError({
 					"contacto_externo_nombre_empresa": "Si proporciona datos de contacto, todos los campos (nombre_empresa, telefono, email) son obligatorios.",

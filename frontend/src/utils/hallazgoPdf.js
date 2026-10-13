@@ -129,6 +129,7 @@ function buildHtml({ hallazgo, porques, solicitudes, historial }) {
           ${keyValueRow("Tipo", tipoLabel[hallazgo?.tipo] || hallazgo?.tipo)}
           ${keyValueRow("Estado", estadoLabel[hallazgo?.estado] || hallazgo?.estado)}
           ${keyValueRowIfPresent("Fecha de creacion", hallazgo?.fecha_creacion ? formatDate(hallazgo?.fecha_creacion) : "")}
+          ${keyValueRow("Descripcion general", hallazgo?.descripcion_general)}
           ${keyValueRow("Descripcion", hallazgo?.descripcion)}
           ${keyValueRow("Ubicacion", hallazgo?.ubicacion)}
           ${keyValueRowIfPresent("Sector", hallazgo?.sector?.nombre)}

@@ -135,6 +135,53 @@ class TestAnalisisCincoPorquesContract:
         assert response.status_code == 200
         assert response.json()["estado"] == "rechazado"
 
+    def test_admin_can_unapprove_an_approved_porque(
+        self, api_client, admin_user, responsable_user, hallazgo, accion_correctiva
+    ):
+        porque = AnalisisCincoPorques.objects.create(
+            hallazgo=hallazgo,
+            autor=responsable_user,
+            autor_tipo="responsable",
+            texto_causa="Root cause",
+            estado="aprobado",
+        )
+        refresh = RefreshToken.for_user(admin_user)
+        api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
+
+        response = api_client.post(
+            f"/api/v1/hallazgos/{hallazgo.id}/acciones/{accion_correctiva.id}/porques/{porque.id}/unapprove/",
+            {"observacion": "Revisar la evidencia asociada."},
+            format="json",
+        )
+
+        assert response.status_code == 200
+        assert response.json()["estado"] == "rechazado"
+        assert response.json()["observacion_rechazo"] == "Revisar la evidencia asociada."
+        assert response.json()["aprobado_por"] == admin_user.id
+
+    def test_non_admin_cannot_unapprove_an_approved_porque(
+        self, api_client, admin_user, responsable_user, hallazgo, accion_correctiva
+    ):
+        porque = AnalisisCincoPorques.objects.create(
+            hallazgo=hallazgo,
+            autor=responsable_user,
+            autor_tipo="responsable",
+            texto_causa="Root cause",
+            estado="aprobado",
+        )
+        refresh = RefreshToken.for_user(responsable_user)
+        api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
+
+        response = api_client.post(
+            f"/api/v1/hallazgos/{hallazgo.id}/acciones/{accion_correctiva.id}/porques/{porque.id}/unapprove/",
+            {"observacion": "Intento no autorizado."},
+            format="json",
+        )
+
+        assert response.status_code == 403
+        porque.refresh_from_db()
+        assert porque.estado == "aprobado"
+
 
 @pytest.mark.django_db
 class TestAnalisisCincoPorquesIntegration:

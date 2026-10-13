@@ -24,6 +24,10 @@ def _require_admin(user):
 
 @transaction.atomic
 def crear_hallazgo(user, data):
+    descripcion_general = data.get("descripcion_general")
+    if not isinstance(descripcion_general, str) or not descripcion_general.strip():
+        raise ValidationError("El campo descripcion_general es obligatorio.")
+
     tipo = data.get("tipo")
     if not tipo:
         raise ValidationError("El campo tipo es obligatorio.")
@@ -54,6 +58,7 @@ def crear_hallazgo(user, data):
         raise PermissionDenied("Tipo de usuario sin permisos para crear hallazgos.")
 
     hallazgo = Hallazgo.objects.create(
+        descripcion_general=descripcion_general.strip(),
         descripcion=data.get("descripcion", ""),
         ubicacion=data.get("ubicacion", ""),
         tipo=tipo,
@@ -201,7 +206,7 @@ def create_with_classification(user, data):
     
     Args:
         user: User creating the hallazgo
-        data: Dict with keys: tipo, descripcion, ubicacion, sector_codigo, subseccion_codigo (optional)
+        data: Dict with keys: tipo, descripcion_general, descripcion, ubicacion, sector_codigo, subseccion_codigo (optional)
     
     Returns:
         Hallazgo instance

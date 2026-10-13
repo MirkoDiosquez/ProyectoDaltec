@@ -58,7 +58,7 @@ def hallazgo_with_chat(db, admin_user, empleado_user):
 
 
 @pytest.mark.asyncio
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(allow_async_unsafe=True)
 async def test_websocket_message_with_archivos(admin_user, empleado_user, hallazgo_with_chat):
     """
     Test: WebSocket chat.send with archivos_ids broadcasts message with archivos (T090, T084, T088).
@@ -135,7 +135,7 @@ async def test_websocket_message_with_archivos(admin_user, empleado_user, hallaz
 
 
 @pytest.mark.asyncio
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db(allow_async_unsafe=True)
 async def test_websocket_message_with_multiple_archivos(admin_user, empleado_user, hallazgo_with_chat):
     """Test: WebSocket message with multiple archivos linked correctly (T090)."""
     api_client = APIClient()
@@ -181,5 +181,49 @@ async def test_websocket_message_with_multiple_archivos(admin_user, empleado_use
     # Verify both archivos in broadcast
     assert len(response["mensaje"]["archivos"]) == 2
     assert {a["nombre"] for a in response["mensaje"]["archivos"]} == {"file1.pdf", "file2.jpg"}
+
+    await communicator.disconnect()
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db(allow_async_unsafe=True)
+async def test_admin_can_delete_message_via_websocket(admin_user, empleado_user, hallazgo_with_chat):
+    chat = hallazgo_with_chat.chat
+    mensaje = Mensaje.objects.create(
+        chat=chat,
+        autor=empleado_user,
+        contenido="Mensaje a eliminar",
+    )
+
+    refresh = RefreshToken.for_user(admin_user)
+    communicator = WebsocketCommunicator(
+        ChatConsumer.as_asgi(),
+        f"/ws/chat/{hallazgo_with_chat.id}/",
+        headers=[(b"authorization", f"Bearer {refresh.access_token}".encode())],
+    )
+    communicator.scope["user"] = admin_user
+    communicator.scope["url_route"] = {"kwargs": {"hallazgo_id": hallazgo_with_chat.id}}
+
+    connected, _ = await communicator.connect()
+    assert connected
+
+    await communicator.send_json_to(
+        {
+            "type": "chat.delete_message",
+            "message_id": mensaje.id,
+        }
+    )
+
+    response = await asyncio.wait_for(communicator.receive_json_from(), timeout=2)
+
+    assert response["type"] == "chat.message_deleted"
+    assert response["mensaje"]["id"] == mensaje.id
+    assert response["mensaje"]["contenido"] == "Eliminado por el admin"
+    assert response["mensaje"]["eliminado_por_admin"] is True
+    assert response["mensaje"]["archivos"] == []
+
+    mensaje.refresh_from_db()
+    assert mensaje.contenido == "Eliminado por el admin"
+    assert mensaje.eliminado_por_admin is True
 
     await communicator.disconnect()

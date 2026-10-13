@@ -22,6 +22,7 @@ Create a new hallazgo with sector, subseccion, tipo classification.
 **Request**:
 ```json
 {
+  "descripcion_general": "string (required)",
   "descripcion": "string",
   "ubicacion": "string",
   "sector_codigo": "string (e.g., 'RECLAMO_CLIENTE', 'PROVEEDOR', 'INTERNO')",
@@ -40,6 +41,7 @@ Create a new hallazgo with sector, subseccion, tipo classification.
 ```json
 {
   "id": 123,
+  "descripcion_general": "string",
   "descripcion": "string",
   "ubicacion": "string",
   "creado_por": {"id": 1, "nombre": "Admin User"},
@@ -92,6 +94,7 @@ List hallazgos with optional filtering by sector, subseccion, tipo, estado.
   "results": [
     {
       "id": 123,
+      "descripcion_general": "string",
       "descripcion": "string",
       "sector": {"id": 1, "codigo": "INTERNO"},
       "subseccion": {"id": 5, "codigo": "ADMIN"},
@@ -122,6 +125,7 @@ Retrieve single hallazgo with all details (sector, subseccion, tipo, contacto_ex
 ```json
 {
   "id": 123,
+  "descripcion_general": "string",
   "descripcion": "string",
   "ubicacion": "string",
   "creado_por": {"id": 1, "nombre": "Admin User"},
@@ -182,22 +186,26 @@ Update hallazgo fields.
 **Request**:
 ```json
 {
+  "descripcion_general": "string (optional)",
   "descripcion": "string (optional)",
   "ubicacion": "string (optional)",
-  "estado": "abierto|en_progreso|cerrado|cancelado (optional)",
-  "responsables_ids": [1, 2, 3]  // optional, replaces current list
+  "tipo": "NO_CONFORMIDAD|OPORTUNIDAD_MEJORA|QUEJA_CLIENTE (optional; only while PENDIENTE)",
+  "sector_codigo": "string (optional)",
+  "subseccion_codigo": "string (required when changing sector to INTERNO)"
 }
 ```
+
+Estado, responsables, contacto externo y cliente asociado no se modifican mediante este endpoint. El tipo solo puede cambiarse mientras el hallazgo está PENDIENTE.
 
 **Response** (200 OK): Updated hallazgo object
 
 **Status Codes**:
 - `200 OK`: Success
-- `400 Bad Request`: Invalid field values
-- `403 Forbidden`: User lacks permission to update
+- `400 Bad Request`: Invalid field values or subsección requerida para el sector INTERNO
+- `403 Forbidden`: Solo Admin puede editar hallazgos
 - `404 Not Found`: Hallazgo not found
 
-**Authorization**: Creator or Admin only
+**Authorization**: Admin only
 
 ---
 

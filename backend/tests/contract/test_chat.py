@@ -137,3 +137,36 @@ class TestChatMessageWithAttachmentsContract:
         # Verify archivos field is empty list
         assert "archivos" in test_msg
         assert test_msg["archivos"] == []
+
+    def test_mensaje_eliminado_por_admin_oculta_archivos(self, api_client, hallazgo_with_chat, empleado_user):
+        refresh = RefreshToken.for_user(empleado_user)
+        api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
+
+        file_obj = SimpleUploadedFile(
+            "test-delete.pdf", b"fake pdf data", content_type="application/pdf"
+        )
+        upload_response = api_client.post(
+            "/api/v1/archivos/",
+            {"nombre": "test-delete.pdf", "ruta": file_obj},
+            format="multipart",
+        )
+        assert upload_response.status_code == 201
+
+        chat = hallazgo_with_chat.chat
+        mensaje = Mensaje.objects.create(
+            chat=chat,
+            autor=empleado_user,
+            contenido="Texto original",
+            eliminado_por_admin=True,
+        )
+
+        archivo = Archivo.objects.get(id=upload_response.json()["id"])
+        archivo.mensaje = mensaje
+        archivo.save()
+
+        response = api_client.get(f"/api/v1/chats/{hallazgo_with_chat.id}/")
+
+        assert response.status_code == 200
+        test_msg = next(msg for msg in response.json()["mensajes"] if msg["id"] == mensaje.id)
+        assert test_msg["eliminado_por_admin"] is True
+        assert test_msg["archivos"] == []

@@ -5,6 +5,7 @@ from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.contrib.auth import get_user_model
 from django.db.models import Case, When, Value, IntegerField, Count
+from django.db.models.functions import ExtractMonth, ExtractQuarter, ExtractYear
 from rest_framework import status, viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -20,6 +21,7 @@ from apps.hallazgos.permissions import HallazgoTipoPermission
 from apps.hallazgos.serializers import (
 	HallazgoCreateSerializer,
 	HallazgoSerializer,
+	HallazgoUpdateSerializer,
 	ResponsableSerializer,
 )
 from apps.hallazgos.services import (
@@ -30,6 +32,7 @@ from apps.hallazgos.services import (
 	remover_responsable,
 	ResponsableService,
 )
+from apps.users.permissions import IsAdmin
 
 User = get_user_model()
 
@@ -45,7 +48,7 @@ class HallazgoViewSet(viewsets.ModelViewSet):
 	# Phase 3: Add filters for sector, subseccion, tipo_catalogo
 	filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
 	filterset_fields = ['sector', 'subseccion', 'tipo_catalogo', 'estado', 'tipo']
-	search_fields = ['descripcion', 'ubicacion']
+	search_fields = ['descripcion_general', 'descripcion', 'ubicacion']
 	ordering_fields = ['fecha_creacion', 'estado']
 
 	# create crea un nuevo hallazgo con el serializador correspondiente y devuelve
@@ -63,6 +66,8 @@ class HallazgoViewSet(viewsets.ModelViewSet):
 		permissions = [IsAuthenticated]
 		if self.action == "create":
 			permissions.append(HallazgoTipoPermission)
+		elif self.action in {"update", "partial_update"}:
+			permissions.append(IsAdmin)
 		return [permission() for permission in permissions]
 
 	# get_queryset filtra la información según el tipo de usuario: administrador,
@@ -98,7 +103,19 @@ class HallazgoViewSet(viewsets.ModelViewSet):
 	def get_serializer_class(self):
 		if self.action == "create":
 			return HallazgoCreateSerializer
+		if self.action in {"update", "partial_update"}:
+			return HallazgoUpdateSerializer
 		return HallazgoSerializer
+
+	def update(self, request, *args, **kwargs):
+		partial = kwargs.pop("partial", False)
+		instance = self.get_object()
+		serializer = self.get_serializer(instance, data=request.data, partial=partial)
+		serializer.is_valid(raise_exception=True)
+		hallazgo = serializer.save()
+		return Response(
+			HallazgoSerializer(hallazgo, context=self.get_serializer_context()).data
+		)
 
 	def _get_hallazgo(self):
 		return self.get_object()
@@ -267,20 +284,15 @@ class HallazgoViewSet(viewsets.ModelViewSet):
 	# estadisticas devuelve métricas para el dashboard administrativo del sistema.
 	@action(detail=False, methods=["get"])
 	def estadisticas(self, request):
-		"""Admin-only endpoint for dashboard statistics.
+		"""Authenticated endpoint for dashboard statistics.
 		
 		Returns:
 		- hallazgos_por_tipo: count of hallazgos by tipo
 		- hallazgos_por_subseccion: count of hallazgos by subseccion (internal sector only)
 		- acciones_abiertas: count of open actions by tipo
+		- hallazgos_por_trimestre: count of hallazgos by quarter and type
+		- hallazgos_por_mes: count of hallazgos by month and type
 		"""
-		# Check admin permission
-		if not getattr(request.user, "is_admin", False):
-			return Response(
-				{"detail": "Solo administradores pueden acceder a estadísticas."},
-				status=status.HTTP_403_FORBIDDEN,
-			)
-		
 		from apps.acciones.models import Accion, EstadoAccion
 		
 		# Hallazgos por tipo
@@ -305,11 +317,71 @@ class HallazgoViewSet(viewsets.ModelViewSet):
 			.annotate(count=Count('id'))
 			.order_by('tipo')
 		)
+
+		tipos_hallazgo = [choice[0] for choice in TipoHallazgo.choices]
+		hallazgos_por_trimestre_raw = (
+			Hallazgo.objects.annotate(
+				anio=ExtractYear('fecha_creacion'),
+				trimestre=ExtractQuarter('fecha_creacion'),
+			)
+			.values('anio', 'trimestre', 'tipo')
+			.annotate(count=Count('id'))
+			.order_by('anio', 'trimestre', 'tipo')
+		)
+
+		hallazgos_por_trimestre = []
+		trimestres_index = {}
+		for item in hallazgos_por_trimestre_raw:
+			key = (item['anio'], item['trimestre'])
+			if key not in trimestres_index:
+				trimestres_index[key] = {
+					'anio': item['anio'],
+					'trimestre': item['trimestre'],
+					'label': f"{item['anio']} T{item['trimestre']}",
+					'total': 0,
+				}
+				for tipo in tipos_hallazgo:
+					trimestres_index[key][tipo] = 0
+
+			trimestres_index[key][item['tipo']] = item['count']
+			trimestres_index[key]['total'] += item['count']
+
+		hallazgos_por_trimestre = list(trimestres_index.values())
+
+		hallazgos_por_mes_raw = (
+			Hallazgo.objects.annotate(
+				anio=ExtractYear('fecha_creacion'),
+				mes=ExtractMonth('fecha_creacion'),
+			)
+			.values('anio', 'mes', 'tipo')
+			.annotate(count=Count('id'))
+			.order_by('anio', 'mes', 'tipo')
+		)
+
+		meses_index = {}
+		for item in hallazgos_por_mes_raw:
+			key = (item['anio'], item['mes'])
+			if key not in meses_index:
+				meses_index[key] = {
+					'anio': item['anio'],
+					'mes': item['mes'],
+					'label': f"{item['anio']}-{item['mes']:02d}",
+					'total': 0,
+				}
+				for tipo in tipos_hallazgo:
+					meses_index[key][tipo] = 0
+
+			meses_index[key][item['tipo']] = item['count']
+			meses_index[key]['total'] += item['count']
+
+		hallazgos_por_mes = list(meses_index.values())
 		
 		return Response({
 			'hallazgos_por_tipo': list(hallazgos_por_tipo) if hallazgos_por_tipo else [],
 			'hallazgos_por_subseccion': list(hallazgos_por_subseccion) if hallazgos_por_subseccion else [],
 			'acciones_abiertas': list(acciones_abiertas) if acciones_abiertas else [],
+			'hallazgos_por_trimestre': hallazgos_por_trimestre,
+			'hallazgos_por_mes': hallazgos_por_mes,
 		})
 
 	@action(detail=True, methods=["get"], url_path="historial_responsables")

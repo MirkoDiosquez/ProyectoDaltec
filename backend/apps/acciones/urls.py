@@ -11,6 +11,7 @@ accion_solicitar = AccionViewSet.as_view({"post": "solicitar_cierre"})
 accion_porques = AccionViewSet.as_view({"get": "list_porques", "post": "create_porque"})
 accion_porque_approve = AccionViewSet.as_view({"post": "approve_porque"})
 accion_porque_reject = AccionViewSet.as_view({"post": "reject_porque"})
+accion_porque_unapprove = AccionViewSet.as_view({"post": "unapprove_porque"})
 
 solicitud_list = SolicitudCierreViewSet.as_view({"get": "list"})
 solicitud_aprobar = SolicitudCierreViewSet.as_view({"post": "aprobar"})
@@ -46,6 +47,11 @@ urlpatterns = [
 		"hallazgos/<int:hallazgo_id>/acciones/<int:pk>/porques/<int:porque_id>/reject/",
 		accion_porque_reject,
 		name="accion-porque-reject",
+	),
+	path(
+		"hallazgos/<int:hallazgo_id>/acciones/<int:pk>/porques/<int:porque_id>/unapprove/",
+		accion_porque_unapprove,
+		name="accion-porque-unapprove",
 	),
 	path("solicitudes-cierre/", solicitud_list, name="solicitud-cierre-list"),
 	path("solicitudes-cierre/<int:pk>/aprobar/", solicitud_aprobar, name="solicitud-cierre-aprobar"),

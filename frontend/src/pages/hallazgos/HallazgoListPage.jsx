@@ -13,7 +13,6 @@ const tipoLabel = {
 };
 
 const estadoLabel = {
-  PENDIENTE: "Pendiente",
   APROBADO: "Aprobado",
   RECHAZADO: "Rechazado",
   CERRADO: "Cerrado",
@@ -219,7 +218,7 @@ export default function HallazgoListPage() {
 
       <section className="hallazgo-list-filters" aria-label="Filtros de hallazgos">
         <div className="hallazgo-list-filter-field hallazgo-list-filter-wide">
-          <label htmlFor="hallazgo-filter-search">Buscar por descripcion</label>
+          <label htmlFor="hallazgo-filter-search">Buscar por descripción general</label>
           <input
             id="hallazgo-filter-search"
             type="text"
@@ -345,7 +344,10 @@ export default function HallazgoListPage() {
                     }}
                   >
                     <div className="hallazgo-list-card-top" style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                      <strong style={{ fontSize: "14px", color: "#1e293b", fontWeight: 600 }}>{item.descripcion}</strong>
+                      <div className="hallazgo-list-description">
+                        <span className="hallazgo-list-id">ID {item.id}</span>
+                        <strong style={{ fontSize: "14px", color: "#1e293b", fontWeight: 600 }}>{item.descripcion_general}</strong>
+                      </div>
                       <span
                         className="hallazgo-list-status"
                         style={{

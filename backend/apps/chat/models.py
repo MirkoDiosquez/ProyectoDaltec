@@ -81,6 +81,12 @@ class Mensaje(models.Model):
         verbose_name="Has #urgente tag",
         help_text="True if message contains #urgente (case-insensitive)"
     )
+    eliminado_por_admin = models.BooleanField(
+        default=False,
+        db_index=True,
+        verbose_name="Eliminado por admin",
+        help_text="True if the message content was replaced after an admin deletion action.",
+    )
 
     class Meta:
         verbose_name = "Mensaje"
@@ -128,28 +134,33 @@ def send_chat_notification(sender, instance, created, **kwargs):
     """
     Post-save signal: Send notifications to chat participants when a new message is created.
     
-    - If message has #urgente tag: sends "mensaje_urgente" notification
-    - Otherwise: sends "mensaje_sin_leer" notification
+    Regular messages create "mensaje_sin_leer" notifications here. Messages with
+    #urgente are handled by ChatConsumer so admins are included and recipients
+    are deduplicated.
     
     Notifications are sent to all chat participants except the message author.
     """
     if not created:
         return  # Only on creation
+
+    # Urgent-message notifications are created by ChatConsumer, which also
+    # includes active admins and deduplicates users who are both admins and
+    # chat participants. Creating them here as well would notify participants
+    # twice.
+    if instance.tiene_urgente:
+        return
     
     from apps.notificaciones.models import Notificacion
     
     # Get all chat participants except the message author
     participantes = instance.chat.participantes.exclude(id=instance.autor_id)
     
-    # Determine notification type
-    tipo = "mensaje_urgente" if instance.tiene_urgente else "mensaje_sin_leer"
-    
     # Create notifications for each participant
     for participante in participantes:
         Notificacion.objects.create(
             titulo=f"Nuevo mensaje en hallazgo #{instance.chat.hallazgo_id}",
             mensaje=f"{instance.autor.nombre} {instance.autor.apellido}: {instance.contenido[:100]}...",
-            tipo=tipo,
+            tipo="mensaje_sin_leer",
             destinatario=participante,
             hallazgo_relacionado=instance.chat.hallazgo,
         )

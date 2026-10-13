@@ -188,26 +188,32 @@ export default function ChatMessageComposer({
 
       {/* Message Input */}
       <div style={{ display: "flex", gap: "10px", alignItems: "flex-end" }}>
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder={disabled ? "Sin permisos para escribir" : "Escribí un mensaje…"}
-          disabled={disabled || sending}
-          rows={2}
-          style={{
-            flex: 1,
-            padding: "10px 12px",
-            border: "1px solid #cbd5e1",
-            borderRadius: "10px",
-            fontFamily: "inherit",
-            fontSize: "14px",
-            resize: "vertical",
-            background: disabled ? "#f1f5f9" : "#ffffff",
-            color: "#1e293b",
-            opacity: disabled || sending ? 0.6 : 1,
-            outline: "none",
-          }}
-        />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder={disabled ? "Sin permisos para escribir" : "Escribí un mensaje…"}
+            disabled={disabled || sending}
+            rows={2}
+            style={{
+              width: "100%",
+              boxSizing: "border-box",
+              padding: "10px 12px",
+              border: "1px solid #cbd5e1",
+              borderRadius: "10px",
+              fontFamily: "inherit",
+              fontSize: "14px",
+              resize: "vertical",
+              background: disabled ? "#f1f5f9" : "#ffffff",
+              color: "#1e293b",
+              opacity: disabled || sending ? 0.6 : 1,
+              outline: "none",
+            }}
+          />
+          <small style={{ display: "block", margin: "4px 2px 0", color: "#64748b", fontSize: "11px" }}>
+            Incluí #urgente en el mensaje para avisar a participantes y administradores.
+          </small>
+        </div>
         <button
           type="submit"
           disabled={disabled || sending || (!content.trim() && attachedFiles.length === 0)}

@@ -6,7 +6,7 @@ import {
   aprobar,
   getHallazgo,
   rechazar,
-  reclasificar,
+  updateHallazgo,
   removeResponsable,
   uploadArchivo,
   listUsuarios,
@@ -22,6 +22,7 @@ import { useNotificaciones } from "../../context/NotificacionContext.jsx";
 import SolicitudCierreAdminView from "../acciones/SolicitudCierreAdminView.jsx";
 import FilePreview from "../../components/FilePreview.jsx";
 import FileUpload from "../../components/FileUpload.jsx";
+import SectorSelector from "../../components/hallazgos/SectorSelector.jsx";
 import ResponsableList from "../../components/ResponsableList.jsx";
 import HistorialResponsablesPanel from "../../components/hallazgos/HistorialResponsablesPanel.jsx";
 import SolicitudCambioForm from "../../components/hallazgos/SolicitudCambioForm.jsx";
@@ -63,6 +64,11 @@ function getDetailErrorMessage(context, apiError) {
     || data?.archivo?.[0]
     || data?.texto_causa?.[0]
     || data?.tipo?.[0]
+    || data?.descripcion_general?.[0]
+    || data?.descripcion?.[0]
+    || data?.ubicacion?.[0]
+    || data?.sector_codigo?.[0]
+    || data?.subseccion_codigo?.[0]
     || data?.observacion?.[0]
     || data?.observacion_rechazo?.[0];
 
@@ -81,6 +87,7 @@ function getDetailErrorMessage(context, apiError) {
       approvePorque: "Solo admin puede aprobar porqués pendientes.",
       rejectPorque: "Solo admin puede rechazar porqués pendientes.",
       createSolicitud: "No tenés permisos para solicitar cambios de responsable.",
+      updateHallazgo: "Solo los administradores pueden editar los datos del hallazgo.",
       approveSolicitud: "Solo admin puede aprobar solicitudes de cambio de responsable.",
       rejectSolicitud: "Solo admin puede rechazar solicitudes de cambio de responsable.",
     };
@@ -102,6 +109,7 @@ function getDetailErrorMessage(context, apiError) {
     approvePorque: detail || "No se pudo aprobar el porqué seleccionado.",
     rejectPorque: detail || "No se pudo rechazar el porqué seleccionado.",
     createSolicitud: detail || "No se pudo enviar la solicitud de cambio de responsable.",
+    updateHallazgo: detail || "No se pudieron guardar los cambios del hallazgo.",
     approveSolicitud: detail || "No se pudo aprobar la solicitud de cambio de responsable.",
     rejectSolicitud: detail || "No se pudo rechazar la solicitud de cambio de responsable.",
   };
@@ -119,7 +127,6 @@ export default function HallazgoDetailPage() {
   const [error, setError] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
-  const [nuevoTipo, setNuevoTipo] = useState("OPORTUNIDAD_MEJORA");
   const [responsableId, setResponsableId] = useState("");
   const [archivo, setArchivo] = useState(null);
 
@@ -128,6 +135,15 @@ export default function HallazgoDetailPage() {
   const [solicitudes, setSolicitudes] = useState([]);
   const [historialResponsables, setHistorialResponsables] = useState([]);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [editandoHallazgo, setEditandoHallazgo] = useState(false);
+  const [formEdicion, setFormEdicion] = useState({
+    descripcion_general: "",
+    descripcion: "",
+    ubicacion: "",
+    tipo: "",
+    sector_codigo: "",
+    subseccion_codigo: "",
+  });
 
   const isAdmin = user?.tipo === "ADMIN";
 
@@ -139,10 +155,6 @@ export default function HallazgoDetailPage() {
       setHallazgo(data);
       markHallazgoNotificationsAsRead(id);
 
-      if (data?.tipo && data.tipo !== "QUEJA_CLIENTE") {
-        setNuevoTipo(data.tipo);
-      }
-      
       // T111, T113: Load usuarios and solicitudes de cambio
       const usuariosData = await listUsuarios({ limit: 1000 });
       setUsuarios(Array.isArray(usuariosData) ? usuariosData : usuariosData.results || []);
@@ -167,6 +179,67 @@ export default function HallazgoDetailPage() {
     () => isAdmin && hallazgo?.estado === "PENDIENTE",
     [isAdmin, hallazgo?.estado]
   );
+
+  const iniciarEdicionHallazgo = () => {
+    setFormEdicion({
+      descripcion_general: hallazgo.descripcion_general || "",
+      descripcion: hallazgo.descripcion || "",
+      ubicacion: hallazgo.ubicacion || "",
+      tipo: hallazgo.tipo || "",
+      sector_codigo: hallazgo.sector?.codigo || "",
+      subseccion_codigo: hallazgo.subseccion?.codigo || "",
+    });
+    setError("");
+    setEditandoHallazgo(true);
+  };
+
+  const onChangeEdicionHallazgo = (event) => {
+    const { name, value } = event.target;
+    setFormEdicion((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const onEditSectorChange = useCallback((sectorCodigo) => {
+    setFormEdicion((prev) => ({
+      ...prev,
+      sector_codigo: sectorCodigo || "",
+      subseccion_codigo: "",
+    }));
+  }, []);
+
+  const onEditSubseccionChange = useCallback((subseccionCodigo) => {
+    setFormEdicion((prev) => ({ ...prev, subseccion_codigo: subseccionCodigo || "" }));
+  }, []);
+
+  const onUpdateHallazgo = async (event) => {
+    event.preventDefault();
+    setActionLoading(true);
+    setError("");
+
+    const payload = {
+      descripcion_general: formEdicion.descripcion_general.trim(),
+      descripcion: formEdicion.descripcion.trim(),
+      ubicacion: formEdicion.ubicacion.trim(),
+      tipo: formEdicion.tipo,
+    };
+    const sectorOriginal = hallazgo.sector?.codigo || "";
+    const subseccionOriginal = hallazgo.subseccion?.codigo || "";
+    const cambioClasificacion = formEdicion.sector_codigo !== sectorOriginal
+      || formEdicion.subseccion_codigo !== subseccionOriginal;
+    if (cambioClasificacion && formEdicion.sector_codigo) {
+      payload.sector_codigo = formEdicion.sector_codigo;
+      payload.subseccion_codigo = formEdicion.subseccion_codigo;
+    }
+
+    try {
+      await updateHallazgo(id, payload);
+      setEditandoHallazgo(false);
+      await refreshDetail();
+    } catch (apiError) {
+      setError(getDetailErrorMessage("updateHallazgo", apiError));
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const accionCorrectiva = useMemo(
     () => (Array.isArray(hallazgo?.acciones)
@@ -378,23 +451,125 @@ export default function HallazgoDetailPage() {
         </div>
       </section>
 
-      <section style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: "1rem", background: "#fff" }}>
-        <p style={{ marginTop: 0 }}><strong>Descripcion:</strong> {hallazgo.descripcion}</p>
-        <p><strong>Ubicacion:</strong> {hallazgo.ubicacion}</p>
-        <p><strong>Estado:</strong> {estadoLabel[hallazgo.estado] || hallazgo.estado}</p>
-        
-        {/* Phase 3: Display sector classification */}
-        {hallazgo.sector && (
-          <p><strong>Sector:</strong> {hallazgo.sector.nombre}</p>
+      <section style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: "1rem", background: "#fff", display: "grid", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+          <h2 style={{ margin: 0, fontSize: "1.05rem" }}>Datos del hallazgo</h2>
+          {isAdmin && !editandoHallazgo && (
+            <button type="button" disabled={actionLoading} onClick={iniciarEdicionHallazgo}>
+              Editar datos
+            </button>
+          )}
+        </div>
+
+        {editandoHallazgo ? (
+          <form onSubmit={onUpdateHallazgo} style={{ display: "grid", gap: 12 }}>
+            <label style={{ display: "grid", gap: 6 }}>
+              <span style={{ fontWeight: 600 }}>Tipo</span>
+              <select
+                name="tipo"
+                value={formEdicion.tipo}
+                onChange={onChangeEdicionHallazgo}
+                disabled={actionLoading || !canReclasificar}
+                required
+                style={{ borderRadius: 8, border: "1px solid #cbd5e1", padding: "0.65rem" }}
+              >
+                {Object.entries(tipoLabel).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+              {!canReclasificar && (
+                <small style={{ color: "#64748b" }}>
+                  El tipo solo puede modificarse mientras el hallazgo está pendiente.
+                </small>
+              )}
+            </label>
+
+            <label style={{ display: "grid", gap: 6 }}>
+              <span style={{ fontWeight: 600 }}>Descripción general</span>
+              <textarea
+                name="descripcion_general"
+                value={formEdicion.descripcion_general}
+                onChange={onChangeEdicionHallazgo}
+                rows={3}
+                required
+                disabled={actionLoading}
+                style={{ borderRadius: 8, border: "1px solid #cbd5e1", padding: "0.65rem" }}
+              />
+            </label>
+
+            <label style={{ display: "grid", gap: 6 }}>
+              <span style={{ fontWeight: 600 }}>Descripción</span>
+              <textarea
+                name="descripcion"
+                value={formEdicion.descripcion}
+                onChange={onChangeEdicionHallazgo}
+                rows={5}
+                required
+                disabled={actionLoading}
+                style={{ borderRadius: 8, border: "1px solid #cbd5e1", padding: "0.65rem" }}
+              />
+            </label>
+
+            <label style={{ display: "grid", gap: 6 }}>
+              <span style={{ fontWeight: 600 }}>Ubicación</span>
+              <input
+                type="text"
+                name="ubicacion"
+                value={formEdicion.ubicacion}
+                onChange={onChangeEdicionHallazgo}
+                maxLength={200}
+                required
+                disabled={actionLoading}
+                style={{ borderRadius: 8, border: "1px solid #cbd5e1", padding: "0.65rem" }}
+              />
+            </label>
+
+            <SectorSelector
+              sectorCodigo={formEdicion.sector_codigo}
+              subseccionCodigo={formEdicion.subseccion_codigo}
+              onSectorChange={onEditSectorChange}
+              onSubseccionChange={onEditSubseccionChange}
+              disabled={actionLoading}
+              required={Boolean(hallazgo.sector || formEdicion.sector_codigo)}
+            />
+
+            <p style={{ margin: 0, color: "#64748b", fontSize: "0.9rem" }}>
+              Estado: {estadoLabel[hallazgo.estado] || hallazgo.estado}. El estado y los responsables se gestionan con sus acciones correspondientes.
+            </p>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <button
+                type="button"
+                disabled={actionLoading}
+                onClick={() => setEditandoHallazgo(false)}
+              >
+                Cancelar
+              </button>
+              <button type="submit" disabled={actionLoading}>
+                {actionLoading ? "Guardando..." : "Guardar cambios"}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <>
+            <p style={{ margin: 0 }}><strong>Descripción general:</strong> {hallazgo.descripcion_general}</p>
+            <p style={{ margin: 0 }}><strong>Descripción:</strong> {hallazgo.descripcion}</p>
+            <p style={{ margin: 0 }}><strong>Ubicación:</strong> {hallazgo.ubicacion}</p>
+            <p style={{ margin: 0 }}><strong>Estado:</strong> {estadoLabel[hallazgo.estado] || hallazgo.estado}</p>
+
+            {hallazgo.sector && (
+              <p style={{ margin: 0 }}><strong>Sector:</strong> {hallazgo.sector.nombre}</p>
+            )}
+            {hallazgo.subseccion && (
+              <p style={{ margin: 0 }}><strong>Subsección:</strong> {hallazgo.subseccion.nombre}</p>
+            )}
+            {hallazgo.tipo_catalogo && (
+              <p style={{ margin: 0 }}><strong>Tipo (Catálogo):</strong> {hallazgo.tipo_catalogo.nombre}</p>
+            )}
+          </>
         )}
-        {hallazgo.subseccion && (
-          <p><strong>Subsección:</strong> {hallazgo.subseccion.nombre}</p>
-        )}
-        {hallazgo.tipo_catalogo && (
-          <p><strong>Tipo (Catálogo):</strong> {hallazgo.tipo_catalogo.nombre}</p>
-        )}
-        
-        {/* Phase 4: Display external contact if present */}
+
+        {/* Los datos de contacto externo siguen siendo inmutables tras la creación. */}
         {hallazgo.contacto_externo && (
           <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid #e2e8f0" }}>
             <p style={{ margin: "0 0 0.5rem 0", fontWeight: 600 }}>Datos de Contacto Externo:</p>
@@ -409,7 +584,6 @@ export default function HallazgoDetailPage() {
             </p>
           </div>
         )}
-        
         {hallazgo.cliente_asociado && (
           <p>
             <strong>Cliente Asociado:</strong>{" "}
@@ -511,26 +685,6 @@ export default function HallazgoDetailPage() {
             </button>
           </div>
 
-          {canReclasificar && (
-            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-              <select
-                value={nuevoTipo}
-                onChange={(event) => setNuevoTipo(event.target.value)}
-                disabled={actionLoading}
-              >
-                <option value="NO_CONFORMIDAD">No Conformidad</option>
-                <option value="OPORTUNIDAD_MEJORA">Oportunidad de Mejora</option>
-                <option value="QUEJA_CLIENTE">Queja de Cliente</option>
-              </select>
-              <button
-                type="button"
-                disabled={actionLoading}
-                onClick={() => doAdminAction(reclasificar, nuevoTipo)}
-              >
-                Reclasificar
-              </button>
-            </div>
-          )}
         </section>
       )}
 

@@ -24,6 +24,7 @@ export default function CrearHallazgoPage() {
   const { user } = useAuth();
 
   const [form, setForm] = useState({
+    descripcion_general: "",
     descripcion: "",
     ubicacion: "",
     tipo: EMPLEADO_TIPOS[0].value,
@@ -100,11 +101,16 @@ export default function CrearHallazgoPage() {
 
   const onSubmit = async (event) => {
     event.preventDefault();
+    if (!form.descripcion_general.trim()) {
+      setError("La descripción general es obligatoria.");
+      return;
+    }
     setError("");
     setLoading(true);
 
     try {
       const payload = {
+        descripcion_general: form.descripcion_general.trim(),
         descripcion: form.descripcion.trim(),
         ubicacion: form.ubicacion.trim(),
         tipo: form.tipo,
@@ -133,6 +139,7 @@ export default function CrearHallazgoPage() {
     } catch (apiError) {
       const detail =
         apiError?.response?.data?.detail ||
+        apiError?.response?.data?.descripcion_general?.[0] ||
         apiError?.response?.data?.cliente_asociado?.[0] ||
         apiError?.response?.data?.tipo?.[0] ||
         apiError?.response?.data?.sector_codigo?.[0] ||
@@ -166,6 +173,19 @@ export default function CrearHallazgoPage() {
         }}
       >
         <label style={{ display: "grid", gap: 6 }}>
+          <span style={{ fontWeight: 600 }}>Descripción general</span>
+          <textarea
+            name="descripcion_general"
+            value={form.descripcion_general}
+            onChange={onChange}
+            rows={3}
+            required
+            placeholder="Resume brevemente el hallazgo"
+            style={{ borderRadius: 8, border: "1px solid #cbd5e1", padding: "0.65rem" }}
+          />
+        </label>
+
+        <label style={{ display: "grid", gap: 6 }}>
           <span style={{ fontWeight: 600 }}>Descripcion</span>
           <textarea
             name="descripcion"
@@ -173,7 +193,7 @@ export default function CrearHallazgoPage() {
             onChange={onChange}
             rows={5}
             required
-            placeholder="Describe el hallazgo detectado"
+            placeholder="Describe en detalle el hallazgo detectado"
             style={{ borderRadius: 8, border: "1px solid #cbd5e1", padding: "0.65rem" }}
           />
         </label>
@@ -217,7 +237,7 @@ export default function CrearHallazgoPage() {
           </select>
         </label>
 
-        {/* Phase 4: External Contact Form (admin-only, RECLAMO_CLIENTE sector) */}
+        {/* Phase 4: External Contact Form (RECLAMO_CLIENTE sector) */}
         <ContactoExternoForm
           nombreEmpresa={form.contacto_externo_nombre_empresa}
           telefono={form.contacto_externo_telefono}
@@ -226,7 +246,6 @@ export default function CrearHallazgoPage() {
           onTelefonoChange={onContactoTelefonoChange}
           onEmailChange={onContactoEmailChange}
           sectorCodigo={form.sector_codigo}
-          isAdmin={isAdmin}
           disabled={loading}
         />
 
